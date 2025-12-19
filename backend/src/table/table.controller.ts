@@ -7,7 +7,10 @@ import {
   Post,
   Put,
   Query,
+  Res,
+  Header,
 } from '@nestjs/common';
+import type { Response } from 'express';
 import { TableService } from './table.service';
 import { CreateTableDto } from '../dto/create-table.dto';
 import { UpdateTableDto } from '../dto/update-table.dto';
@@ -46,5 +49,70 @@ export class TableController {
     @Body('status') status: 'active' | 'inactive',
   ) {
     return this.tableService.changeStatus(id, status);
+  }
+
+  @Post(':id/qr/generate')
+  async generateQrCode(@Param('id') id: string) {
+    return this.tableService.generateQrCode(id);
+  }
+
+  @Post(':id/qr/regenerate')
+  async regenerateQrCode(@Param('id') id: string) {
+    return this.tableService.regenerateQrCode(id);
+  }
+
+  @Get(':id/qr/download')
+  async downloadQrCode(
+    @Param('id') id: string,
+    @Query('format') format: 'png' | 'pdf' = 'png',
+    @Res() res: Response,
+  ) {
+    const table = await this.tableService.findOne(id);
+
+    if (format === 'pdf') {
+      const pdfBuffer = await this.tableService.downloadQrCodePdf(id);
+      res.set({
+        'Content-Type': 'application/pdf',
+        'Content-Disposition': `attachment; filename="table-${table.tableNumber}-qr.pdf"`,
+        'Content-Length': pdfBuffer.length,
+      });
+      res.send(pdfBuffer);
+    } else {
+      const pngBuffer = await this.tableService.downloadQrCodePng(id);
+      res.set({
+        'Content-Type': 'image/png',
+        'Content-Disposition': `attachment; filename="table-${table.tableNumber}-qr.png"`,
+        'Content-Length': pngBuffer.length,
+      });
+      res.send(pngBuffer);
+    }
+  }
+
+  @Get('qr/download-all')
+  async downloadAllQrCodes(
+    @Query('format') format: 'pdf' | 'zip' = 'pdf',
+    @Res() res: Response,
+  ) {
+    if (format === 'zip') {
+      const zipStream = await this.tableService.downloadAllQrCodesZip();
+      res.set({
+        'Content-Type': 'application/zip',
+        'Content-Disposition': 'attachment; filename="all-tables-qr-codes.zip"',
+      });
+      zipStream.pipe(res);
+    } else {
+      const pdfBuffer = await this.tableService.downloadAllQrCodes();
+      res.set({
+        'Content-Type': 'application/pdf',
+        'Content-Disposition': 'attachment; filename="all-tables-qr-codes.pdf"',
+        'Content-Length': pdfBuffer.length,
+      });
+      res.send(pdfBuffer);
+    }
+  }
+
+  @Post('qr/regenerate-all')
+  async regenerateAllQrCodes() {
+    return this.tableService.regenerateAllQrCodes();
   }
 }

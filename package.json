@@ -1,0 +1,11 @@
+{
+  "name": "smart-restaurant",
+  "packageManager": "yarn@4.12.0",
+  "workspaces": [
+    "backend",
+    "frontend"
+  ],
+  "dependencies": {
+    "typescript": "^5.9.3"
+  }
+}

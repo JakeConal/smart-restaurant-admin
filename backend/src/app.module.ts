@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { TableModule } from './table/table.module';
+import { MenuModule } from './menu/menu.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { Table } from './schema/table.schema';
@@ -23,6 +24,7 @@ import { Table } from './schema/table.schema';
       }),
     }),
     TableModule,
+    MenuModule,
   ],
   controllers: [AppController],
   providers: [AppService],
