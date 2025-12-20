@@ -56,9 +56,10 @@ export default function TablesPage() {
   }, [filters]);
 
   // Create table
-  const handleCreate = async (data: CreateTableDto) => {
-    await tableApi.create(data);
+  const handleCreate = async (data: CreateTableDto | UpdateTableDto) => {
+    await tableApi.create(data as CreateTableDto);
     await loadTables();
+    setShowCreateModal(false);
   };
 
   // Update table
