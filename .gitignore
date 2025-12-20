@@ -24,3 +24,6 @@ node_modules
 !.yarn/releases
 !.yarn/sdks
 !.yarn/versions
+
+frontend/.env
+backend/.env
