@@ -76,4 +76,17 @@ export class MenuItemService {
     item.isDeleted = true;
     return this.itemRepo.save(item);
   }
+
+  async incrementPopularity(id: string, restaurantId: string) {
+    const item = await this.itemRepo.findOne({
+      where: { id, restaurantId, isDeleted: false },
+    });
+
+    if (!item) {
+      throw new NotFoundException('Menu item not found');
+    }
+
+    item.popularityScore += 1;
+    return this.itemRepo.save(item);
+  }
 }

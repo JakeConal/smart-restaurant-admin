@@ -52,7 +52,7 @@ export class MenuService {
     });
 
     // Build where conditions for items
-    const where: any = { restaurantId, status: MenuItemStatus.AVAILABLE };
+    const where: any = { restaurantId, isDeleted: false };
     if (categoryId) where.categoryId = categoryId;
     if (chefRecommended !== undefined)
       where.isChefRecommended = chefRecommended;
@@ -61,8 +61,8 @@ export class MenuService {
     // Sort options
     let order: any = { name: 'ASC' };
     if (sort === 'popularity') {
-      // Assuming popularity is by some field, but since not defined, sort by name
-      order = { name: 'ASC' };
+      // Sort by popularity score (higher scores first), then by name
+      order = { popularityScore: 'DESC', name: 'ASC' };
     }
 
     // Get items with pagination
@@ -125,6 +125,7 @@ export class MenuService {
         ...item,
         primaryPhoto: photoMap.get(item.id),
         modifierGroups,
+        canOrder: item.status === MenuItemStatus.AVAILABLE,
       };
     });
 

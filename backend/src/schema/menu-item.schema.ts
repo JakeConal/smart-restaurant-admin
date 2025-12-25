@@ -49,6 +49,9 @@ export class MenuItem {
   @Column({ default: false })
   isDeleted: boolean;
 
+  @Column({ type: 'int', default: 0 })
+  popularityScore: number;
+
   @CreateDateColumn()
   createdAt: Date;
 
