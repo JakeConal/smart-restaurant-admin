@@ -20,7 +20,7 @@ export class TableService {
     private readonly qrService: QrService,
   ) {}
 
-  async create(dto: CreateTableDto): Promise<Table> {
+  async create(dto: CreateTableDto, restaurantId: string): Promise<Table> {
     // Check unique table number
     const exist = await this.tableRepo.findOne({
       where: { tableNumber: dto.tableNumber },
@@ -31,6 +31,7 @@ export class TableService {
     }
 
     const table = this.tableRepo.create({
+      restaurantId,
       tableNumber: dto.tableNumber,
       capacity: dto.capacity,
       location: dto.location,

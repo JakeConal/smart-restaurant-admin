@@ -6,15 +6,25 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { TableService } from '../table/table.service';
+import { MenuService } from './menu.service';
 
 @Controller('/api/menu')
 export class MenuController {
-  constructor(private readonly tableService: TableService) {}
+  constructor(
+    private readonly tableService: TableService,
+    private readonly menuService: MenuService,
+  ) {}
 
   @Get()
   async verifyAndGetMenu(
     @Query('table') tableId: string,
     @Query('token') token: string,
+    @Query('q') q?: string,
+    @Query('categoryId') categoryId?: string,
+    @Query('sort') sort?: string,
+    @Query('chefRecommended') chefRecommended?: string,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
   ) {
     if (!tableId || !token) {
       throw new BadRequestException('Table ID and token are required');
@@ -34,7 +44,23 @@ export class MenuController {
       );
     }
 
-    // Return table information - in the future, this would also return the menu
+    // Parse query params
+    const query = {
+      q,
+      categoryId,
+      sort,
+      chefRecommended:
+        chefRecommended === 'true'
+          ? true
+          : chefRecommended === 'false'
+            ? false
+            : undefined,
+      page: page ? parseInt(page, 10) : undefined,
+      limit: limit ? parseInt(limit, 10) : undefined,
+    };
+
+    const menu = await this.menuService.getGuestMenu(table.restaurantId, query);
+
     return {
       success: true,
       message: 'QR code verified successfully',
@@ -44,8 +70,7 @@ export class MenuController {
         capacity: table.capacity,
         location: table.location,
       },
-      // TODO: Add menu items here
-      menu: [],
+      menu,
     };
   }
 }

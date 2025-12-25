@@ -11,6 +11,7 @@ import {
 @Unique(['tableNumber'])
 export class Table {
   @PrimaryGeneratedColumn('uuid') id: string;
+  @Column('uuid') restaurantId: string;
   @Column({ name: 'table_number', length: 50 }) tableNumber: string;
   @Column({ type: 'int' }) capacity: number;
   @Column({ length: 100, nullable: true }) location?: string;

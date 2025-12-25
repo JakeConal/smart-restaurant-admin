@@ -17,6 +17,8 @@ import { TableService } from './table.service';
 import { CreateTableDto } from '../dto/create-table.dto';
 import { UpdateTableDto } from '../dto/update-table.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt.guards';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import type { AuthUser } from '../auth/interfaces/auth-user.interface';
 
 @Controller('/api/admin/tables')
 @UseGuards(JwtAuthGuard)
@@ -24,8 +26,8 @@ export class TableController {
   constructor(private readonly tableService: TableService) {}
 
   @Post()
-  create(@Body() dto: CreateTableDto) {
-    return this.tableService.create(dto);
+  create(@Body() dto: CreateTableDto, @CurrentUser() user: AuthUser) {
+    return this.tableService.create(dto, user.restaurantId);
   }
 
   @Get()
