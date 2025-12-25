@@ -6,8 +6,7 @@ import { MenuModule } from './menu/menu.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { Table } from './schema/table.schema';
-import { MenuCategoryService } from './menu-category/menu-category.service';
-import { MenuCategoryController } from './menu-category/menu-category.controller';
+import { MenuCategory } from './schema/menu-category.schema';
 import { MenuCategoryModule } from './menu-category/menu-category.module';
 
 @Module({
@@ -23,7 +22,7 @@ import { MenuCategoryModule } from './menu-category/menu-category.module';
         username: config.get<string>('DB_USERNAME'),
         password: config.get<string>('DB_PASSWORD'),
         database: config.get<string>('DB_NAME'),
-        entities: [Table],
+        entities: [Table, MenuCategory],
         synchronize: true,
       }),
     }),
@@ -31,7 +30,7 @@ import { MenuCategoryModule } from './menu-category/menu-category.module';
     MenuModule,
     MenuCategoryModule,
   ],
-  controllers: [AppController, MenuCategoryController],
-  providers: [AppService, MenuCategoryService],
+  controllers: [AppController],
+  providers: [AppService],
 })
 export class AppModule {}
