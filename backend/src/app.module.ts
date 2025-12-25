@@ -15,6 +15,12 @@ import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { MenuItemModule } from './menu-item/menu-item.module';
 import { MenuItemPhotoModule } from './menu-item-photo/menu-item-photo.module';
+import { ModifierGroupModule } from './modifier-group/modifier-group.module';
+import { ModifierGroup } from './schema/modifier-group.schema';
+import { ModifierOption } from './schema/modifier-option.schema';
+import { ModifierOptionModule } from './modifier-option/modifier-option.module';
+import { MenuItemModifierModule } from './menu-item-modifier/menu-item-modifier.module';
+import { MenuItemModifierGroup } from './schema/menu-item-modifier.schema';
 
 @Module({
   imports: [
@@ -29,7 +35,16 @@ import { MenuItemPhotoModule } from './menu-item-photo/menu-item-photo.module';
         username: config.get<string>('DB_USERNAME'),
         password: config.get<string>('DB_PASSWORD'),
         database: config.get<string>('DB_NAME'),
-        entities: [Table, MenuCategory, Users, MenuItem, MenuItemPhoto],
+        entities: [
+          Table,
+          MenuCategory,
+          Users,
+          MenuItem,
+          MenuItemPhoto,
+          ModifierGroup,
+          ModifierOption,
+          MenuItemModifierGroup,
+        ],
         synchronize: true,
       }),
     }),
@@ -40,6 +55,9 @@ import { MenuItemPhotoModule } from './menu-item-photo/menu-item-photo.module';
     UsersModule,
     MenuItemModule,
     MenuItemPhotoModule,
+    ModifierGroupModule,
+    ModifierOptionModule,
+    MenuItemModifierModule,
   ],
   controllers: [AppController],
   providers: [AppService],
