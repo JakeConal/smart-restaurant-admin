@@ -10,13 +10,16 @@ import {
   Query,
   Res,
   Header,
+  UseGuards,
 } from '@nestjs/common';
 import type { Response } from 'express';
 import { TableService } from './table.service';
 import { CreateTableDto } from '../dto/create-table.dto';
 import { UpdateTableDto } from '../dto/update-table.dto';
+import { JwtAuthGuard } from '../auth/guards/jwt.guards';
 
 @Controller('/api/admin/tables')
+@UseGuards(JwtAuthGuard)
 export class TableController {
   constructor(private readonly tableService: TableService) {}
 

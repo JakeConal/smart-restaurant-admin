@@ -7,7 +7,10 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { Table } from './schema/table.schema';
 import { MenuCategory } from './schema/menu-category.schema';
+import { Users } from './schema/user.schema';
 import { MenuCategoryModule } from './menu-category/menu-category.module';
+import { AuthModule } from './auth/auth.module';
+import { UsersModule } from './users/users.module';
 
 @Module({
   imports: [
@@ -22,13 +25,15 @@ import { MenuCategoryModule } from './menu-category/menu-category.module';
         username: config.get<string>('DB_USERNAME'),
         password: config.get<string>('DB_PASSWORD'),
         database: config.get<string>('DB_NAME'),
-        entities: [Table, MenuCategory],
+        entities: [Table, MenuCategory, Users],
         synchronize: true,
       }),
     }),
     TableModule,
     MenuModule,
     MenuCategoryModule,
+    AuthModule,
+    UsersModule,
   ],
   controllers: [AppController],
   providers: [AppService],
