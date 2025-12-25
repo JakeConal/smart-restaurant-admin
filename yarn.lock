@@ -1836,19 +1836,19 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@nestjs/platform-express@npm:^11.0.1":
-  version: 11.1.9
-  resolution: "@nestjs/platform-express@npm:11.1.9"
+"@nestjs/platform-express@npm:^11.1.10":
+  version: 11.1.10
+  resolution: "@nestjs/platform-express@npm:11.1.10"
   dependencies:
     cors: "npm:2.8.5"
-    express: "npm:5.1.0"
+    express: "npm:5.2.1"
     multer: "npm:2.0.2"
     path-to-regexp: "npm:8.3.0"
     tslib: "npm:2.8.1"
   peerDependencies:
     "@nestjs/common": ^11.0.0
     "@nestjs/core": ^11.0.0
-  checksum: 10c0/0d17a0b436a9020da3e2e439543ed7d2054201e7ae4b48adec741f467d946feeca8451873580cbaa60a0ffc29b7fd9f28f061c8c2d024877dd0fc163173da75c
+  checksum: 10c0/f35475b2d9d96751743bc4f8eec24af746322a7c2eebb7b47659c66394b4dfd2461bc510c79e6313203fcea2fe0fb834e98db0731087c13525cd0bd62f50c4b1
   languageName: node
   linkType: hard
 
@@ -2758,6 +2758,15 @@ __metadata:
   version: 2.1.0
   resolution: "@types/ms@npm:2.1.0"
   checksum: 10c0/5ce692ffe1549e1b827d99ef8ff71187457e0eb44adbae38fdf7b9a74bae8d20642ee963c14516db1d35fa2652e65f47680fdf679dcbde52bbfadd021f497225
+  languageName: node
+  linkType: hard
+
+"@types/multer@npm:^2":
+  version: 2.0.0
+  resolution: "@types/multer@npm:2.0.0"
+  dependencies:
+    "@types/express": "npm:*"
+  checksum: 10c0/375b0e77c4675c2ff27d1170e469df48dced928cc9fcd077ead111a20d0f2c01921fd25e20e25426604d6d3e311b37da2bc03ce47523d06adafba5c4b8077b67
   languageName: node
   linkType: hard
 
@@ -4100,7 +4109,7 @@ __metadata:
     "@nestjs/core": "npm:^11.0.1"
     "@nestjs/jwt": "npm:^11.0.2"
     "@nestjs/passport": "npm:^11.0.5"
-    "@nestjs/platform-express": "npm:^11.0.1"
+    "@nestjs/platform-express": "npm:^11.1.10"
     "@nestjs/schematics": "npm:^11.0.0"
     "@nestjs/testing": "npm:^11.0.1"
     "@nestjs/typeorm": "npm:^11.0.0"
@@ -4111,6 +4120,7 @@ __metadata:
     "@types/express": "npm:^5.0.0"
     "@types/jest": "npm:^29.5.14"
     "@types/jsonwebtoken": "npm:^9.0.10"
+    "@types/multer": "npm:^2"
     "@types/node": "npm:^22.10.7"
     "@types/passport": "npm:^0"
     "@types/passport-jwt": "npm:^4.0.1"
@@ -4127,6 +4137,7 @@ __metadata:
     globals: "npm:^15.14.0"
     jest: "npm:^29.7.0"
     jsonwebtoken: "npm:^9.0.3"
+    multer: "npm:^2.0.2"
     mysql2: "npm:^3.16.0"
     passport: "npm:^0.7.0"
     passport-jwt: "npm:^4.0.1"
@@ -4232,7 +4243,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"body-parser@npm:^2.2.0":
+"body-parser@npm:^2.2.1":
   version: 2.2.1
   resolution: "body-parser@npm:2.2.1"
   dependencies:
@@ -5881,17 +5892,18 @@ __metadata:
   languageName: node
   linkType: hard
 
-"express@npm:5.1.0":
-  version: 5.1.0
-  resolution: "express@npm:5.1.0"
+"express@npm:5.2.1":
+  version: 5.2.1
+  resolution: "express@npm:5.2.1"
   dependencies:
     accepts: "npm:^2.0.0"
-    body-parser: "npm:^2.2.0"
+    body-parser: "npm:^2.2.1"
     content-disposition: "npm:^1.0.0"
     content-type: "npm:^1.0.5"
     cookie: "npm:^0.7.1"
     cookie-signature: "npm:^1.2.1"
     debug: "npm:^4.4.0"
+    depd: "npm:^2.0.0"
     encodeurl: "npm:^2.0.0"
     escape-html: "npm:^1.0.3"
     etag: "npm:^1.8.1"
@@ -5912,7 +5924,7 @@ __metadata:
     statuses: "npm:^2.0.1"
     type-is: "npm:^2.0.1"
     vary: "npm:^1.1.2"
-  checksum: 10c0/80ce7c53c5f56887d759b94c3f2283e2e51066c98d4b72a4cc1338e832b77f1e54f30d0239cc10815a0f849bdb753e6a284d2fa48d4ab56faf9c501f55d751d6
+  checksum: 10c0/45e8c841ad188a41402ddcd1294901e861ee0819f632fb494f2ed344ef9c43315d294d443fb48d594e6586a3b779785120f43321417adaef8567316a55072949
   languageName: node
   linkType: hard
 
@@ -8656,7 +8668,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"multer@npm:2.0.2":
+"multer@npm:2.0.2, multer@npm:^2.0.2":
   version: 2.0.2
   resolution: "multer@npm:2.0.2"
   dependencies:

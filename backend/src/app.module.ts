@@ -9,10 +9,12 @@ import { Table } from './schema/table.schema';
 import { MenuCategory } from './schema/menu-category.schema';
 import { Users } from './schema/user.schema';
 import { MenuItem } from './schema/menu-item.schema';
+import { MenuItemPhoto } from './schema/menu-item-photo.schema';
 import { MenuCategoryModule } from './menu-category/menu-category.module';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { MenuItemModule } from './menu-item/menu-item.module';
+import { MenuItemPhotoModule } from './menu-item-photo/menu-item-photo.module';
 
 @Module({
   imports: [
@@ -27,7 +29,7 @@ import { MenuItemModule } from './menu-item/menu-item.module';
         username: config.get<string>('DB_USERNAME'),
         password: config.get<string>('DB_PASSWORD'),
         database: config.get<string>('DB_NAME'),
-        entities: [Table, MenuCategory, Users, MenuItem],
+        entities: [Table, MenuCategory, Users, MenuItem, MenuItemPhoto],
         synchronize: true,
       }),
     }),
@@ -37,6 +39,7 @@ import { MenuItemModule } from './menu-item/menu-item.module';
     AuthModule,
     UsersModule,
     MenuItemModule,
+    MenuItemPhotoModule,
   ],
   controllers: [AppController],
   providers: [AppService],
