@@ -4108,6 +4108,7 @@ __metadata:
     "@nestjs/config": "npm:^4.0.2"
     "@nestjs/core": "npm:^11.0.1"
     "@nestjs/jwt": "npm:^11.0.2"
+    "@nestjs/mapped-types": "npm:^2.1.0"
     "@nestjs/passport": "npm:^11.0.5"
     "@nestjs/platform-express": "npm:^11.1.10"
     "@nestjs/schematics": "npm:^11.0.0"
@@ -6307,7 +6308,7 @@ __metadata:
     react: "npm:19.2.1"
     react-dom: "npm:19.2.1"
     tailwindcss: "npm:^4"
-    typescript: "npm:^5"
+    typescript: "npm:5.9.3"
   languageName: unknown
   linkType: soft
 
@@ -11287,7 +11288,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"typescript@npm:5.9.3, typescript@npm:^5, typescript@npm:^5.7.3, typescript@npm:^5.9.3":
+"typescript@npm:5.9.3, typescript@npm:^5.7.3, typescript@npm:^5.9.3":
   version: 5.9.3
   resolution: "typescript@npm:5.9.3"
   bin:
@@ -11297,7 +11298,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"typescript@patch:typescript@npm%3A5.9.3#optional!builtin<compat/typescript>, typescript@patch:typescript@npm%3A^5#optional!builtin<compat/typescript>, typescript@patch:typescript@npm%3A^5.7.3#optional!builtin<compat/typescript>, typescript@patch:typescript@npm%3A^5.9.3#optional!builtin<compat/typescript>":
+"typescript@patch:typescript@npm%3A5.9.3#optional!builtin<compat/typescript>, typescript@patch:typescript@npm%3A^5.7.3#optional!builtin<compat/typescript>, typescript@patch:typescript@npm%3A^5.9.3#optional!builtin<compat/typescript>":
   version: 5.9.3
   resolution: "typescript@patch:typescript@npm%3A5.9.3#optional!builtin<compat/typescript>::version=5.9.3&hash=5786d5"
   bin:
