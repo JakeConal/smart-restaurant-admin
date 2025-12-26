@@ -19,7 +19,7 @@ export const QRCodeModal: React.FC<QRCodeModalProps> = ({ isOpen, onClose, table
 
   const qrCodeUrl = table.qrToken
     ? `https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=${encodeURIComponent(
-        `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/menu?table=${table.id}&token=${
+        `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/menu?tableId=${table.id}&token=${
           table.qrToken
         }`
       )}`

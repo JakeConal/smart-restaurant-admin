@@ -1,5 +1,6 @@
 import axios from 'axios';
 import type { Table, CreateTableDto, UpdateTableDto, TableFilters, QRCodeData } from '@/types/table';
+import type { GuestMenuResponse, MenuFilters } from '@/types/menu';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
 
@@ -9,6 +10,97 @@ const apiClient = axios.create({
     'Content-Type': 'application/json',
   },
 });
+
+// Add request interceptor to include JWT token in all requests
+apiClient.interceptors.request.use(
+  (config) => {
+    // Only add token for admin API routes
+    if (config.url?.includes('/api/admin/')) {
+      const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
+      if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+      }
+    }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
+
+// Add response interceptor to handle 401 errors
+apiClient.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      // Clear token and redirect to login
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('auth_token');
+        // Redirect to login page if not already there
+        if (!window.location.pathname.includes('/login')) {
+          window.location.href = '/login';
+        }
+      }
+    }
+    return Promise.reject(error);
+  }
+);
+
+// Auth API Operations
+export interface LoginDto {
+  email: string;
+  password: string;
+}
+
+export interface SignupDto {
+  email: string;
+  password: string;
+  name: string;
+  restaurantId: string;
+  role?: string;
+}
+
+export interface AuthResponse {
+  access_token: string;
+}
+
+export const authApi = {
+  // Login
+  login: async (credentials: LoginDto): Promise<AuthResponse> => {
+    const response = await apiClient.post('/auth/login', credentials);
+    // Store token in localStorage
+    if (response.data.access_token && typeof window !== 'undefined') {
+      localStorage.setItem('auth_token', response.data.access_token);
+    }
+    return response.data;
+  },
+
+  // Signup
+  signup: async (data: SignupDto): Promise<{ message: string }> => {
+    const response = await apiClient.post('/auth/signup', data);
+    return response.data;
+  },
+
+  // Logout
+  logout: () => {
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('auth_token');
+      window.location.href = '/login';
+    }
+  },
+
+  // Check if user is authenticated
+  isAuthenticated: (): boolean => {
+    if (typeof window === 'undefined') return false;
+    return !!localStorage.getItem('auth_token');
+  },
+
+  // Get stored token
+  getToken: (): string | null => {
+    if (typeof window === 'undefined') return null;
+    return localStorage.getItem('auth_token');
+  },
+};
 
 // Table CRUD Operations
 export const tableApi = {
@@ -102,6 +194,32 @@ export const qrApi = {
     const response = await apiClient.get('/api/admin/tables/qr/download-all?format=pdf', {
       responseType: 'blob',
     });
+    return response.data;
+  },
+};
+
+// Guest Menu Operations
+export const menuApi = {
+  // Get guest menu (accessed via QR code)
+  getGuestMenu: async (
+    tableId: string,
+    token: string,
+    filters?: MenuFilters
+  ): Promise<GuestMenuResponse> => {
+    const params = new URLSearchParams();
+    params.append('table', tableId);
+    params.append('token', token);
+    
+    if (filters?.q) params.append('q', filters.q);
+    if (filters?.categoryId) params.append('categoryId', filters.categoryId);
+    if (filters?.sort) params.append('sort', filters.sort);
+    if (filters?.chefRecommended !== undefined) {
+      params.append('chefRecommended', String(filters.chefRecommended));
+    }
+    if (filters?.page) params.append('page', String(filters.page));
+    if (filters?.limit) params.append('limit', String(filters.limit));
+
+    const response = await apiClient.get(`/api/menu?${params.toString()}`);
     return response.data;
   },
 };
