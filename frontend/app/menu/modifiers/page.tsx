@@ -18,7 +18,7 @@ import type {
   UpdateModifierGroupDto,
   CreateModifierOptionDto,
 } from "@/types/menu";
-import { modifierGroupApi } from "@/lib/api";
+import { menuApi } from "@/lib/api/menu";
 
 export default function ModifiersPage() {
   const toast = useToast();
@@ -44,7 +44,7 @@ export default function ModifiersPage() {
   const loadGroups = async () => {
     try {
       setLoading(true);
-      const data = await modifierGroupApi.getAll();
+      const data = await menuApi.getModifierGroups();
       setGroups(data);
     } catch (error) {
       console.error("Failed to load modifier groups:", error);
@@ -63,12 +63,14 @@ export default function ModifiersPage() {
     data: CreateModifierGroupDto | UpdateModifierGroupDto,
     options?: CreateModifierOptionDto[],
   ) => {
-    const group = await modifierGroupApi.create(data as CreateModifierGroupDto);
+    const group = await menuApi.createModifierGroup(
+      data as CreateModifierGroupDto,
+    );
 
     // Create options if provided
     if (options && options.length > 0) {
       for (const option of options) {
-        await modifierGroupApi.createOption(group.id, option);
+        await menuApi.createModifierOption(group.id, option);
       }
     }
 
@@ -79,7 +81,7 @@ export default function ModifiersPage() {
   // Update group
   const handleUpdate = async (data: UpdateModifierGroupDto) => {
     if (!selectedGroup) return;
-    await modifierGroupApi.update(selectedGroup.id, data);
+    await menuApi.updateModifierGroup(selectedGroup.id, data);
     await loadGroups();
     setShowEditModal(false);
   };
@@ -101,7 +103,7 @@ export default function ModifiersPage() {
     }
 
     try {
-      await modifierGroupApi.delete(group.id);
+      await menuApi.deleteModifierGroup(group.id);
       await loadGroups();
     } catch (error) {
       console.error("Failed to delete group:", error);
@@ -120,7 +122,7 @@ export default function ModifiersPage() {
     }
 
     try {
-      await modifierGroupApi.deleteOption(optionId);
+      await menuApi.deleteModifierOption(optionId);
       await loadGroups();
     } catch (error) {
       console.error("Failed to delete option:", error);

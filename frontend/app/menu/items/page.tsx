@@ -17,7 +17,7 @@ import type {
   UpdateMenuItemDto,
   MenuItemFilters,
 } from "@/types/menu";
-import { menuItemApi, menuCategoryApi, menuPhotoApi } from "@/lib/api";
+import { menuApi } from "@/lib/api/menu";
 
 export default function MenuItemsPage() {
   const toast = useToast();
@@ -43,7 +43,7 @@ export default function MenuItemsPage() {
   // Load categories
   const loadCategories = async () => {
     try {
-      const data = await menuCategoryApi.getAll({ status: "active" });
+      const data = await menuApi.getCategories({ status: "active" });
       setCategories(data);
     } catch (error) {
       console.error("Failed to load categories:", error);
@@ -54,7 +54,7 @@ export default function MenuItemsPage() {
   const loadItems = async () => {
     try {
       setLoading(true);
-      const data = await menuItemApi.getAll(filters);
+      const data = await menuApi.getItems(filters);
       setItems(data.items);
       setTotalCount(data.total);
     } catch (error) {
@@ -75,7 +75,7 @@ export default function MenuItemsPage() {
 
   // Create item
   const handleCreate = async (data: CreateMenuItemDto | UpdateMenuItemDto) => {
-    await menuItemApi.create(data as CreateMenuItemDto);
+    await menuApi.createItem(data as CreateMenuItemDto);
     await loadItems();
     setShowCreateModal(false);
   };
@@ -83,7 +83,7 @@ export default function MenuItemsPage() {
   // Update item
   const handleUpdate = async (data: UpdateMenuItemDto) => {
     if (!selectedItem) return;
-    await menuItemApi.update(selectedItem.id, data);
+    await menuApi.updateItem(selectedItem.id, data);
     await loadItems();
     setShowEditModal(false);
   };
@@ -93,7 +93,7 @@ export default function MenuItemsPage() {
     const newStatus = item.status === "available" ? "unavailable" : "available";
 
     try {
-      await menuItemApi.updateStatus(item.id, newStatus);
+      await menuApi.updateItemStatus(item.id, newStatus);
       await loadItems();
     } catch (error) {
       console.error("Failed to update status:", error);
@@ -118,7 +118,7 @@ export default function MenuItemsPage() {
     }
 
     try {
-      await menuItemApi.delete(item.id);
+      await menuApi.deleteItem(item.id);
       await loadItems();
     } catch (error) {
       console.error("Failed to delete item:", error);
@@ -135,7 +135,7 @@ export default function MenuItemsPage() {
   const handlePhotoUpload = async (files: File[]) => {
     if (!selectedItem) return;
     try {
-      await menuPhotoApi.upload(selectedItem.id, files);
+      await menuApi.uploadPhotos(selectedItem.id, files);
       await loadItems();
       toast.success("Photos uploaded successfully");
     } catch (error) {
@@ -147,7 +147,7 @@ export default function MenuItemsPage() {
   const handlePhotoDelete = async (photoId: string) => {
     if (!selectedItem) return;
     try {
-      await menuPhotoApi.delete(selectedItem.id, photoId);
+      await menuApi.deletePhoto(selectedItem.id, photoId);
       await loadItems();
       toast.success("Photo deleted successfully");
     } catch (error) {
@@ -159,7 +159,7 @@ export default function MenuItemsPage() {
   const handleSetPrimaryPhoto = async (photoId: string) => {
     if (!selectedItem) return;
     try {
-      await menuPhotoApi.setPrimary(selectedItem.id, photoId);
+      await menuApi.setPrimaryPhoto(selectedItem.id, photoId);
       await loadItems();
       toast.success("Primary photo updated");
     } catch (error) {

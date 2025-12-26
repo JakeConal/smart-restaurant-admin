@@ -16,7 +16,7 @@ import type {
   UpdateTableDto,
   TableFilters,
 } from "@/types/table";
-import { tableApi, qrApi, downloadFile } from "@/lib/api";
+import { tablesApi } from "@/lib/api/tables";
 
 export default function TablesPage() {
   const toast = useToast();
@@ -42,7 +42,7 @@ export default function TablesPage() {
   const loadTables = async () => {
     try {
       setLoading(true);
-      const data = await tableApi.getAll(filters);
+      const data = await tablesApi.getTables(filters);
       setTables(data);
     } catch (error) {
       console.error("Failed to load tables:", error);
@@ -58,7 +58,7 @@ export default function TablesPage() {
 
   // Create table
   const handleCreate = async (data: CreateTableDto | UpdateTableDto) => {
-    await tableApi.create(data as CreateTableDto);
+    await tablesApi.createTable(data as CreateTableDto);
     await loadTables();
     setShowCreateModal(false);
   };
@@ -66,7 +66,7 @@ export default function TablesPage() {
   // Update table
   const handleUpdate = async (data: UpdateTableDto) => {
     if (!selectedTable) return;
-    await tableApi.update(selectedTable.id, data);
+    await tablesApi.updateTable(selectedTable.id, data);
     await loadTables();
     setShowEditModal(false);
   };
@@ -84,7 +84,7 @@ export default function TablesPage() {
     }
 
     try {
-      await tableApi.updateStatus(table.id, newStatus);
+      await tablesApi.updateTableStatus(table.id, newStatus);
       await loadTables();
     } catch (error) {
       console.error("Failed to update status:", error);
@@ -115,7 +115,7 @@ export default function TablesPage() {
     }
 
     try {
-      await tableApi.delete(table.id);
+      await tablesApi.deleteTable(table.id);
       await loadTables();
     } catch (error) {
       console.error("Failed to delete table:", error);
@@ -126,8 +126,7 @@ export default function TablesPage() {
   // Download all QR codes
   const handleDownloadAllPDF = async () => {
     try {
-      const blob = await qrApi.downloadAllPDF();
-      downloadFile(blob, "all-tables-qr.pdf");
+      await tablesApi.downloadAllQRPDF();
     } catch (error) {
       console.error("Failed to download all QR codes:", error);
       toast.error("Failed to download QR codes");
@@ -136,8 +135,7 @@ export default function TablesPage() {
 
   const handleDownloadAllZIP = async () => {
     try {
-      const blob = await qrApi.downloadAllZIP();
-      downloadFile(blob, "all-tables-qr.zip");
+      await tablesApi.downloadAllQRZIP();
     } catch (error) {
       console.error("Failed to download all QR codes:", error);
       toast.error("Failed to download QR codes");
@@ -155,7 +153,7 @@ export default function TablesPage() {
     }
 
     try {
-      const result = await qrApi.regenerateAll();
+      const result = await tablesApi.regenerateAllQR();
       await loadTables();
       toast.success(`Successfully regenerated ${result.count} QR codes!`);
     } catch (error) {

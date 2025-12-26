@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import { Modal, Button, useToast } from "@/components/ui";
 import { Download, QrCode as QrCodeIcon } from "lucide-react";
 import type { Table } from "@/types/table";
-import { qrApi, downloadFile } from "@/lib/api";
+import { tablesApi } from "@/lib/api/tables";
 
 export interface QRCodeModalProps {
   isOpen: boolean;
@@ -34,8 +34,7 @@ export const QRCodeModal: React.FC<QRCodeModalProps> = ({
   const handleDownloadPNG = async () => {
     setDownloading("png");
     try {
-      const blob = await qrApi.downloadPNG(table.id);
-      downloadFile(blob, `table-${table.tableNumber}-qr.png`);
+      await tablesApi.downloadQRPNG(table.id);
     } catch (error) {
       console.error("Failed to download PNG:", error);
       toast.error("Failed to download QR code");
@@ -47,8 +46,7 @@ export const QRCodeModal: React.FC<QRCodeModalProps> = ({
   const handleDownloadPDF = async () => {
     setDownloading("pdf");
     try {
-      const blob = await qrApi.downloadPDF(table.id);
-      downloadFile(blob, `table-${table.tableNumber}-qr.pdf`);
+      await tablesApi.downloadQRPDF(table.id);
     } catch (error) {
       console.error("Failed to download PDF:", error);
       toast.error("Failed to download QR code");
@@ -70,7 +68,7 @@ export const QRCodeModal: React.FC<QRCodeModalProps> = ({
 
     setRegenerating(true);
     try {
-      await qrApi.regenerate(table.id);
+      await tablesApi.regenerateQR(table.id);
       onRegenerate?.();
       if (!isNew) {
         toast.success("QR code regenerated successfully!");

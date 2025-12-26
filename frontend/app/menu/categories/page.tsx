@@ -15,7 +15,7 @@ import type {
   UpdateMenuCategoryDto,
   MenuCategoryFilters,
 } from "@/types/menu";
-import { menuCategoryApi } from "@/lib/api";
+import { menuApi } from "@/lib/api/menu";
 
 export default function MenuCategoriesPage() {
   const toast = useToast();
@@ -41,7 +41,7 @@ export default function MenuCategoriesPage() {
   const loadCategories = async () => {
     try {
       setLoading(true);
-      const data = await menuCategoryApi.getAll(filters);
+      const data = await menuApi.getCategories(filters);
       setCategories(data);
     } catch (error) {
       console.error("Failed to load categories:", error);
@@ -59,7 +59,7 @@ export default function MenuCategoriesPage() {
   const handleCreate = async (
     data: CreateMenuCategoryDto | UpdateMenuCategoryDto,
   ) => {
-    await menuCategoryApi.create(data as CreateMenuCategoryDto);
+    await menuApi.createCategory(data as CreateMenuCategoryDto);
     await loadCategories();
     setShowCreateModal(false);
   };
@@ -67,7 +67,7 @@ export default function MenuCategoriesPage() {
   // Update category
   const handleUpdate = async (data: UpdateMenuCategoryDto) => {
     if (!selectedCategory) return;
-    await menuCategoryApi.update(selectedCategory.id, data);
+    await menuApi.updateCategory(selectedCategory.id, data);
     await loadCategories();
     setShowEditModal(false);
   };
@@ -87,7 +87,7 @@ export default function MenuCategoriesPage() {
     }
 
     try {
-      await menuCategoryApi.updateStatus(category.id, newStatus);
+      await menuApi.updateCategoryStatus(category.id, newStatus);
       await loadCategories();
     } catch (error) {
       console.error("Failed to update status:", error);
@@ -119,7 +119,7 @@ export default function MenuCategoriesPage() {
     }
 
     try {
-      await menuCategoryApi.delete(category.id);
+      await menuApi.deleteCategory(category.id);
       await loadCategories();
     } catch (error) {
       console.error("Failed to delete category:", error);
