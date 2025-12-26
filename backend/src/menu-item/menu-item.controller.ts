@@ -20,14 +20,19 @@ import { UpdateMenuItemDto } from '../dto/update-menu-item.dto';
 export class MenuItemController {
   constructor(private readonly service: MenuItemService) {}
 
-  @Post()
-  create(@CurrentUser() user: AuthUser, @Body() dto: CreateMenuItemDto) {
-    return this.service.create(user.restaurantId, dto);
-  }
-
   @Get()
   findAll(@CurrentUser() user: AuthUser) {
     return this.service.findAll(user.restaurantId);
+  }
+
+  @Get(':id')
+  findOne(@Param('id') id: string, @CurrentUser() user: AuthUser) {
+    return this.service.findOne(id, user.restaurantId);
+  }
+
+  @Post()
+  create(@CurrentUser() user: AuthUser, @Body() dto: CreateMenuItemDto) {
+    return this.service.create(user.restaurantId, dto);
   }
 
   @Put(':id')

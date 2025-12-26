@@ -51,6 +51,19 @@ export class MenuItemService {
     });
   }
 
+  async findOne(id: string, restaurantId: string) {
+    const item = await this.itemRepo.findOne({
+      where: { id, restaurantId, isDeleted: false },
+      relations: ['category', 'photos', 'modifierGroups', 'modifierGroups.options'],
+    });
+
+    if (!item) {
+      throw new NotFoundException('Menu item not found');
+    }
+
+    return item;
+  }
+
   async update(id: string, restaurantId: string, dto: UpdateMenuItemDto) {
     const item = await this.itemRepo.findOne({
       where: { id, restaurantId, isDeleted: false },

@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { CreateModifierGroupDto } from 'src/dto/create-modifier-group.dto';
 import { ModifierGroup } from 'src/schema/modifier-group.schema';
@@ -16,6 +16,23 @@ export class ModifierGroupService {
       restaurantId,
       ...dto,
     });
+    return this.modifierGroupRepo.save(group);
+  }
+
+  async updateGroup(
+    id: string,
+    restaurantId: string,
+    dto: CreateModifierGroupDto,
+  ) {
+    const group = await this.modifierGroupRepo.findOne({
+      where: { id, restaurantId },
+    });
+
+    if (!group) {
+      throw new NotFoundException('Modifier group not found');
+    }
+
+    Object.assign(group, dto);
     return this.modifierGroupRepo.save(group);
   }
 

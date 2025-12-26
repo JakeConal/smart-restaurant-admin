@@ -4,7 +4,7 @@ import { JwtAuthGuard } from '../auth/guards/jwt.guards';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import type { AuthUser } from '../auth/interfaces/auth-user.interface';
 
-@Controller('items/:itemId/modifier-groups')
+@Controller('api/admin/menu/items/:itemId/modifier-groups')
 @UseGuards(JwtAuthGuard)
 export class MenuItemModifierController {
   constructor(private readonly service: MenuItemModifierService) {}
