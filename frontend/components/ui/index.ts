@@ -17,4 +17,4 @@ export { Select } from "./Select";
 export type { SelectProps } from "./Select";
 
 export { ToastProvider, useToast } from "./Toast";
-export type { Toast, ToastType } from "./Toast";
+export type { ToastContentProps, ToastType } from "./Toast";
