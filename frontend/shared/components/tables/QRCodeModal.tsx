@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import Image from "next/image";
 import { Modal, Button, useToast } from "@/shared/components/ui";
 import { Download, QrCode as QrCodeIcon } from "lucide-react";
 import type { Table } from "@/shared/types/table";
@@ -22,14 +23,29 @@ export const QRCodeModal: React.FC<QRCodeModalProps> = ({
   const toast = useToast();
   const [downloading, setDownloading] = useState<"png" | "pdf" | null>(null);
   const [regenerating, setRegenerating] = useState(false);
+  const [qrCodeUrl, setQrCodeUrl] = useState<string>("");
+  const [loading, setLoading] = useState(false);
 
-  const qrCodeUrl = table.qrToken
-    ? `https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=${encodeURIComponent(
-        `${process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000"}/api/menu?table=${table.id}&token=${
-          table.qrToken
-        }`,
-      )}`
-    : "";
+  useEffect(() => {
+    if (isOpen && table.qrToken) {
+      setLoading(true);
+      tablesApi
+        .getQRCodeDataUrl(table.id)
+        .then((dataUrl) => {
+          setQrCodeUrl(dataUrl);
+        })
+        .catch((error) => {
+          console.error("Failed to load QR code:", error);
+          toast.error("Failed to load QR code");
+        })
+        .finally(() => {
+          setLoading(false);
+        });
+    } else {
+      setQrCodeUrl("");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen, table.qrToken, table.id]);
 
   const handleDownloadPNG = async () => {
     setDownloading("png");
@@ -98,12 +114,21 @@ export const QRCodeModal: React.FC<QRCodeModalProps> = ({
         </p>
 
         {/* QR Code */}
-        {qrCodeUrl ? (
+        {loading ? (
+          <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 inline-block mb-5">
+            <div className="w-40 h-40 flex items-center justify-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+            </div>
+          </div>
+        ) : qrCodeUrl ? (
           <div className="bg-white p-3 rounded-3xl shadow-sm border border-gray-100 inline-block mb-5">
-            <img
+            <Image
               src={qrCodeUrl}
               alt={`QR Code for ${table.tableNumber}`}
-              className="w-40 h-40 rounded-xl mix-blend-multiply opacity-90"
+              width={160}
+              height={160}
+              className="rounded-xl mix-blend-multiply opacity-90"
+              unoptimized
             />
           </div>
         ) : (

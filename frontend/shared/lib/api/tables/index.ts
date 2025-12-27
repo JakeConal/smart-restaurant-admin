@@ -96,6 +96,16 @@ export class TablesApi {
   }
 
   /**
+   * Get QR code as data URL
+   */
+  async getQRCodeDataUrl(tableId: string): Promise<string> {
+    const response = await apiClient.get(
+      `/api/admin/tables/${tableId}/qr/data-url`,
+    );
+    return response.data.dataUrl;
+  }
+
+  /**
    * Bulk regenerate all active tables
    */
   async regenerateAllQR(): Promise<{ count: number; tables: Table[] }> {

@@ -77,6 +77,11 @@ export class TableController {
     return this.tableService.regenerateQrCode(id);
   }
 
+  @Get(':id/qr/data-url')
+  async getQrCodeDataUrl(@Param('id') id: string) {
+    return await this.tableService.getQrCodeDataUrl(id);
+  }
+
   @Get(':id/qr/download')
   async downloadQrCode(
     @Param('id') id: string,

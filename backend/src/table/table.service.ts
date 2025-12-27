@@ -158,6 +158,19 @@ export class TableService {
     return this.generateQrCode(id);
   }
 
+  async getQrCodeDataUrl(id: string): Promise<{ dataUrl: string }> {
+    const table = await this.findOne(id);
+
+    if (!table.qrToken) {
+      throw new BadRequestException('QR code not generated for this table');
+    }
+
+    const qrUrl = this.qrService.generateQrUrl(table.id, table.qrToken);
+    const dataUrl = await this.qrService.generateQrCodeDataUrl(qrUrl);
+
+    return { dataUrl };
+  }
+
   async downloadQrCodePng(id: string): Promise<Buffer> {
     const table = await this.findOne(id);
 
@@ -277,7 +290,7 @@ export class TableService {
       archive.append(pngBuffer, { name: `table-${table.tableNumber}-qr.png` });
     }
 
-    archive.finalize();
+    await archive.finalize();
 
     return archive;
   }
