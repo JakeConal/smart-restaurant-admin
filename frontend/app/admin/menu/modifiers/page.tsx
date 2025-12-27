@@ -1,8 +1,12 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { DashboardLayout, TopBar } from "@/shared/components/layout";
-import { ModifierGroupFormModal } from "@/shared/components/menu";
+import {
+  ModifierGroupFormModal,
+  ModifierOptionFormModal,
+} from "@/shared/components/menu";
 import { Button, Card, Badge, useToast } from "@/shared/components/ui";
 import {
   RefreshCw,
@@ -19,8 +23,11 @@ import type {
   CreateModifierOptionDto,
 } from "@/shared/types/menu";
 import { menuApi } from "@/shared/lib/api/menu";
+import { useAuth } from "@/shared/components/auth/AuthContext";
 
 export default function ModifiersPage() {
+  const { user, isLoading } = useAuth();
+  const router = useRouter();
   const toast = useToast();
   const [groups, setGroups] = useState<ModifierGroup[]>([]);
   const [loading, setLoading] = useState(true);
@@ -28,14 +35,26 @@ export default function ModifiersPage() {
   // Modals
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [showAddOptionModal, setShowAddOptionModal] = useState(false);
   const [selectedGroup, setSelectedGroup] = useState<
     ModifierGroup | undefined
   >();
+  const [selectedGroupForOptions, setSelectedGroupForOptions] = useState<
+    ModifierGroup | undefined
+  >();
+
+  useEffect(() => {
+    if (!isLoading && !user) {
+      router.push("/admin/login");
+    }
+  }, [user, isLoading, router]);
 
   // Stats
   const totalGroups = groups.length;
-  const activeGroups = groups.filter((g) => g.status === "active").length;
-  const totalOptions = groups.reduce(
+  const activeGroups = (groups || []).filter(
+    (g) => g.status === "active",
+  ).length;
+  const totalOptions = (groups || []).reduce(
     (sum, g) => sum + (g.options?.length || 0),
     0,
   );
@@ -45,10 +64,11 @@ export default function ModifiersPage() {
     try {
       setLoading(true);
       const data = await menuApi.getModifierGroups();
-      setGroups(data);
+      setGroups(data || []);
     } catch (error) {
       console.error("Failed to load modifier groups:", error);
       toast.error("Failed to load modifier groups");
+      setGroups([]);
     } finally {
       setLoading(false);
     }
@@ -63,19 +83,28 @@ export default function ModifiersPage() {
     data: CreateModifierGroupDto | UpdateModifierGroupDto,
     options?: CreateModifierOptionDto[],
   ) => {
-    const group = await menuApi.createModifierGroup(
-      data as CreateModifierGroupDto,
-    );
+    try {
+      const group = await menuApi.createModifierGroup(
+        data as CreateModifierGroupDto,
+      );
 
-    // Create options if provided
-    if (options && options.length > 0) {
-      for (const option of options) {
-        await menuApi.createModifierOption(group.id, option);
+      // Create options if provided
+      if (options && options.length > 0) {
+        for (const option of options) {
+          console.log("Creating option:", option);
+          await menuApi.createModifierOption(group.id, option);
+        }
       }
-    }
 
-    await loadGroups();
-    setShowCreateModal(false);
+      await loadGroups();
+      setShowCreateModal(false);
+      toast.success("Modifier group created successfully");
+    } catch (error: any) {
+      console.error("Failed to create modifier group:", error);
+      toast.error(
+        error.response?.data?.message || "Failed to create modifier group",
+      );
+    }
   };
 
   // Update group
@@ -84,6 +113,33 @@ export default function ModifiersPage() {
     await menuApi.updateModifierGroup(selectedGroup.id, data);
     await loadGroups();
     setShowEditModal(false);
+  };
+
+  // Add option to group
+  const handleAddOption = async (data: CreateModifierOptionDto) => {
+    if (!selectedGroupForOptions) return;
+    try {
+      console.log(
+        "Frontend: Adding option to group",
+        selectedGroupForOptions.id,
+        "with data:",
+        data,
+      );
+      await menuApi.createModifierOption(selectedGroupForOptions.id, data);
+      await loadGroups();
+      setShowAddOptionModal(false);
+      setSelectedGroupForOptions(undefined);
+      toast.success("Option added successfully");
+    } catch (error: any) {
+      console.error("Frontend: Failed to add option:", error);
+      toast.error(error.response?.data?.message || "Failed to add option");
+    }
+  };
+
+  // Open add option modal
+  const handleAddOptionClick = (group: ModifierGroup) => {
+    setSelectedGroupForOptions(group);
+    setShowAddOptionModal(true);
   };
 
   // Edit group
@@ -212,7 +268,11 @@ export default function ModifiersPage() {
         ) : (
           <div className="space-y-4">
             {groups.map((group) => (
-              <Card key={group.id} className="p-6">
+              <Card
+                key={group.id}
+                className="p-6 cursor-pointer hover:shadow-md transition-shadow"
+                onClick={() => handleAddOptionClick(group)}
+              >
                 {/* Group Header */}
                 <div className="flex justify-between items-start mb-4">
                   <div className="flex-1">
@@ -251,13 +311,29 @@ export default function ModifiersPage() {
 
                   <div className="flex gap-2">
                     <button
-                      onClick={() => handleEdit(group)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleAddOptionClick(group);
+                      }}
+                      className="p-2 bg-blue-50 hover:bg-blue-100 rounded-xl transition-colors"
+                      title="Add Option"
+                    >
+                      <Plus className="w-4 h-4 text-blue-600" />
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleEdit(group);
+                      }}
                       className="p-2 bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors"
                     >
                       <Edit2 className="w-4 h-4 text-slate-700" />
                     </button>
                     <button
-                      onClick={() => handleDelete(group)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDelete(group);
+                      }}
                       className="p-2 bg-red-50 hover:bg-red-100 rounded-xl transition-colors"
                     >
                       <Trash2 className="w-4 h-4 text-red-600" />
@@ -289,7 +365,7 @@ export default function ModifiersPage() {
                             {option.priceAdjustment > 0 && (
                               <span className="text-xs text-green-600 font-semibold flex items-center gap-1">
                                 <DollarSign className="w-3 h-3" />
-                                +${option.priceAdjustment.toFixed(2)}
+                                +${Number(option.priceAdjustment).toFixed(2)}
                               </span>
                             )}
                           </div>
@@ -339,6 +415,16 @@ export default function ModifiersPage() {
         onSubmit={handleUpdate}
         group={selectedGroup}
         mode="edit"
+      />
+
+      <ModifierOptionFormModal
+        isOpen={showAddOptionModal}
+        onClose={() => {
+          setShowAddOptionModal(false);
+          setSelectedGroupForOptions(undefined);
+        }}
+        onSubmit={handleAddOption}
+        groupName={selectedGroupForOptions?.name || ""}
       />
     </DashboardLayout>
   );

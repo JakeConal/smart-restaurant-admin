@@ -12,11 +12,12 @@ import {
 import { FilesInterceptor } from '@nestjs/platform-express';
 import { MenuItemPhotoService } from './menu-item-photo.service';
 import { JwtAuthGuard } from '../auth/guards/jwt.guards';
+import { AdminGuard } from '../auth/guards/admin.guards';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import type { AuthUser } from '../auth/interfaces/auth-user.interface';
 
 @Controller('api/admin/menu/items')
-@UseGuards(JwtAuthGuard)
+@UseGuards(AdminGuard)
 export class MenuItemPhotoController {
   constructor(private readonly service: MenuItemPhotoService) {}
 

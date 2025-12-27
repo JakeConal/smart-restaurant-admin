@@ -1,16 +1,17 @@
-'use client';
+"use client";
 
-import React from 'react';
-import { Bell, Plus } from 'lucide-react';
-import { Button } from '@/shared/components/ui';
+import React from "react";
+import { Bell, Plus, LogOut } from "lucide-react";
+import { Button } from "@/shared/components/ui";
+import { useAuth } from "@/shared/components/auth/AuthContext";
 
 export interface TopBarProps {
   title: string;
   subtitle?: string;
   onAddClick?: () => void;
   showViewToggle?: boolean;
-  currentView?: 'list' | 'map';
-  onViewChange?: (view: 'list' | 'map') => void;
+  currentView?: "list" | "map";
+  onViewChange?: (view: "list" | "map") => void;
 }
 
 export const TopBar: React.FC<TopBarProps> = ({
@@ -18,35 +19,41 @@ export const TopBar: React.FC<TopBarProps> = ({
   subtitle,
   onAddClick,
   showViewToggle = false,
-  currentView = 'list',
+  currentView = "list",
   onViewChange,
 }) => {
+  const { logout, user } = useAuth();
+
   return (
     <header className="h-20 flex items-center justify-between px-2">
       <div>
-        <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">{title}</h1>
-        {subtitle && <p className="text-gray-400 font-medium mt-1">{subtitle}</p>}
+        <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">
+          {title}
+        </h1>
+        {subtitle && (
+          <p className="text-gray-400 font-medium mt-1">{subtitle}</p>
+        )}
       </div>
 
       <div className="flex items-center gap-3">
         {showViewToggle && (
           <div className="hidden md:flex bg-white px-1 py-1 rounded-2xl border border-slate-100 shadow-sm items-center">
             <button
-              onClick={() => onViewChange?.('list')}
+              onClick={() => onViewChange?.("list")}
               className={`px-5 py-2 rounded-xl font-bold text-sm transition-all ${
-                currentView === 'list'
-                  ? 'bg-slate-100 text-slate-800 shadow-inner'
-                  : 'text-gray-400 hover:text-slate-800'
+                currentView === "list"
+                  ? "bg-slate-100 text-slate-800 shadow-inner"
+                  : "text-gray-400 hover:text-slate-800"
               }`}
             >
               List View
             </button>
             <button
-              onClick={() => onViewChange?.('map')}
+              onClick={() => onViewChange?.("map")}
               className={`px-5 py-2 rounded-xl font-bold text-sm transition-all ${
-                currentView === 'map'
-                  ? 'bg-slate-100 text-slate-800 shadow-inner'
-                  : 'text-gray-400 hover:text-slate-800'
+                currentView === "map"
+                  ? "bg-slate-100 text-slate-800 shadow-inner"
+                  : "text-gray-400 hover:text-slate-800"
               }`}
             >
               Map View
@@ -56,6 +63,14 @@ export const TopBar: React.FC<TopBarProps> = ({
 
         <button className="w-12 h-12 bg-white rounded-2xl border border-slate-100 shadow-sm flex items-center justify-center hover:bg-slate-50 text-slate-800 transition-all">
           <Bell className="w-5 h-5" />
+        </button>
+
+        <button
+          onClick={logout}
+          className="w-12 h-12 bg-red-50 rounded-2xl border border-red-100 shadow-sm flex items-center justify-center hover:bg-red-100 text-red-600 transition-all"
+          title="Logout"
+        >
+          <LogOut className="w-5 h-5" />
         </button>
 
         {onAddClick && (

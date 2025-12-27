@@ -12,11 +12,24 @@ export class ModifierGroupService {
   ) {}
 
   async createGroup(restaurantId: string, dto: CreateModifierGroupDto) {
-    const group = this.modifierGroupRepo.create({
+    console.log(
+      'Service: Creating modifier group for restaurant:',
       restaurantId,
-      ...dto,
-    });
-    return this.modifierGroupRepo.save(group);
+      'with data:',
+      dto,
+    );
+    try {
+      const group = this.modifierGroupRepo.create({
+        restaurantId,
+        ...dto,
+      });
+      const result = await this.modifierGroupRepo.save(group);
+      console.log('Service: Modifier group created successfully:', result);
+      return result;
+    } catch (error) {
+      console.error('Service: Error creating modifier group:', error);
+      throw error;
+    }
   }
 
   async updateGroup(
@@ -24,19 +37,42 @@ export class ModifierGroupService {
     restaurantId: string,
     dto: CreateModifierGroupDto,
   ) {
-    const group = await this.modifierGroupRepo.findOne({
-      where: { id, restaurantId },
-    });
+    try {
+      const group = await this.modifierGroupRepo.findOne({
+        where: { id, restaurantId },
+      });
 
-    if (!group) {
-      throw new NotFoundException('Modifier group not found');
+      if (!group) {
+        throw new NotFoundException('Modifier group not found');
+      }
+
+      Object.assign(group, dto);
+      return this.modifierGroupRepo.save(group);
+    } catch (error) {
+      console.error('Error updating modifier group:', error);
+      throw error;
     }
-
-    Object.assign(group, dto);
-    return this.modifierGroupRepo.save(group);
   }
 
   async findAllByRestaurant(restaurantId: string) {
-    return this.modifierGroupRepo.find({ where: { restaurantId } });
+    try {
+      console.log('Fetching modifier groups for restaurant:', restaurantId);
+      const result = await this.modifierGroupRepo.find({
+        where: { restaurantId },
+        relations: ['options'],
+        order: { displayOrder: 'ASC', name: 'ASC' },
+      });
+      console.log(`Found ${result.length} modifier groups`);
+      return result;
+    } catch (error) {
+      console.error(
+        'Error fetching modifier groups for restaurant',
+        restaurantId,
+        ':',
+        error,
+      );
+      // Return empty array on error to prevent app crash
+      return [];
+    }
   }
 }

@@ -12,11 +12,13 @@ import {
   Clock,
   Grid3x3,
   Zap,
+  Eye,
 } from "lucide-react";
 import type { MenuItem } from "@/shared/types/menu";
 
 export interface MenuItemCardProps {
   item: MenuItem;
+  onView: (item: MenuItem) => void;
   onEdit: (item: MenuItem) => void;
   onDelete: (item: MenuItem) => void;
   onManagePhotos: (item: MenuItem) => void;
@@ -32,6 +34,7 @@ const statusVariants = {
 
 export const MenuItemCard: React.FC<MenuItemCardProps> = ({
   item,
+  onView,
   onEdit,
   onDelete,
   onManagePhotos,
@@ -111,7 +114,7 @@ export const MenuItemCard: React.FC<MenuItemCardProps> = ({
           <span
             className={`text-lg font-bold ${!isAvailable ? "text-gray-500" : ""}`}
           >
-            ${item.price.toFixed(2)}
+            ${Number(item.price).toFixed(2)}
           </span>
         </div>
         {item.prepTimeMinutes !== undefined && (
@@ -142,6 +145,16 @@ export const MenuItemCard: React.FC<MenuItemCardProps> = ({
           className="flex-1 bg-white border border-gray-200 text-gray-600 py-2.5 rounded-xl text-xs font-bold hover:bg-gray-50 transition-colors"
         >
           Photos
+        </button>
+
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onView(item);
+          }}
+          className="flex-1 bg-blue-600 text-white py-2.5 rounded-xl text-xs font-bold hover:bg-blue-700 transition-colors"
+        >
+          View
         </button>
 
         <button

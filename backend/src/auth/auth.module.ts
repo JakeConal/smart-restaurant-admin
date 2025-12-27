@@ -6,6 +6,7 @@ import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { JwtAuthGuard } from './guards/jwt.guards';
+import { AdminGuard } from './guards/admin.guards';
 import { Users } from '../schema/user.schema';
 
 @Module({
@@ -14,11 +15,11 @@ import { Users } from '../schema/user.schema';
     PassportModule,
     JwtModule.register({
       secret: process.env.JWT_SECRET || 'secretKey123',
-      signOptions: { expiresIn: '1d' },
+      signOptions: { expiresIn: '7d' },
     }),
   ],
-  providers: [AuthService, JwtStrategy, JwtAuthGuard],
+  providers: [AuthService, JwtStrategy, JwtAuthGuard, AdminGuard],
   controllers: [AuthController],
-  exports: [JwtAuthGuard],
+  exports: [JwtAuthGuard, AdminGuard],
 })
 export class AuthModule {}

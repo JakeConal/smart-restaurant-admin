@@ -21,13 +21,15 @@ export class TableService {
   ) {}
 
   async create(dto: CreateTableDto, restaurantId: string): Promise<Table> {
-    // Check unique table number
+    // Check unique table number within the restaurant
     const exist = await this.tableRepo.findOne({
-      where: { tableNumber: dto.tableNumber },
+      where: { tableNumber: dto.tableNumber, restaurantId },
     });
 
     if (exist) {
-      throw new BadRequestException('Table number already exists');
+      throw new BadRequestException(
+        'Table number already exists in this restaurant',
+      );
     }
 
     const table = this.tableRepo.create({
@@ -43,7 +45,7 @@ export class TableService {
 
     // Generate QR code automatically for new table
     try {
-      const token = this.qrService.generateToken(savedTable.id);
+      const token = this.qrService.generateToken(savedTable.id, restaurantId);
       savedTable.qrToken = token;
       savedTable.qrTokenCreatedAt = new Date();
       return await this.tableRepo.save(savedTable);
@@ -53,15 +55,19 @@ export class TableService {
     }
   }
 
-  async findAll(query: {
-    status?: 'active' | 'inactive';
-    location?: string;
-    sortBy?: 'tableNumber' | 'capacity' | 'createdAt';
-  }): Promise<Table[]> {
+  async findAll(
+    query: {
+      status?: 'active' | 'inactive';
+      location?: string;
+      sortBy?: 'tableNumber' | 'capacity' | 'createdAt';
+    },
+    restaurantId: string,
+  ): Promise<Table[]> {
     const { status, location, sortBy } = query;
 
     return this.tableRepo.find({
       where: {
+        restaurantId,
         ...(status && { status }),
         ...(location && { location }),
       },
@@ -84,14 +90,19 @@ export class TableService {
   async update(id: string, dto: UpdateTableDto): Promise<Table> {
     const table = await this.findOne(id);
 
-    // If update table number → check unique
+    // If update table number → check unique within restaurant
     if (dto.tableNumber && dto.tableNumber !== table.tableNumber) {
       const exist = await this.tableRepo.findOne({
-        where: { tableNumber: dto.tableNumber },
+        where: {
+          tableNumber: dto.tableNumber,
+          restaurantId: table.restaurantId,
+        },
       });
 
       if (exist) {
-        throw new BadRequestException('Table number already exists');
+        throw new BadRequestException(
+          'Table number already exists in this restaurant',
+        );
       }
     }
 
@@ -122,7 +133,7 @@ export class TableService {
     const table = await this.findOne(id);
 
     // Generate new token
-    const token = this.qrService.generateToken(table.id);
+    const token = this.qrService.generateToken(table.id, table.restaurantId);
     const qrUrl = this.qrService.generateQrUrl(table.id, token);
     const qrCodeDataUrl = await this.qrService.generateQrCodeDataUrl(qrUrl);
 
@@ -171,9 +182,9 @@ export class TableService {
     return this.qrService.generateQrCodePdf(table.tableNumber, qrCodeDataUrl);
   }
 
-  async downloadAllQrCodes(): Promise<Buffer> {
+  async downloadAllQrCodes(restaurantId: string): Promise<Buffer> {
     const tables = await this.tableRepo.find({
-      where: { status: 'active' },
+      where: { status: 'active', restaurantId },
     });
 
     const tablesWithQr = tables.filter((t) => t.qrToken);
@@ -196,14 +207,19 @@ export class TableService {
     return this.qrService.generateBulkQrCodesPdf(qrData);
   }
 
-  async regenerateAllQrCodes(): Promise<{ count: number; tables: Table[] }> {
+  async regenerateAllQrCodes(
+    restaurantId: string,
+  ): Promise<{ count: number; tables: Table[] }> {
     const tables = await this.tableRepo.find({
-      where: { status: 'active' },
+      where: { status: 'active', restaurantId },
     });
 
     const updatedTables = await Promise.all(
       tables.map(async (table) => {
-        const token = this.qrService.generateToken(table.id);
+        const token = this.qrService.generateToken(
+          table.id,
+          table.restaurantId,
+        );
         table.qrToken = token;
         table.qrTokenCreatedAt = new Date();
         return this.tableRepo.save(table);
@@ -239,9 +255,9 @@ export class TableService {
     return table;
   }
 
-  async downloadAllQrCodesZip(): Promise<Readable> {
+  async downloadAllQrCodesZip(restaurantId: string): Promise<Readable> {
     const tables = await this.tableRepo.find({
-      where: { status: 'active' },
+      where: { status: 'active', restaurantId },
     });
 
     const tablesWithQr = tables.filter((t) => t.qrToken);

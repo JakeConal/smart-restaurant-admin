@@ -12,11 +12,12 @@ import { MenuCategoryService } from './menu-category.service';
 import { CreateMenuCategoryDto } from 'src/dto/create-menu-category.dto';
 import { UpdateMenuCategoryDto } from 'src/dto/update-menu-category.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt.guards';
+import { AdminGuard } from '../auth/guards/admin.guards';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import type { AuthUser } from '../auth/interfaces/auth-user.interface';
 
 @Controller('api/admin/menu/categories')
-@UseGuards(JwtAuthGuard)
+@UseGuards(AdminGuard)
 export class MenuCategoryController {
   constructor(private readonly service: MenuCategoryService) {}
 

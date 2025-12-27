@@ -46,6 +46,14 @@ import { MenuItemModifierGroup } from './schema/menu-item-modifier.schema';
           MenuItemModifierGroup,
         ],
         synchronize: true,
+        // Add connection pool and retry settings
+        extra: {
+          connectionLimit: 10,
+          acquireTimeout: 60000,
+          timeout: 60000,
+        },
+        retryAttempts: 3,
+        retryDelay: 3000,
       }),
     }),
     TableModule,

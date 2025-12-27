@@ -8,7 +8,7 @@ import {
 } from 'typeorm';
 
 @Entity()
-@Unique(['tableNumber'])
+@Unique(['restaurantId', 'tableNumber'])
 export class Table {
   @PrimaryGeneratedColumn('uuid') id: string;
   @Column('uuid') restaurantId: string;

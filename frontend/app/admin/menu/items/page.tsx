@@ -1,12 +1,15 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { DashboardLayout, TopBar } from "@/shared/components/layout";
 import {
   MenuItemCard,
   MenuItemFormModal,
   PhotoUpload,
   MenuStatsCards,
+  MenuItemModifierModal,
+  MenuItemDetailModal,
 } from "@/shared/components/menu";
 import { Button, Input, useToast } from "@/shared/components/ui";
 import { RefreshCw, Search, UtensilsCrossed } from "lucide-react";
@@ -18,8 +21,11 @@ import type {
   MenuItemFilters,
 } from "@/shared/types/menu";
 import { menuApi } from "@/shared/lib/api/menu";
+import { useAuth } from "@/shared/components/auth/AuthContext";
 
 export default function MenuItemsPage() {
+  const { user, isLoading } = useAuth();
+  const router = useRouter();
   const toast = useToast();
   const [items, setItems] = useState<MenuItem[]>([]);
   const [categories, setCategories] = useState<MenuCategory[]>([]);
@@ -34,11 +40,23 @@ export default function MenuItemsPage() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showPhotoModal, setShowPhotoModal] = useState(false);
+  const [showModifierModal, setShowModifierModal] = useState(false);
+  const [showDetailModal, setShowDetailModal] = useState(false);
   const [selectedItem, setSelectedItem] = useState<MenuItem | undefined>();
 
+  useEffect(() => {
+    if (!isLoading && !user) {
+      router.push("/admin/login");
+    }
+  }, [user, isLoading, router]);
+
   // Stats
-  const activeItems = items.filter((i) => i.status === "available").length;
-  const chefRecommendations = items.filter((i) => i.isChefRecommended).length;
+  const activeItems = (items || []).filter(
+    (i) => i.status === "available",
+  ).length;
+  const chefRecommendations = (items || []).filter(
+    (i) => i.isChefRecommended,
+  ).length;
 
   // Load categories
   const loadCategories = async () => {
@@ -55,11 +73,13 @@ export default function MenuItemsPage() {
     try {
       setLoading(true);
       const data = await menuApi.getItems(filters);
-      setItems(data.items);
-      setTotalCount(data.total);
+      setItems(data.items || []);
+      setTotalCount(data.total || 0);
     } catch (error) {
       console.error("Failed to load items:", error);
       toast.error("Failed to load menu items");
+      setItems([]);
+      setTotalCount(0);
     } finally {
       setLoading(false);
     }
@@ -75,17 +95,33 @@ export default function MenuItemsPage() {
 
   // Create item
   const handleCreate = async (data: CreateMenuItemDto | UpdateMenuItemDto) => {
-    await menuApi.createItem(data as CreateMenuItemDto);
-    await loadItems();
-    setShowCreateModal(false);
+    try {
+      console.log("Creating menu item:", data);
+      const result = await menuApi.createItem(data as CreateMenuItemDto);
+      console.log("Menu item created:", result);
+      toast.success("Menu item created successfully");
+      await loadItems();
+      setShowCreateModal(false);
+    } catch (error: any) {
+      console.error("Failed to create menu item:", error);
+      toast.error(error.message || "Failed to create menu item");
+      throw error; // Re-throw so the modal can handle it
+    }
   };
 
   // Update item
   const handleUpdate = async (data: UpdateMenuItemDto) => {
     if (!selectedItem) return;
-    await menuApi.updateItem(selectedItem.id, data);
-    await loadItems();
-    setShowEditModal(false);
+    try {
+      await menuApi.updateItem(selectedItem.id, data);
+      toast.success("Menu item updated successfully");
+      await loadItems();
+      setShowEditModal(false);
+    } catch (error: any) {
+      console.error("Failed to update menu item:", error);
+      toast.error(error.message || "Failed to update menu item");
+      throw error;
+    }
   };
 
   // Toggle item status
@@ -168,9 +204,16 @@ export default function MenuItemsPage() {
     }
   };
 
-  // Modifier management (placeholder)
+  // View item details
+  const handleView = (item: MenuItem) => {
+    setSelectedItem(item);
+    setShowDetailModal(true);
+  };
+
+  // Modifier management
   const handleManageModifiers = (item: MenuItem) => {
-    toast.info(`Modifier management for "${item.name}" - Coming soon!`);
+    setSelectedItem(item);
+    setShowModifierModal(true);
   };
 
   // Search
@@ -299,6 +342,7 @@ export default function MenuItemsPage() {
                 <MenuItemCard
                   key={item.id}
                   item={item}
+                  onView={handleView}
                   onEdit={handleEdit}
                   onDelete={handleDelete}
                   onManagePhotos={handleManagePhotos}
@@ -403,6 +447,28 @@ export default function MenuItemsPage() {
           onSetPrimary={handleSetPrimaryPhoto}
         />
       )}
+
+      {/* Modifier Modal */}
+      {selectedItem && (
+        <MenuItemModifierModal
+          isOpen={showModifierModal}
+          onClose={() => {
+            setShowModifierModal(false);
+            setSelectedItem(undefined);
+          }}
+          item={selectedItem}
+        />
+      )}
+
+      {/* Detail Modal */}
+      <MenuItemDetailModal
+        isOpen={showDetailModal}
+        onClose={() => {
+          setShowDetailModal(false);
+          setSelectedItem(undefined);
+        }}
+        item={selectedItem || null}
+      />
     </DashboardLayout>
   );
 }

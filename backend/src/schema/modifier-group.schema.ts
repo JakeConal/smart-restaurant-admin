@@ -4,7 +4,10 @@ import {
   Column,
   CreateDateColumn,
   UpdateDateColumn,
+  OneToMany,
 } from 'typeorm';
+import { MenuItemModifierGroup } from './menu-item-modifier.schema';
+import { ModifierOption } from './modifier-option.schema';
 
 export enum SelectionType {
   SINGLE = 'single',
@@ -39,6 +42,12 @@ export class ModifierGroup {
 
   @Column({ default: 'active' })
   status: string;
+
+  @OneToMany(() => MenuItemModifierGroup, (modifier) => modifier.group)
+  menuItems: MenuItemModifierGroup[];
+
+  @OneToMany(() => ModifierOption, (option) => option.group)
+  options: ModifierOption[];
 
   @CreateDateColumn()
   createdAt: Date;

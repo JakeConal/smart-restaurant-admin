@@ -6,23 +6,43 @@ import {
   Delete,
   Body,
   Param,
+  Query,
   UseGuards,
 } from '@nestjs/common';
 import { MenuItemService } from './menu-item.service';
 import { JwtAuthGuard } from '../auth/guards/jwt.guards';
+import { AdminGuard } from '../auth/guards/admin.guards';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import type { AuthUser } from '../auth/interfaces/auth-user.interface';
 import { CreateMenuItemDto } from '../dto/create-menu-item.dto';
 import { UpdateMenuItemDto } from '../dto/update-menu-item.dto';
 
-@UseGuards(JwtAuthGuard)
+@UseGuards(AdminGuard)
 @Controller('api/admin/menu/items')
 export class MenuItemController {
   constructor(private readonly service: MenuItemService) {}
 
   @Get()
-  findAll(@CurrentUser() user: AuthUser) {
-    return this.service.findAll(user.restaurantId);
+  findAll(
+    @CurrentUser() user: AuthUser,
+    @Query('search') search?: string,
+    @Query('categoryId') categoryId?: string,
+    @Query('status') status?: string,
+    @Query('chefRecommended') chefRecommended?: string,
+    @Query('sortBy') sortBy?: string,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+  ) {
+    const filters = {
+      search,
+      categoryId,
+      status,
+      chefRecommended: chefRecommended === 'true',
+      sortBy,
+      page: page ? parseInt(page) : 1,
+      limit: limit ? parseInt(limit) : 12,
+    };
+    return this.service.findAll(user.restaurantId, filters);
   }
 
   @Get(':id')

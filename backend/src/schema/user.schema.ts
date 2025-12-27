@@ -16,4 +16,7 @@ export class Users {
 
   @Column({ default: 'admin' })
   role: string;
+
+  @Column()
+  restaurantName: string;
 }

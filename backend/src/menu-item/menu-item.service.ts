@@ -38,30 +38,155 @@ export class MenuItemService {
       restaurantId,
     });
 
-    return this.itemRepo.save(item);
+    const savedItem = await this.itemRepo.save(item);
+
+    // Load the category relation for the response
+    const itemWithCategory = await this.itemRepo.findOne({
+      where: { id: savedItem.id },
+      relations: ['category'],
+    });
+
+    return {
+      ...itemWithCategory,
+      categoryName: itemWithCategory?.category?.name,
+    };
   }
 
-  async findAll(restaurantId: string) {
-    return this.itemRepo.find({
-      where: {
-        restaurantId,
-        isDeleted: false,
-      },
-      order: { createdAt: 'DESC' },
+  async findAll(
+    restaurantId: string,
+    filters?: {
+      search?: string;
+      categoryId?: string;
+      status?: string;
+      chefRecommended?: boolean;
+      sortBy?: string;
+      page?: number;
+      limit?: number;
+    },
+  ) {
+    console.log('findAll called with restaurantId:', restaurantId);
+
+    const queryBuilder = this.itemRepo
+      .createQueryBuilder('item')
+      .leftJoinAndSelect('item.category', 'category')
+      .leftJoinAndSelect('item.photos', 'photos')
+      .leftJoinAndSelect('item.modifierGroups', 'modifierGroups')
+      .leftJoinAndSelect('modifierGroups.options', 'modifierOptions')
+      .where('item.restaurantId = :restaurantId', { restaurantId })
+      .andWhere('item.isDeleted = :isDeleted', { isDeleted: false });
+
+    // Apply filters
+    if (filters?.search) {
+      queryBuilder.andWhere(
+        'item.name LIKE :search OR item.description LIKE :search',
+        {
+          search: `%${filters.search}%`,
+        },
+      );
+    }
+
+    if (filters?.categoryId) {
+      queryBuilder.andWhere('item.categoryId = :categoryId', {
+        categoryId: filters.categoryId,
+      });
+    }
+
+    if (filters?.status) {
+      queryBuilder.andWhere('item.status = :status', {
+        status: filters.status,
+      });
+    }
+
+    if (filters?.chefRecommended !== undefined) {
+      queryBuilder.andWhere('item.isChefRecommended = :chefRecommended', {
+        chefRecommended: filters.chefRecommended,
+      });
+    }
+
+    // Apply sorting
+    const sortBy = filters?.sortBy || 'createdAt';
+    const sortOrder = sortBy === 'price' ? 'ASC' : 'DESC';
+    queryBuilder.orderBy(`item.${sortBy}`, sortOrder);
+
+    // Apply pagination
+    const page = filters?.page || 1;
+    const limit = filters?.limit || 12;
+    const offset = (page - 1) * limit;
+
+    queryBuilder.skip(offset).take(limit);
+
+    // Get total count
+    const totalQuery = this.itemRepo
+      .createQueryBuilder('item')
+      .where('item.restaurantId = :restaurantId', { restaurantId })
+      .andWhere('item.isDeleted = :isDeleted', { isDeleted: false });
+
+    // Apply same filters to total count
+    if (filters?.search) {
+      totalQuery.andWhere(
+        'item.name LIKE :search OR item.description LIKE :search',
+        {
+          search: `%${filters.search}%`,
+        },
+      );
+    }
+
+    if (filters?.categoryId) {
+      totalQuery.andWhere('item.categoryId = :categoryId', {
+        categoryId: filters.categoryId,
+      });
+    }
+
+    if (filters?.status) {
+      totalQuery.andWhere('item.status = :status', {
+        status: filters.status,
+      });
+    }
+
+    if (filters?.chefRecommended !== undefined) {
+      totalQuery.andWhere('item.isChefRecommended = :chefRecommended', {
+        chefRecommended: filters.chefRecommended,
+      });
+    }
+
+    const [items, total] = await Promise.all([
+      queryBuilder.getMany(),
+      totalQuery.getCount(),
+    ]);
+
+    // Transform items to include categoryName as flat field
+    const transformedItems = items.map((item) => ({
+      ...item,
+      categoryName: item.category?.name,
+    }));
+
+    console.log('findAll returning:', {
+      itemsCount: transformedItems.length,
+      total,
     });
+
+    return { items: transformedItems, total };
   }
 
   async findOne(id: string, restaurantId: string) {
     const item = await this.itemRepo.findOne({
       where: { id, restaurantId, isDeleted: false },
-      relations: ['category', 'photos', 'modifierGroups', 'modifierGroups.options'],
+      relations: [
+        'category',
+        'photos',
+        'modifierGroups',
+        'modifierGroups.options',
+      ],
     });
 
     if (!item) {
       throw new NotFoundException('Menu item not found');
     }
 
-    return item;
+    return {
+      ...item,
+      categoryName: item.category?.name,
+    };
   }
 
   async update(id: string, restaurantId: string, dto: UpdateMenuItemDto) {
@@ -74,7 +199,18 @@ export class MenuItemService {
     }
 
     Object.assign(item, dto);
-    return this.itemRepo.save(item);
+    const savedItem = await this.itemRepo.save(item);
+
+    // Load the category relation for the response
+    const itemWithCategory = await this.itemRepo.findOne({
+      where: { id: savedItem.id },
+      relations: ['category'],
+    });
+
+    return {
+      ...itemWithCategory,
+      categoryName: itemWithCategory?.category?.name,
+    };
   }
 
   async remove(id: string, restaurantId: string) {

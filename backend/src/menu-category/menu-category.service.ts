@@ -8,12 +8,15 @@ import { CreateMenuCategoryDto } from 'src/dto/create-menu-category.dto';
 import { MenuCategory, CategoryStatus } from 'src/schema/menu-category.schema';
 import { Repository } from 'typeorm';
 import { UpdateMenuCategoryDto } from 'src/dto/update-menu-category.dto';
+import { MenuItem } from 'src/schema/menu-item.schema';
 
 @Injectable()
 export class MenuCategoryService {
   constructor(
     @InjectRepository(MenuCategory)
     private readonly CategoryRepo: Repository<MenuCategory>,
+    @InjectRepository(MenuItem)
+    private readonly itemRepo: Repository<MenuItem>,
   ) {}
 
   async create(restaurantId: string, dto: CreateMenuCategoryDto) {
@@ -30,14 +33,48 @@ export class MenuCategoryService {
       ...dto,
     });
 
-    return this.CategoryRepo.save(category);
+    const savedCategory = await this.CategoryRepo.save(category);
+
+    // Calculate item count for the new category
+    const itemCount = await this.itemRepo.count({
+      where: {
+        categoryId: savedCategory.id,
+        restaurantId,
+        isDeleted: false,
+      },
+    });
+
+    return {
+      ...savedCategory,
+      itemCount,
+    };
   }
 
   async findAll(restaurantId: string) {
-    return this.CategoryRepo.find({
+    const categories = await this.CategoryRepo.find({
       where: { restaurantId },
       order: { displayOrder: 'ASC', name: 'ASC' },
     });
+
+    // Calculate item count for each category
+    const categoriesWithCounts = await Promise.all(
+      categories.map(async (category) => {
+        const itemCount = await this.itemRepo.count({
+          where: {
+            categoryId: category.id,
+            restaurantId,
+            isDeleted: false,
+          },
+        });
+
+        return {
+          ...category,
+          itemCount,
+        };
+      }),
+    );
+
+    return categoriesWithCounts;
   }
 
   async update(id: string, restaurantId: string, dto: UpdateMenuCategoryDto) {
@@ -60,7 +97,21 @@ export class MenuCategoryService {
     }
 
     Object.assign(category, dto);
-    return this.CategoryRepo.save(category);
+    const savedCategory = await this.CategoryRepo.save(category);
+
+    // Calculate item count for the updated category
+    const itemCount = await this.itemRepo.count({
+      where: {
+        categoryId: savedCategory.id,
+        restaurantId,
+        isDeleted: false,
+      },
+    });
+
+    return {
+      ...savedCategory,
+      itemCount,
+    };
   }
 
   async deactivate(id: string, restaurantId: string) {
@@ -73,6 +124,20 @@ export class MenuCategoryService {
     }
 
     category.status = CategoryStatus.INACTIVE;
-    return this.CategoryRepo.save(category);
+    const savedCategory = await this.CategoryRepo.save(category);
+
+    // Calculate item count for the deactivated category
+    const itemCount = await this.itemRepo.count({
+      where: {
+        categoryId: savedCategory.id,
+        restaurantId,
+        isDeleted: false,
+      },
+    });
+
+    return {
+      ...savedCategory,
+      itemCount,
+    };
   }
 }

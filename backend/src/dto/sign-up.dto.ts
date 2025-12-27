@@ -9,5 +9,5 @@ export class SignupDto {
   password: string;
 
   @IsString()
-  restaurantId: string;
+  restaurantName: string;
 }

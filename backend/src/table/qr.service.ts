@@ -5,24 +5,30 @@ import PDFDocument from 'pdfkit';
 
 @Injectable()
 export class QrService {
-  private readonly jwtSecret = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
+  private readonly jwtSecret =
+    process.env.JWT_SECRET || 'your-secret-key-change-in-production';
   private readonly baseUrl = process.env.BASE_URL || 'http://localhost:3000';
-  private readonly restaurantId = process.env.RESTAURANT_ID || 'default-restaurant';
 
   /**
    * Generate a signed JWT token for a table
    */
-  generateToken(tableId: string, expiresIn?: string | number): string {
+  generateToken(
+    tableId: string,
+    restaurantId: string,
+    expiresIn?: string | number,
+  ): string {
     const payload = {
       tableId,
-      restaurantId: this.restaurantId,
+      restaurantId,
       timestamp: new Date().toISOString(),
     };
 
     const options: jwt.SignOptions = {
       issuer: 'smart-restaurant',
       subject: 'table-qr-code',
-      ...(expiresIn && { expiresIn: expiresIn as jwt.SignOptions['expiresIn'] }),
+      ...(expiresIn && {
+        expiresIn: expiresIn as jwt.SignOptions['expiresIn'],
+      }),
     };
 
     return jwt.sign(payload, this.jwtSecret, options);
@@ -31,7 +37,9 @@ export class QrService {
   /**
    * Verify a QR code token
    */
-  verifyToken(token: string): { tableId: string; restaurantId: string; timestamp: string } | null {
+  verifyToken(
+    token: string,
+  ): { tableId: string; restaurantId: string; timestamp: string } | null {
     try {
       const decoded = jwt.verify(token, this.jwtSecret) as any;
       return {
@@ -84,7 +92,7 @@ export class QrService {
       includeWifi?: boolean;
       wifiSsid?: string;
       wifiPassword?: string;
-    }
+    },
   ): Promise<Buffer> {
     return new Promise((resolve, reject) => {
       const doc = new PDFDocument({
@@ -129,9 +137,12 @@ export class QrService {
 
       doc.moveDown(0.5);
 
-      doc.fontSize(12).fillColor('#999').text('Point your camera at the QR code to view our menu', {
-        align: 'center',
-      });
+      doc
+        .fontSize(12)
+        .fillColor('#999')
+        .text('Point your camera at the QR code to view our menu', {
+          align: 'center',
+        });
 
       // Optional WiFi information
       if (options?.includeWifi && options?.wifiSsid) {
@@ -141,14 +152,20 @@ export class QrService {
         });
 
         doc.moveDown(0.3);
-        doc.fontSize(12).fillColor('#666').text(`Network: ${options.wifiSsid}`, {
-          align: 'center',
-        });
-
-        if (options?.wifiPassword) {
-          doc.fontSize(12).fillColor('#666').text(`Password: ${options.wifiPassword}`, {
+        doc
+          .fontSize(12)
+          .fillColor('#666')
+          .text(`Network: ${options.wifiSsid}`, {
             align: 'center',
           });
+
+        if (options?.wifiPassword) {
+          doc
+            .fontSize(12)
+            .fillColor('#666')
+            .text(`Password: ${options.wifiPassword}`, {
+              align: 'center',
+            });
         }
       }
 
@@ -193,7 +210,10 @@ export class QrService {
         doc.moveDown(1);
 
         // QR Code
-        const qrImageBuffer = Buffer.from(table.qrCodeDataUrl.split(',')[1], 'base64');
+        const qrImageBuffer = Buffer.from(
+          table.qrCodeDataUrl.split(',')[1],
+          'base64',
+        );
         const qrSize = 250;
         doc.image(qrImageBuffer, (doc.page.width - qrSize) / 2, doc.y, {
           fit: [qrSize, qrSize],

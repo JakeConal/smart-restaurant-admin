@@ -3,7 +3,10 @@ import {
   PrimaryGeneratedColumn,
   Column,
   CreateDateColumn,
+  ManyToOne,
+  JoinColumn,
 } from 'typeorm';
+import { ModifierGroup } from './modifier-group.schema';
 
 @Entity()
 export class ModifierOption {
@@ -13,10 +16,22 @@ export class ModifierOption {
   @Column('uuid')
   groupId: string;
 
+  @ManyToOne(() => ModifierGroup, (group) => group.options)
+  @JoinColumn({ name: 'groupId' })
+  group: ModifierGroup;
+
   @Column()
   name: string;
 
-  @Column('decimal', { precision: 12, scale: 2, default: 0 })
+  @Column('decimal', {
+    precision: 12,
+    scale: 2,
+    default: 0,
+    transformer: {
+      to: (value: number) => value,
+      from: (value: string) => parseFloat(value),
+    },
+  })
   priceAdjustment: number;
 
   @Column({ default: 'active' })

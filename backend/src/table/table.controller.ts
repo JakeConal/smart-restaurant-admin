@@ -17,11 +17,12 @@ import { TableService } from './table.service';
 import { CreateTableDto } from '../dto/create-table.dto';
 import { UpdateTableDto } from '../dto/update-table.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt.guards';
+import { AdminGuard } from '../auth/guards/admin.guards';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import type { AuthUser } from '../auth/interfaces/auth-user.interface';
 
 @Controller('/api/admin/tables')
-@UseGuards(JwtAuthGuard)
+@UseGuards(AdminGuard)
 export class TableController {
   constructor(private readonly tableService: TableService) {}
 
@@ -32,11 +33,15 @@ export class TableController {
 
   @Get()
   findAll(
+    @CurrentUser() user: AuthUser,
     @Query('status') status?: 'active' | 'inactive',
     @Query('location') location?: string,
     @Query('sortBy') sortBy?: 'tableNumber' | 'capacity' | 'createdAt',
   ) {
-    return this.tableService.findAll({ status, location, sortBy });
+    return this.tableService.findAll(
+      { status, location, sortBy },
+      user.restaurantId,
+    );
   }
 
   @Get(':id')
@@ -101,18 +106,23 @@ export class TableController {
 
   @Get('qr/download-all')
   async downloadAllQrCodes(
+    @CurrentUser() user: AuthUser,
     @Query('format') format: 'pdf' | 'zip' = 'pdf',
     @Res() res: Response,
   ) {
     if (format === 'zip') {
-      const zipStream = await this.tableService.downloadAllQrCodesZip();
+      const zipStream = await this.tableService.downloadAllQrCodesZip(
+        user.restaurantId,
+      );
       res.set({
         'Content-Type': 'application/zip',
         'Content-Disposition': 'attachment; filename="all-tables-qr-codes.zip"',
       });
       zipStream.pipe(res);
     } else {
-      const pdfBuffer = await this.tableService.downloadAllQrCodes();
+      const pdfBuffer = await this.tableService.downloadAllQrCodes(
+        user.restaurantId,
+      );
       res.set({
         'Content-Type': 'application/pdf',
         'Content-Disposition': 'attachment; filename="all-tables-qr-codes.pdf"',
@@ -123,7 +133,7 @@ export class TableController {
   }
 
   @Post('qr/regenerate-all')
-  async regenerateAllQrCodes() {
-    return this.tableService.regenerateAllQrCodes();
+  async regenerateAllQrCodes(@CurrentUser() user: AuthUser) {
+    return this.tableService.regenerateAllQrCodes(user.restaurantId);
   }
 }

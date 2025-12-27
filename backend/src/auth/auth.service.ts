@@ -19,10 +19,39 @@ export class AuthService {
     if (exists) throw new BadRequestException('Email already exists');
 
     const hashed = await bcrypt.hash(dto.password, 10);
-    const user = this.userRepo.create({ ...dto, password: hashed });
+    // Generate unique restaurant ID based on restaurant name and timestamp
+    const baseSlug = dto.restaurantName
+      .toLowerCase()
+      .replace(/[^a-z0-9]/g, '')
+      .substring(0, 20);
+    const timestamp = Date.now().toString(36);
+    const random = Math.random().toString(36).substr(2, 5);
+    const restaurantId = `${baseSlug}_${timestamp}_${random}`;
+    const user = this.userRepo.create({
+      email: dto.email,
+      password: hashed,
+      restaurantId,
+      restaurantName: dto.restaurantName,
+      role: 'admin', // Explicitly set admin role for all users
+    });
     await this.userRepo.save(user);
 
-    return { message: 'Signup successful' };
+    const token = await this.jwt.signAsync({
+      sub: user.id,
+      email: user.email,
+      role: user.role,
+      restaurantId: user.restaurantId,
+    });
+
+    return {
+      access_token: token,
+      user: {
+        id: user.id,
+        email: user.email,
+        role: user.role,
+        restaurantId: user.restaurantId,
+      },
+    };
   }
 
   async login(dto: LoginDto) {
@@ -39,6 +68,14 @@ export class AuthService {
       restaurantId: user.restaurantId,
     });
 
-    return { access_token: token };
+    return {
+      access_token: token,
+      user: {
+        id: user.id,
+        email: user.email,
+        role: user.role,
+        restaurantId: user.restaurantId,
+      },
+    };
   }
 }

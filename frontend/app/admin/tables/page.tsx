@@ -1,12 +1,14 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { DashboardLayout, TopBar } from "@/shared/components/layout";
 import {
   StatsCards,
   TableCard,
   TableFormModal,
   QRCodeModal,
+  TablesGridSkeleton,
 } from "@/shared/components/tables";
 import { Button, useToast } from "@/shared/components/ui";
 import { Download, RefreshCw } from "lucide-react";
@@ -17,8 +19,11 @@ import type {
   TableFilters,
 } from "@/shared/types/table";
 import { tablesApi } from "@/shared/lib/api/tables";
+import { useAuth } from "@/shared/components/auth/AuthContext";
 
 export default function TablesPage() {
+  const { user, isLoading } = useAuth();
+  const router = useRouter();
   const toast = useToast();
   const [tables, setTables] = useState<Table[]>([]);
   const [loading, setLoading] = useState(true);
@@ -30,12 +35,24 @@ export default function TablesPage() {
   const [showQRModal, setShowQRModal] = useState(false);
   const [selectedTable, setSelectedTable] = useState<Table | undefined>();
 
+  useEffect(() => {
+    if (!isLoading && !user) {
+      router.push("/admin/login");
+    } else if (!isLoading && user) {
+      loadTables();
+    }
+  }, [user, isLoading, router]);
+
   // Stats
   const totalTables = tables.length;
-  const activeTables = tables.filter((t) => t.status === "active").length;
+  const activeTables = (tables || []).filter(
+    (t) => t.status === "active",
+  ).length;
   const qrValidPercentage =
     totalTables > 0
-      ? Math.round((tables.filter((t) => t.qrToken).length / totalTables) * 100)
+      ? Math.round(
+          ((tables || []).filter((t) => t.qrToken).length / totalTables) * 100,
+        )
       : 0;
 
   // Load tables
@@ -43,18 +60,21 @@ export default function TablesPage() {
     try {
       setLoading(true);
       const data = await tablesApi.getTables(filters);
-      setTables(data);
+      setTables(data || []);
     } catch (error) {
       console.error("Failed to load tables:", error);
       toast.error("Failed to load tables");
+      setTables([]);
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    loadTables();
-  }, [filters]);
+    if (!isLoading && user) {
+      loadTables();
+    }
+  }, [filters, isLoading, user]);
 
   // Create table
   const handleCreate = async (data: CreateTableDto | UpdateTableDto) => {
@@ -243,9 +263,7 @@ export default function TablesPage() {
         </h3>
 
         {loading ? (
-          <div className="text-center py-12">
-            <p className="text-gray-400 font-medium">Loading tables...</p>
-          </div>
+          <TablesGridSkeleton />
         ) : tables.length === 0 ? (
           <div className="text-center py-12">
             <p className="text-gray-400 font-medium">No tables found</p>

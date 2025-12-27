@@ -15,11 +15,19 @@ export class ModifierOptionService {
   ) {}
 
   async createOption(groupId: string, dto: CreateModifierOptionDto) {
+    console.log(
+      'Service: Creating modifier option for group:',
+      groupId,
+      'with data:',
+      dto,
+    );
     const option = this.repo.create({
       groupId,
       ...dto,
     });
-    return this.repo.save(option);
+    const result = await this.repo.save(option);
+    console.log('Service: Modifier option created successfully:', result);
+    return result;
   }
 
   async updateOption(

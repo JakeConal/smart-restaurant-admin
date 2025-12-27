@@ -1,12 +1,23 @@
-import { Controller, Post, Get, Put, Param, Body, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Get,
+  Put,
+  Param,
+  Body,
+  UseGuards,
+  HttpException,
+  HttpStatus,
+} from '@nestjs/common';
 import { ModifierOptionService } from './modifier-option.service';
 import { CreateModifierOptionDto } from '../dto/create-modifier-option.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt.guards';
+import { AdminGuard } from '../auth/guards/admin.guards';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import type { AuthUser } from '../auth/interfaces/auth-user.interface';
 
 @Controller('api/admin/menu')
-@UseGuards(JwtAuthGuard)
+@UseGuards(AdminGuard)
 export class ModifierOptionController {
   constructor(private readonly service: ModifierOptionService) {}
 
@@ -16,7 +27,23 @@ export class ModifierOptionController {
     @CurrentUser() user: AuthUser,
     @Body() dto: CreateModifierOptionDto,
   ) {
-    return this.service.createOption(groupId, dto);
+    try {
+      console.log(
+        'Creating modifier option for group:',
+        groupId,
+        'with data:',
+        dto,
+        'user:',
+        user.restaurantId,
+      );
+      return await this.service.createOption(groupId, dto);
+    } catch (error) {
+      console.error('Error creating modifier option:', error);
+      throw new HttpException(
+        error.message || 'Failed to create modifier option',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
   }
 
   @Put('modifier-options/:id')

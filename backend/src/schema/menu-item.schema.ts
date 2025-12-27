@@ -5,7 +5,16 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   Index,
+  ManyToOne,
+  JoinColumn,
+  OneToMany,
+  ManyToMany,
+  JoinTable,
 } from 'typeorm';
+import { MenuCategory } from './menu-category.schema';
+import { MenuItemPhoto } from './menu-item-photo.schema';
+import { MenuItemModifierGroup } from './menu-item-modifier.schema';
+import { ModifierGroup } from './modifier-group.schema';
 
 export enum MenuItemStatus {
   AVAILABLE = 'available',
@@ -25,10 +34,35 @@ export class MenuItem {
   @Column('uuid')
   categoryId: string;
 
+  @ManyToOne(() => MenuCategory)
+  @JoinColumn({ name: 'categoryId' })
+  category: MenuCategory;
+
+  @OneToMany(() => MenuItemPhoto, (photo) => photo.menuItem)
+  photos: MenuItemPhoto[];
+
+  @OneToMany(() => MenuItemModifierGroup, (modifier) => modifier.menuItem)
+  modifierGroupLinks: MenuItemModifierGroup[];
+
+  @ManyToMany(() => ModifierGroup)
+  @JoinTable({
+    name: 'menu_item_modifier_groups',
+    joinColumn: { name: 'menuItemId', referencedColumnName: 'id' },
+    inverseJoinColumn: { name: 'groupId', referencedColumnName: 'id' },
+  })
+  modifierGroups: ModifierGroup[];
+
   @Column({ length: 80 })
   name: string;
 
-  @Column('decimal', { precision: 12, scale: 2 })
+  @Column('decimal', {
+    precision: 12,
+    scale: 2,
+    transformer: {
+      to: (value: number) => value,
+      from: (value: string) => parseFloat(value),
+    },
+  })
   price: number;
 
   @Column({ type: 'text', nullable: true })

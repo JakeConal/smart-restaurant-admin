@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { DashboardLayout, TopBar } from "@/shared/components/layout";
 import {
   MenuCategoryCard,
@@ -16,8 +17,11 @@ import type {
   MenuCategoryFilters,
 } from "@/shared/types/menu";
 import { menuApi } from "@/shared/lib/api/menu";
+import { useAuth } from "@/shared/components/auth/AuthContext";
 
 export default function MenuCategoriesPage() {
+  const { user, isLoading } = useAuth();
+  const router = useRouter();
   const toast = useToast();
   const [categories, setCategories] = useState<MenuCategory[]>([]);
   const [loading, setLoading] = useState(true);
@@ -30,22 +34,32 @@ export default function MenuCategoriesPage() {
     MenuCategory | undefined
   >();
 
+  useEffect(() => {
+    if (!isLoading && !user) {
+      router.push("/admin/login");
+    }
+  }, [user, isLoading, router]);
+
   // Stats
   const totalCategories = categories.length;
-  const activeCategories = categories.filter(
+  const activeCategories = (categories || []).filter(
     (c) => c.status === "active",
   ).length;
-  const totalItems = categories.reduce((sum, c) => sum + (c.itemCount || 0), 0);
+  const totalItems = (categories || []).reduce(
+    (sum, c) => sum + (c.itemCount || 0),
+    0,
+  );
 
   // Load categories
   const loadCategories = async () => {
     try {
       setLoading(true);
       const data = await menuApi.getCategories(filters);
-      setCategories(data);
+      setCategories(data || []);
     } catch (error) {
       console.error("Failed to load categories:", error);
       toast.error("Failed to load categories");
+      setCategories([]);
     } finally {
       setLoading(false);
     }

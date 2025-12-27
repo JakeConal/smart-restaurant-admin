@@ -16,5 +16,10 @@ export type { InputProps } from "./Input";
 export { Select } from "./Select";
 export type { SelectProps } from "./Select";
 
+export { Checkbox } from "./Checkbox";
+export type { CheckboxProps } from "./Checkbox";
+
+export { Skeleton } from "./Skeleton";
+
 export { ToastProvider, useToast } from "./Toast";
 export type { ToastContentProps, ToastType } from "./Toast";

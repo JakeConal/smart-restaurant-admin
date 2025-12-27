@@ -233,10 +233,12 @@ export class MenuApi {
   async createModifierGroup(
     data: CreateModifierGroupDto,
   ): Promise<ModifierGroup> {
+    console.log("Frontend: Creating modifier group with data:", data);
     const response = await apiClient.post(
       "/api/admin/menu/modifier-groups",
       data,
     );
+    console.log("Frontend: Modifier group created:", response.data);
     return response.data;
   }
 

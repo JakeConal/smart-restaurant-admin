@@ -1,11 +1,34 @@
 "use client";
 
-import React from "react";
+import React, { useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { DashboardLayout, TopBar } from "@/shared/components/layout";
 import { Card } from "@/shared/components/ui";
 import { LayoutGrid, Layers, Utensils, Users2 } from "lucide-react";
+import { useAuth } from "@/shared/components/auth/AuthContext";
 
 export default function AdminHome() {
+  const { user, isLoading } = useAuth();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!isLoading && !user) {
+      router.push("/admin/login");
+    }
+  }, [user, isLoading, router]);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return null;
+  }
+
   const quickActions = [
     {
       title: "Manage Tables",
