@@ -64,14 +64,12 @@ export class MenuItemService {
       limit?: number;
     },
   ) {
-    console.log('findAll called with restaurantId:', restaurantId);
-
     const queryBuilder = this.itemRepo
       .createQueryBuilder('item')
       .leftJoinAndSelect('item.category', 'category')
       .leftJoinAndSelect('item.photos', 'photos')
       .leftJoinAndSelect('item.modifierGroups', 'modifierGroups')
-      .leftJoinAndSelect('modifierGroups.options', 'modifierOptions')
+      .leftJoinAndSelect('modifierGroups.options', 'options')
       .where('item.restaurantId = :restaurantId', { restaurantId })
       .andWhere('item.isDeleted = :isDeleted', { isDeleted: false });
 
@@ -110,7 +108,7 @@ export class MenuItemService {
 
     // Apply pagination
     const page = filters?.page || 1;
-    const limit = filters?.limit || 12;
+    const limit = filters?.limit && !isNaN(filters.limit) ? filters.limit : 12;
     const offset = (page - 1) * limit;
 
     queryBuilder.skip(offset).take(limit);
@@ -159,11 +157,6 @@ export class MenuItemService {
       ...item,
       categoryName: item.category?.name,
     }));
-
-    console.log('findAll returning:', {
-      itemsCount: transformedItems.length,
-      total,
-    });
 
     return { items: transformedItems, total };
   }

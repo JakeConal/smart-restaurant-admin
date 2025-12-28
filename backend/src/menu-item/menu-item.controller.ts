@@ -38,10 +38,10 @@ export class MenuItemController {
       search,
       categoryId,
       status,
-      chefRecommended: chefRecommended === 'true',
+      chefRecommended: chefRecommended ? chefRecommended === 'true' : undefined,
       sortBy,
       page: page ? parseInt(page) : 1,
-      limit: limit ? parseInt(limit) : 12,
+      limit: limit && limit.trim() !== '' ? parseInt(limit) : 12,
     };
     return this.service.findAll(user.restaurantId, filters);
   }
