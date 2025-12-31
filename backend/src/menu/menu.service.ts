@@ -123,7 +123,7 @@ export class MenuService {
 
       return {
         ...item,
-        primaryPhoto: photoMap.get(item.id),
+        primaryPhotoId: photoMap.get(item.id)?.id,
         modifierGroups,
         canOrder: item.status === MenuItemStatus.AVAILABLE,
       };

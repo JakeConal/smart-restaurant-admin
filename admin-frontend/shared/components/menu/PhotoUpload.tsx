@@ -1,9 +1,10 @@
 "use client";
 
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useEffect } from "react";
 import { Modal, Button } from "@/shared/components/ui";
 import { Upload, X, Star, Image as ImageIcon } from "lucide-react";
 import type { MenuItem, MenuItemPhoto } from "@/shared/types/menu";
+import { menuApi } from "@/shared/lib/api/menu";
 
 export interface PhotoUploadProps {
   isOpen: boolean;
@@ -25,6 +26,40 @@ export const PhotoUpload: React.FC<PhotoUploadProps> = ({
   const [uploading, setUploading] = useState(false);
   const [dragActive, setDragActive] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [photoUrls, setPhotoUrls] = useState<Record<string, string>>({});
+
+  // Fetch photo data when modal opens
+  useEffect(() => {
+    if (isOpen && item.photos) {
+      const fetchPhotoUrls = async () => {
+        // Clean up previous URLs before fetching new ones
+        Object.values(photoUrls).forEach((url) => URL.revokeObjectURL(url));
+
+        const urls: Record<string, string> = {};
+        for (const photo of item.photos!) {
+          try {
+            const blob = await menuApi.getPhotoData(item.id, photo.id);
+            urls[photo.id] = URL.createObjectURL(blob);
+          } catch (error) {
+            console.error(`Failed to load photo ${photo.id}:`, error);
+          }
+        }
+        setPhotoUrls(urls);
+      };
+      fetchPhotoUrls();
+    } else if (!isOpen) {
+      // Clean up URLs when modal closes
+      Object.values(photoUrls).forEach((url) => URL.revokeObjectURL(url));
+      setPhotoUrls({});
+    }
+  }, [isOpen, item.photos, item.id]);
+
+  // Cleanup URLs on unmount
+  useEffect(() => {
+    return () => {
+      Object.values(photoUrls).forEach((url) => URL.revokeObjectURL(url));
+    };
+  }, []);
 
   const handleDrag = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -178,11 +213,17 @@ export const PhotoUpload: React.FC<PhotoUploadProps> = ({
             <div className="grid grid-cols-3 gap-3">
               {item.photos.map((photo) => (
                 <div key={photo.id} className="relative group">
-                  <img
-                    src={photo.url}
-                    alt="Menu item"
-                    className="w-full h-32 object-cover rounded-xl"
-                  />
+                  {photoUrls[photo.id] ? (
+                    <img
+                      src={photoUrls[photo.id]}
+                      alt="Menu item"
+                      className="w-full h-32 object-cover rounded-xl"
+                    />
+                  ) : (
+                    <div className="w-full h-32 bg-slate-100 rounded-xl flex items-center justify-center">
+                      <ImageIcon className="w-8 h-8 text-slate-300" />
+                    </div>
+                  )}
                   {photo.isPrimary && (
                     <div className="absolute top-2 left-2 bg-orange-500 text-white px-2 py-1 rounded-lg text-xs font-bold flex items-center gap-1">
                       <Star className="w-3 h-3 fill-white" />

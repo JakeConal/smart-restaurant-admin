@@ -15,6 +15,7 @@ import {
   Eye,
 } from "lucide-react";
 import type { MenuItem } from "@/shared/types/menu";
+import { menuApi } from "@/shared/lib/api/menu";
 
 export interface MenuItemCardProps {
   item: MenuItem;

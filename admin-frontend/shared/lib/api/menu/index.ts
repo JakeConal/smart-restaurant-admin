@@ -193,14 +193,14 @@ export class MenuApi {
   }
 
   /**
-   * Set primary photo
+   * Get photo data as blob
    */
-  async setPrimaryPhoto(
-    itemId: string,
-    photoId: string,
-  ): Promise<MenuItemPhoto> {
-    const response = await apiClient.patch(
-      `/api/admin/menu/items/${itemId}/photos/${photoId}/primary`,
+  async getPhotoData(itemId: string, photoId: string): Promise<Blob> {
+    const response = await apiClient.get(
+      `/api/admin/menu/items/${itemId}/photos/${photoId}`,
+      {
+        responseType: "blob",
+      },
     );
     return response.data;
   }

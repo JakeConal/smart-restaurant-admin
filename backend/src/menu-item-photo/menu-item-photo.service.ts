@@ -13,7 +13,30 @@ export class MenuItemPhotoService {
     private readonly photoRepo: Repository<MenuItemPhoto>,
   ) {}
 
-  async addPhotos(restaurantId: string, itemId: string, files: any[]) {
+  async getPhoto(itemId: string, photoId: string) {
+    const photo = await this.photoRepo.findOne({
+      where: { id: photoId, menuItemId: itemId },
+    });
+
+    if (!photo) {
+      throw new NotFoundException('Photo not found');
+    }
+
+    return photo;
+  }
+
+  async getPhotos(itemId: string) {
+    return this.photoRepo.find({
+      where: { menuItemId: itemId },
+      order: { isPrimary: 'DESC', createdAt: 'ASC' },
+    });
+  }
+
+  async addPhotos(
+    restaurantId: string,
+    itemId: string,
+    files: Express.Multer.File[],
+  ) {
     const item = await this.itemRepo.findOne({
       where: { id: itemId, restaurantId, isDeleted: false },
     });
@@ -22,10 +45,11 @@ export class MenuItemPhotoService {
       throw new NotFoundException('Menu item not found');
     }
 
-    const photos = files.map((file: any, index: number) =>
+    const photos = files.map((file: Express.Multer.File, index: number) =>
       this.photoRepo.create({
         menuItemId: itemId,
-        url: `/uploads/menu-items/${file.filename}`,
+        data: file.buffer,
+        mimeType: file.mimetype,
         isPrimary: index === 0, // first = primary
       }),
     );

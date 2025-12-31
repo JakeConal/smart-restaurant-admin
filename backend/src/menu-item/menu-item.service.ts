@@ -156,6 +156,7 @@ export class MenuItemService {
     const transformedItems = items.map((item) => ({
       ...item,
       categoryName: item.category?.name,
+      primaryPhotoId: item.photos?.find((p) => p.isPrimary)?.id,
     }));
 
     return { items: transformedItems, total };
@@ -179,6 +180,7 @@ export class MenuItemService {
     return {
       ...item,
       categoryName: item.category?.name,
+      primaryPhotoId: item.photos?.find((p) => p.isPrimary)?.id,
     };
   }
 

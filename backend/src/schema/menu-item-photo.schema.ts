@@ -22,8 +22,11 @@ export class MenuItemPhoto {
   @JoinColumn({ name: 'menuItemId' })
   menuItem: MenuItem;
 
+  @Column({ type: 'longblob' })
+  data: Buffer;
+
   @Column()
-  url: string;
+  mimeType: string;
 
   @Column({ default: false })
   isPrimary: boolean;

@@ -205,6 +205,19 @@ export class MenuApi {
     return response.data;
   }
 
+  /**
+   * Get photo data as blob
+   */
+  async getPhotoData(itemId: string, photoId: string): Promise<Blob> {
+    const response = await apiClient.get(
+      `/api/admin/menu/items/${itemId}/photos/${photoId}`,
+      {
+        responseType: "blob",
+      },
+    );
+    return response.data;
+  }
+
   // ============================================
   // Modifier Group Methods
   // ============================================

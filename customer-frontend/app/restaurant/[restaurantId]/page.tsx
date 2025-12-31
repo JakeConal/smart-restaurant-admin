@@ -3,6 +3,8 @@
 import React, { useEffect, useState, Suspense } from "react";
 import { useParams, useSearchParams } from "next/navigation";
 import { Button, Input, Modal, Select } from "@/shared/components/ui";
+import { menuApi } from "@/shared/lib/api/menu";
+import type { MenuItemPhoto } from "@/shared/types/menu";
 import {
   ArrowLeft,
   ShoppingCart,
@@ -16,6 +18,8 @@ import {
   List,
   ClipboardList,
   UtensilsCrossed,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 
 interface MenuItem {
@@ -27,7 +31,7 @@ interface MenuItem {
   isChefRecommended?: boolean;
   categoryId?: string;
   categoryName?: string;
-  primaryPhoto?: string;
+  primaryPhotoId?: string;
   modifierGroups?: ModifierGroup[];
   canOrder?: boolean;
   rating?: number;
@@ -81,6 +85,7 @@ function RestaurantMenuPageContent() {
   const [cartCount, setCartCount] = useState(0);
   const [tableInfo, setTableInfo] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
+  const [photoUrls, setPhotoUrls] = useState<Record<string, string>>({});
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [activeTab, setActiveTab] = useState("menu");
@@ -91,6 +96,13 @@ function RestaurantMenuPageContent() {
     Record<string, string[]>
   >({});
   const [itemTotal, setItemTotal] = useState(0);
+  const [selectedItemPhotos, setSelectedItemPhotos] = useState<MenuItemPhoto[]>(
+    [],
+  );
+  const [selectedItemPhotoUrls, setSelectedItemPhotoUrls] = useState<
+    Record<string, string>
+  >({});
+  const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
 
   useEffect(() => {
     const fetchMenu = async () => {
@@ -125,6 +137,48 @@ function RestaurantMenuPageContent() {
     fetchMenu();
   }, [tableId, token]);
 
+  // Fetch photo URLs when menu items change
+  useEffect(() => {
+    const fetchPhotoUrls = async () => {
+      const urls: Record<string, string> = {};
+      for (const item of allMenuItems) {
+        if (item.primaryPhotoId) {
+          try {
+            const response = await fetch(
+              `${process.env.NEXT_PUBLIC_API_URL}/api/menu/items/${item.id}/photos/${item.primaryPhotoId}`,
+            );
+            const blob = await response.blob();
+            urls[item.id] = URL.createObjectURL(blob);
+          } catch (error) {
+            console.error(`Failed to load photo for item ${item.id}:`, error);
+          }
+        }
+      }
+      setPhotoUrls(urls);
+    };
+
+    if (allMenuItems.length > 0) {
+      fetchPhotoUrls();
+    }
+
+    // Cleanup URLs when component unmounts or items change
+    return () => {
+      Object.values(photoUrls).forEach((url) => URL.revokeObjectURL(url));
+    };
+  }, [allMenuItems]);
+
+  // Cleanup selected item photo URLs when modal closes
+  useEffect(() => {
+    if (!isItemModalOpen) {
+      Object.values(selectedItemPhotoUrls).forEach((url) =>
+        URL.revokeObjectURL(url),
+      );
+      setSelectedItemPhotoUrls({});
+      setSelectedItemPhotos([]);
+      setCurrentPhotoIndex(0);
+    }
+  }, [isItemModalOpen]);
+
   useEffect(() => {
     let filtered = allMenuItems;
 
@@ -157,12 +211,35 @@ function RestaurantMenuPageContent() {
     console.log("Added to cart:", item);
   };
 
-  const handleItemClick = (item: MenuItem) => {
+  const handleItemClick = async (item: MenuItem) => {
     setSelectedItem(item);
     setQuantity(1);
     setSelectedModifiers({});
     setItemTotal(item.price);
+    setCurrentPhotoIndex(0);
     setIsItemModalOpen(true);
+
+    // Fetch all photos for this item
+    try {
+      const photos = await menuApi.getPhotos(item.id);
+      setSelectedItemPhotos(photos);
+
+      // Fetch photo URLs
+      const urls: Record<string, string> = {};
+      for (const photo of photos) {
+        try {
+          const blob = await menuApi.getPhotoData(item.id, photo.id);
+          urls[photo.id] = URL.createObjectURL(blob);
+        } catch (error) {
+          console.error(`Failed to load photo ${photo.id}:`, error);
+        }
+      }
+      setSelectedItemPhotoUrls(urls);
+    } catch (error) {
+      console.error("Failed to load photos for item:", error);
+      setSelectedItemPhotos([]);
+      setSelectedItemPhotoUrls({});
+    }
   };
 
   const handleModifierChange = (
@@ -361,9 +438,9 @@ function RestaurantMenuPageContent() {
               <div className="flex items-start space-x-4">
                 {/* Thumbnail */}
                 <div className="w-16 h-16 bg-gradient-to-br from-orange-100 to-orange-200 rounded-xl flex items-center justify-center flex-shrink-0">
-                  {item.primaryPhoto ? (
+                  {photoUrls[item.id] ? (
                     <img
-                      src={item.primaryPhoto}
+                      src={photoUrls[item.id]}
                       alt={item.name}
                       className="w-full h-full object-cover rounded-xl"
                     />
@@ -467,17 +544,76 @@ function RestaurantMenuPageContent() {
       >
         {selectedItem && (
           <div className="bg-white rounded-2xl overflow-hidden">
-            {/* Item Image/Header */}
-            <div className="relative h-48 bg-gradient-to-br from-orange-100 to-orange-200 flex items-center justify-center">
-              {selectedItem.primaryPhoto ? (
+            {/* Item Image/Header with Carousel */}
+            <div className="relative h-48 bg-gradient-to-br from-orange-100 to-orange-200">
+              {selectedItemPhotos.length > 0 &&
+              selectedItemPhotoUrls[
+                selectedItemPhotos[currentPhotoIndex]?.id
+              ] ? (
                 <img
-                  src={selectedItem.primaryPhoto}
+                  src={
+                    selectedItemPhotoUrls[
+                      selectedItemPhotos[currentPhotoIndex].id
+                    ]
+                  }
                   alt={selectedItem.name}
                   className="w-full h-full object-cover"
                 />
               ) : (
-                <UtensilsCrossed className="w-16 h-16 text-orange-600" />
+                <div className="w-full h-full flex items-center justify-center">
+                  <UtensilsCrossed className="w-16 h-16 text-orange-600" />
+                </div>
               )}
+
+              {/* Photo Navigation */}
+              {selectedItemPhotos.length > 1 && (
+                <>
+                  <button
+                    onClick={() =>
+                      setCurrentPhotoIndex((prev) =>
+                        prev > 0 ? prev - 1 : selectedItemPhotos.length - 1,
+                      )
+                    }
+                    className="absolute left-4 top-1/2 -translate-y-1/2 p-2 bg-white/80 backdrop-blur-sm rounded-full hover:bg-white transition-colors"
+                  >
+                    <ChevronLeft className="w-5 h-5 text-gray-600" />
+                  </button>
+                  <button
+                    onClick={() =>
+                      setCurrentPhotoIndex((prev) =>
+                        prev < selectedItemPhotos.length - 1 ? prev + 1 : 0,
+                      )
+                    }
+                    className="absolute right-4 top-1/2 -translate-y-1/2 p-2 bg-white/80 backdrop-blur-sm rounded-full hover:bg-white transition-colors"
+                  >
+                    <ChevronRight className="w-5 h-5 text-gray-600" />
+                  </button>
+
+                  {/* Photo Indicators */}
+                  <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex space-x-2">
+                    {selectedItemPhotos.map((_, index) => (
+                      <button
+                        key={index}
+                        onClick={() => setCurrentPhotoIndex(index)}
+                        className={`w-2 h-2 rounded-full transition-colors ${
+                          index === currentPhotoIndex
+                            ? "bg-white"
+                            : "bg-white/50"
+                        }`}
+                      />
+                    ))}
+                  </div>
+                </>
+              )}
+
+              {/* Primary Photo Indicator */}
+              {selectedItemPhotos[currentPhotoIndex]?.isPrimary && (
+                <div className="absolute top-4 left-4 bg-orange-500 text-white px-2 py-1 rounded-lg text-xs font-bold flex items-center gap-1">
+                  <Star className="w-3 h-3 fill-white" />
+                  Primary
+                </div>
+              )}
+
               <button
                 onClick={() => setIsItemModalOpen(false)}
                 className="absolute top-4 right-4 p-2 bg-white/80 backdrop-blur-sm rounded-full hover:bg-white transition-colors"

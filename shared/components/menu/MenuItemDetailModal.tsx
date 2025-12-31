@@ -41,10 +41,17 @@ export const MenuItemDetailModal: React.FC<MenuItemDetailModalProps> = ({
   const [loading, setLoading] = useState(false);
   const [modifierGroups, setModifierGroups] = useState<ModifierGroup[]>([]);
   const [fullItem, setFullItem] = useState<MenuItem | null>(null);
+  const [photoUrl, setPhotoUrl] = useState<string | null>(null);
 
   useEffect(() => {
     if (isOpen && item) {
       loadItemDetails();
+    } else {
+      // Cleanup when modal closes
+      if (photoUrl) {
+        URL.revokeObjectURL(photoUrl);
+        setPhotoUrl(null);
+      }
     }
   }, [isOpen, item]);
 
@@ -61,6 +68,20 @@ export const MenuItemDetailModal: React.FC<MenuItemDetailModalProps> = ({
       // Load modifier groups attached to this item
       const attachedGroups = await menuApi.getItemModifierGroups(item.id);
       setModifierGroups(attachedGroups);
+
+      // Load photo if available
+      if (detailedItem.primaryPhotoId) {
+        try {
+          const blob = await menuApi.getPhotoData(
+            detailedItem.id,
+            detailedItem.primaryPhotoId,
+          );
+          const url = URL.createObjectURL(blob);
+          setPhotoUrl(url);
+        } catch (error) {
+          console.error("Failed to load photo:", error);
+        }
+      }
     } catch (error) {
       console.error("Failed to load item details:", error);
     } finally {
@@ -93,10 +114,10 @@ export const MenuItemDetailModal: React.FC<MenuItemDetailModalProps> = ({
             <div className="flex gap-6">
               {/* Image */}
               <div className="flex-shrink-0">
-                {displayItem.primaryPhoto ? (
+                {photoUrl ? (
                   <div className="w-32 h-32 rounded-xl overflow-hidden bg-gray-100">
                     <img
-                      src={displayItem.primaryPhoto}
+                      src={photoUrl}
                       alt={displayItem.name}
                       className="w-full h-full object-cover"
                     />

@@ -15,6 +15,7 @@ import {
   Eye,
 } from "lucide-react";
 import type { MenuItem } from "@/shared/types/menu";
+import { menuApi } from "@/shared/lib/api/menu";
 
 export interface MenuItemCardProps {
   item: MenuItem;
@@ -42,8 +43,32 @@ export const MenuItemCard: React.FC<MenuItemCardProps> = ({
   onToggleStatus,
 }) => {
   const [showMenu, setShowMenu] = useState(false);
+  const [photoUrl, setPhotoUrl] = useState<string | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
   const isAvailable = item.status === "available";
+
+  // Fetch photo data when primaryPhotoId is available
+  useEffect(() => {
+    if (item.primaryPhotoId) {
+      menuApi
+        .getPhotoData(item.id, item.primaryPhotoId)
+        .then((blob) => {
+          const url = URL.createObjectURL(blob);
+          setPhotoUrl(url);
+          return url;
+        })
+        .catch((error) => {
+          console.error("Failed to load photo:", error);
+        });
+    }
+
+    // Cleanup
+    return () => {
+      if (photoUrl) {
+        URL.revokeObjectURL(photoUrl);
+      }
+    };
+  }, [item.primaryPhotoId, item.id]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -67,10 +92,10 @@ export const MenuItemCard: React.FC<MenuItemCardProps> = ({
       }`}
     >
       {/* Image */}
-      {item.primaryPhoto ? (
+      {photoUrl ? (
         <div className="w-full h-40 rounded-xl overflow-hidden bg-gray-100">
           <img
-            src={item.primaryPhoto}
+            src={photoUrl}
             alt={item.name}
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
           />

@@ -8,20 +8,39 @@ import {
   UploadedFiles,
   Delete,
   Patch,
+  Get,
+  Res,
 } from '@nestjs/common';
 import { FilesInterceptor } from '@nestjs/platform-express';
+import type { Response } from 'express';
 import { MenuItemPhotoService } from './menu-item-photo.service';
 import { JwtAuthGuard } from '../auth/guards/jwt.guards';
 import { AdminGuard } from '../auth/guards/admin.guards';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import type { AuthUser } from '../auth/interfaces/auth-user.interface';
 
-@Controller('api/admin/menu/items')
-@UseGuards(AdminGuard)
+@Controller(['api/admin/menu/items', 'api/menu/items'])
 export class MenuItemPhotoController {
   constructor(private readonly service: MenuItemPhotoService) {}
 
+  @Get(':itemId/photos/:photoId')
+  async getPhoto(
+    @Param('itemId') itemId: string,
+    @Param('photoId') photoId: string,
+    @Res() res: Response,
+  ) {
+    const photo = await this.service.getPhoto(itemId, photoId);
+    res.set('Content-Type', photo.mimeType);
+    res.send(photo.data);
+  }
+
+  @Get(':itemId/photos')
+  async getPhotos(@Param('itemId') itemId: string) {
+    return this.service.getPhotos(itemId);
+  }
+
   @Post(':id/photos')
+  @UseGuards(AdminGuard)
   @UseInterceptors(
     FilesInterceptor('photos', 5, {
       limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
@@ -42,6 +61,7 @@ export class MenuItemPhotoController {
   }
 
   @Delete(':itemId/photos/:photoId')
+  @UseGuards(AdminGuard)
   removePhoto(
     @Param('itemId') itemId: string,
     @Param('photoId') photoId: string,
@@ -51,6 +71,7 @@ export class MenuItemPhotoController {
   }
 
   @Patch(':itemId/photos/:photoId/primary')
+  @UseGuards(AdminGuard)
   setPrimary(
     @Param('itemId') itemId: string,
     @Param('photoId') photoId: string,
