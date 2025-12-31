@@ -8,7 +8,7 @@ export class Users {
   @Column({ unique: true })
   email: string;
 
-  @Column()
+  @Column({ nullable: true })
   password: string;
 
   @Column()
@@ -19,4 +19,10 @@ export class Users {
 
   @Column()
   restaurantName: string;
+
+  @Column({ nullable: true })
+  firstName: string;
+
+  @Column({ nullable: true })
+  lastName: string;
 }

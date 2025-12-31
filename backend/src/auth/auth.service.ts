@@ -78,4 +78,50 @@ export class AuthService {
       },
     };
   }
+
+  async googleLogin(user: any) {
+    const { email, firstName, lastName } = user;
+    let existingUser = await this.userRepo.findOne({ where: { email } });
+
+    if (!existingUser) {
+      // Create new user for Google login
+      const baseSlug = `${firstName}${lastName}`
+        .toLowerCase()
+        .replace(/[^a-z0-9]/g, '')
+        .substring(0, 20);
+      const timestamp = Date.now().toString(36);
+      const random = Math.random().toString(36).substr(2, 5);
+      const restaurantId = `${baseSlug}_${timestamp}_${random}`;
+
+      existingUser = this.userRepo.create({
+        email,
+        password: '', // No password for Google users
+        restaurantId,
+        restaurantName: `${firstName} ${lastName}'s Restaurant`,
+        role: 'admin',
+        firstName,
+        lastName,
+      });
+      await this.userRepo.save(existingUser);
+    }
+
+    const token = await this.jwt.signAsync({
+      sub: existingUser.id,
+      email: existingUser.email,
+      role: existingUser.role,
+      restaurantId: existingUser.restaurantId,
+    });
+
+    return {
+      access_token: token,
+      user: {
+        id: existingUser.id,
+        email: existingUser.email,
+        role: existingUser.role,
+        restaurantId: existingUser.restaurantId,
+        firstName: existingUser.firstName,
+        lastName: existingUser.lastName,
+      },
+    };
+  }
 }

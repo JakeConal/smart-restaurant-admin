@@ -18,6 +18,8 @@ export interface AuthResponse {
     email: string;
     role: string;
     restaurantId: string;
+    firstName?: string;
+    lastName?: string;
   };
 }
 
@@ -30,6 +32,10 @@ export class AuthApi {
   async signup(data: SignupRequest): Promise<AuthResponse> {
     const response = await apiClient.post("/auth/signup", data);
     return response.data;
+  }
+
+  async googleLogin(): Promise<void> {
+    window.location.href = `${apiClient.defaults.baseURL}/auth/google`;
   }
 }
 

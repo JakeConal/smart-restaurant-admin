@@ -48,7 +48,10 @@ export const ModifierOptionFormModal: React.FC<
       newErrors.name = "Option name is required";
     }
 
-    if (formData.priceAdjustment < 0) {
+    if (
+      formData.priceAdjustment !== undefined &&
+      formData.priceAdjustment < 0
+    ) {
       newErrors.priceAdjustment = "Price adjustment cannot be negative";
     }
 

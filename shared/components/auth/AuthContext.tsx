@@ -20,6 +20,8 @@ interface User {
   email: string;
   role: string;
   restaurantId: string;
+  firstName?: string;
+  lastName?: string;
 }
 
 interface AuthContextType {
@@ -27,7 +29,9 @@ interface AuthContextType {
   token: string | null;
   login: (data: LoginRequest) => Promise<void>;
   signup: (data: SignupRequest) => Promise<void>;
+  googleLogin: () => Promise<void>;
   logout: () => void;
+  loadUser: () => void;
   isLoading: boolean;
 }
 
@@ -39,16 +43,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
   const { success, error: showError } = useToast();
 
-  useEffect(() => {
-    // Check for stored token on mount
+  const loadUser = () => {
     const storedToken = localStorage.getItem("authToken");
     const storedUser = localStorage.getItem("authUser");
-
     if (storedToken && storedUser) {
       setToken(storedToken);
       setUser(JSON.parse(storedUser));
     }
     setIsLoading(false);
+  };
+
+  useEffect(() => {
+    loadUser();
   }, []);
 
   const login = async (data: LoginRequest) => {
@@ -85,6 +91,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const googleLogin = async () => {
+    try {
+      setIsLoading(true);
+      await authApi.googleLogin();
+    } catch (authError) {
+      showError("Google login failed. Please try again.");
+      throw authError;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const logout = () => {
     setUser(null);
     setToken(null);
@@ -95,7 +113,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   return (
     <AuthContext.Provider
-      value={{ user, token, login, signup, logout, isLoading }}
+      value={{
+        user,
+        token,
+        login,
+        signup,
+        googleLogin,
+        logout,
+        loadUser,
+        isLoading,
+      }}
     >
       {children}
     </AuthContext.Provider>
