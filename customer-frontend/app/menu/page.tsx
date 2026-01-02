@@ -397,12 +397,13 @@ function MenuContent() {
                   className="flex-shrink-0 w-48 bg-white rounded-3xl shadow-lg overflow-hidden pt-12 pb-4 px-4 relative"
                 >
                   <div className="absolute -top-6 left-1/2 -translate-x-1/2 w-28 h-28 rounded-full overflow-hidden bg-gray-100">
-                    {item.primaryPhotoId ? (
+                    {item.primaryPhotoUrl ? (
                       <Image
-                        src={menuApi.getItemPhoto(item.primaryPhotoId)}
+                        src={item.primaryPhotoUrl}
                         alt={item.name}
                         fill
                         className="object-cover"
+                        unoptimized
                       />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center text-4xl">
@@ -445,12 +446,13 @@ function MenuContent() {
                   className="flex-shrink-0 w-48 bg-white rounded-3xl shadow-lg overflow-hidden pt-12 pb-4 px-4 relative"
                 >
                   <div className="absolute -top-6 left-1/2 -translate-x-1/2 w-28 h-28 rounded-full overflow-hidden bg-gray-100">
-                    {item.primaryPhotoId ? (
+                    {item.primaryPhotoUrl ? (
                       <Image
-                        src={menuApi.getItemPhoto(item.primaryPhotoId)}
+                        src={item.primaryPhotoUrl}
                         alt={item.name}
                         fill
                         className="object-cover"
+                        unoptimized
                       />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center text-4xl">
@@ -497,12 +499,13 @@ function MenuContent() {
                   <div className="absolute top-2 right-2 text-lg">👨‍🍳</div>
                 )}
                 <div className="absolute -top-4 left-1/2 -translate-x-1/2 w-24 h-24 rounded-full overflow-hidden bg-gray-100">
-                  {item.primaryPhotoId ? (
+                  {item.primaryPhotoUrl ? (
                     <Image
-                      src={menuApi.getItemPhoto(item.primaryPhotoId)}
+                      src={item.primaryPhotoUrl}
                       alt={item.name}
                       fill
                       className="object-cover"
+                      unoptimized
                     />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center text-3xl">

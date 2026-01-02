@@ -121,9 +121,16 @@ export class MenuService {
         })
         .filter(Boolean);
 
+      const photo = photoMap.get(item.id);
+      let primaryPhotoUrl = null;
+      if (photo && photo.data && photo.mimeType) {
+        const base64 = photo.data.toString('base64');
+        primaryPhotoUrl = `data:${photo.mimeType};base64,${base64}`;
+      }
+
       return {
         ...item,
-        primaryPhotoId: photoMap.get(item.id)?.id,
+        primaryPhotoUrl,
         modifierGroups,
         canOrder: item.status === MenuItemStatus.AVAILABLE,
       };

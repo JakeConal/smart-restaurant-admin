@@ -5,7 +5,7 @@ export interface MenuCategory {
   name: string;
   description?: string;
   displayOrder: number;
-  status: 'active' | 'inactive';
+  status: "active" | "inactive";
   createdAt: string;
   updatedAt: string;
 }
@@ -23,7 +23,7 @@ export interface ModifierGroup {
   id: string;
   restaurantId: string;
   name: string;
-  selectionType: 'single' | 'multiple';
+  selectionType: "single" | "multiple";
   isRequired: boolean;
   minSelections: number;
   maxSelections: number;
@@ -32,7 +32,7 @@ export interface ModifierGroup {
   options: ModifierOption[];
 }
 
-export type MenuItemStatus = 'available' | 'unavailable' | 'sold_out';
+export type MenuItemStatus = "available" | "unavailable" | "sold_out";
 
 export interface MenuItem {
   id: string;
@@ -46,7 +46,7 @@ export interface MenuItem {
   isChefRecommended: boolean;
   isDeleted: boolean;
   popularityScore: number;
-  primaryPhotoId?: string;
+  primaryPhotoUrl?: string;
   modifierGroups: ModifierGroup[];
   canOrder: boolean;
   createdAt: string;
@@ -112,7 +112,12 @@ export interface CartItem {
 }
 
 // Order types
-export type OrderStatus = 'received' | 'preparing' | 'ready' | 'completed' | 'cancelled';
+export type OrderStatus =
+  | "received"
+  | "preparing"
+  | "ready"
+  | "completed"
+  | "cancelled";
 
 export interface OrderItem {
   id: string;
