@@ -7,6 +7,8 @@ import { CartProvider } from "@/lib/cart-context";
 const inter = Inter({
   variable: "--font-inter",
   subsets: ["latin"],
+  display: "swap",
+  weight: ["300", "400", "500", "600", "700"],
 });
 
 export const metadata: Metadata = {
@@ -25,7 +27,7 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 1,
   userScalable: false,
-  themeColor: "#fa4a0c",
+  themeColor: "#2563eb",
 };
 
 export default function RootLayout({
@@ -34,11 +36,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body className={`${inter.variable} antialiased`}>
+    <html lang="en" className={inter.variable}>
+      <body className="font-sans antialiased">
         <AppProvider>
           <CartProvider>
-            <div className="min-h-screen max-w-md mx-auto bg-[#f2f2f2] relative">
+            <div className="min-h-screen max-w-md mx-auto bg-neutral-50 relative">
               {children}
             </div>
           </CartProvider>

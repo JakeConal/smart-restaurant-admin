@@ -206,62 +206,77 @@ function MenuContent() {
   }
 
   return (
-    <div className="min-h-screen pb-24 safe-bottom">
+    <div className="min-h-screen pb-24 safe-bottom bg-neutral-50">
       {/* Header */}
-      <div className="pt-8 px-6">
-        <div className="flex justify-between items-start mb-6">
-          <div className="flex items-center gap-3">
-            <button className="w-6 h-6">
-              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <div className="pt-12 px-6 bg-gradient-to-b from-white to-transparent">
+        <div className="flex justify-between items-start mb-8">
+          <div className="flex items-center gap-4">
+            <button className="w-8 h-8 rounded-xl bg-white shadow-sm border border-neutral-200 flex items-center justify-center interactive focus-ring">
+              <svg
+                className="w-5 h-5 text-neutral-700"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
                 <path
                   strokeLinecap="round"
                   strokeLinejoin="round"
-                  strokeWidth={2}
+                  strokeWidth={1.5}
                   d="M4 6h16M4 12h16M4 18h16"
                 />
               </svg>
             </button>
             {tableNumber && (
-              <span className="px-3 py-1 bg-[#fa4a0c] text-white text-sm font-medium rounded-full">
+              <div className="badge bg-blue-50 text-blue-700 border border-blue-200">
                 Table {tableNumber}
-              </span>
+              </div>
             )}
           </div>
-          <Link href={`/cart?token=${currentToken}`} className="relative">
-            <svg
-              className="w-6 h-6"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"
-              />
-            </svg>
+          <Link
+            href={`/cart?token=${currentToken}`}
+            className="relative interactive focus-ring rounded-xl"
+          >
+            <div className="w-10 h-10 bg-white rounded-xl shadow-sm border border-neutral-200 flex items-center justify-center">
+              <svg
+                className="w-5 h-5 text-neutral-700"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={1.5}
+                  d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"
+                />
+              </svg>
+            </div>
             {getTotalItems() > 0 && (
-              <span className="absolute -top-2 -right-2 w-5 h-5 bg-[#fa4a0c] text-white text-xs rounded-full flex items-center justify-center">
+              <div className="absolute -top-2 -right-2 w-6 h-6 bg-blue-600 text-white text-xs rounded-full flex items-center justify-center font-medium shadow-lg">
                 {getTotalItems()}
-              </span>
+              </div>
             )}
           </Link>
         </div>
 
-        <h1 className="text-3xl font-bold leading-tight">
-          Delicious
-          <br />
-          food for you
-        </h1>
+        <div className="mb-8">
+          <h1 className="text-display-lg text-neutral-900 mb-2 animate-fade-in">
+            Delicious
+            <br />
+            food for you
+          </h1>
+          <p className="text-body-lg text-neutral-600">
+            Fresh meals crafted with care
+          </p>
+        </div>
       </div>
 
       {/* Search bar */}
-      <div className="px-6 mt-6">
-        <div className="relative">
-          <div className="absolute left-4 top-1/2 -translate-y-1/2">
+      <div className="px-6 mb-8">
+        <div className="input-with-icon animate-slide-in-up">
+          <div className="input-icon">
             <svg
-              className="w-5 h-5 text-gray-400"
+              className="w-5 h-5"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -276,54 +291,55 @@ function MenuContent() {
           </div>
           <input
             type="text"
-            placeholder="Search"
+            placeholder="Search for dishes..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full h-14 pl-12 pr-4 bg-[#efeeee] rounded-full text-base focus:ring-2 focus:ring-[#fa4a0c]"
+            className="input text-body-lg h-14 shadow-sm"
           />
         </div>
       </div>
 
       {/* Categories */}
-      <div className="mt-6">
-        <div className="flex gap-6 px-6 overflow-x-auto hide-scrollbar pb-2">
+      <div className="mb-6">
+        <div className="flex gap-8 px-6 overflow-x-auto scrollbar-hidden pb-4">
           <button
             onClick={() => {
               setSelectedCategory(null);
               setShowChefRecommended(false);
             }}
-            className={`whitespace-nowrap text-base transition-colors ${
+            className={`whitespace-nowrap text-label-lg transition-all interactive ${
               !selectedCategory && !showChefRecommended
-                ? "text-[#fa4a0c] font-medium"
-                : "text-gray-400"
+                ? "text-blue-600 font-medium"
+                : "text-neutral-500 hover:text-neutral-700"
             }`}
           >
             All
           </button>
-          {categories.map((category) => (
+          {categories.map((category, index) => (
             <button
               key={category.id}
               onClick={() => {
                 setSelectedCategory(category.id);
                 setShowChefRecommended(false);
               }}
-              className={`whitespace-nowrap text-base transition-colors ${
+              className={`whitespace-nowrap text-label-lg transition-all interactive ${
                 selectedCategory === category.id
-                  ? "text-[#fa4a0c] font-medium"
-                  : "text-gray-400"
+                  ? "text-blue-600 font-medium"
+                  : "text-neutral-500 hover:text-neutral-700"
               }`}
+              style={{ animationDelay: `${index * 50}ms` }}
             >
               {category.name}
             </button>
           ))}
         </div>
-        <div className="px-6 mt-2">
+        <div className="px-6">
           <div
-            className="h-[3px] bg-[#fa4a0c] rounded-full transition-all duration-300"
+            className="h-0.5 bg-blue-600 rounded-full transition-all duration-300 ease-out"
             style={{
-              width: "80px",
+              width: "64px",
               marginLeft: selectedCategory
-                ? `${(categories.findIndex((c) => c.id === selectedCategory) + 1) * 70}px`
+                ? `${(categories.findIndex((c) => c.id === selectedCategory) + 1) * 80}px`
                 : "0px",
             }}
           />
@@ -331,44 +347,52 @@ function MenuContent() {
       </div>
 
       {/* Sort and filter options */}
-      <div className="flex gap-2 px-6 mt-4 overflow-x-auto hide-scrollbar">
+      <div className="flex gap-3 px-6 mb-8 overflow-x-auto scrollbar-hidden">
         <select
           value={sortBy}
           onChange={(e) => setSortBy(e.target.value)}
-          className="px-4 py-2 bg-white rounded-full text-sm border border-gray-200"
+          className="btn btn-secondary btn-md min-w-max focus-ring"
         >
           <option value="name">Sort by Name</option>
           <option value="popularity">Sort by Popularity</option>
         </select>
         <button
           onClick={() => setShowChefRecommended(!showChefRecommended)}
-          className={`px-4 py-2 rounded-full text-sm whitespace-nowrap transition-colors ${
-            showChefRecommended
-              ? "bg-[#fa4a0c] text-white"
-              : "bg-white border border-gray-200"
+          className={`btn btn-md whitespace-nowrap transition-all ${
+            showChefRecommended ? "btn-primary" : "btn-secondary"
           }`}
         >
-          👨‍🍳 Chef&apos;s Pick
+          <span className="mr-2">👨‍🍳</span>
+          Chef's Pick
         </button>
       </div>
 
       {/* Loading state */}
       {loading && (
-        <div className="flex justify-center py-12">
-          <div className="w-10 h-10 border-4 border-[#fa4a0c] border-t-transparent rounded-full spinner"></div>
+        <div className="flex flex-col items-center justify-center py-16 px-6 animate-fade-in">
+          <div className="w-12 h-12 border-3 border-neutral-200 border-t-blue-600 rounded-full spinner mb-4"></div>
+          <p className="text-body-lg text-neutral-600">
+            Loading delicious options...
+          </p>
         </div>
       )}
 
       {/* Error state */}
       {error && (
-        <div className="mx-6 mt-6 p-4 bg-red-50 border border-red-200 rounded-xl text-red-600 text-center">
-          {error}
-          <button
-            onClick={() => fetchMenu(1)}
-            className="block w-full mt-2 text-[#fa4a0c] font-medium"
-          >
-            Try Again
-          </button>
+        <div className="mx-6 mb-6">
+          <div className="card card-body bg-red-50 border-red-200 text-center animate-slide-in-up">
+            <div className="text-4xl mb-3">😔</div>
+            <h3 className="text-heading-sm text-red-900 mb-2">
+              Oops! Something went wrong
+            </h3>
+            <p className="text-body-md text-red-700 mb-4">{error}</p>
+            <button
+              onClick={() => fetchMenu(1)}
+              className="btn btn-primary btn-md mx-auto"
+            >
+              Try Again
+            </button>
+          </div>
         </div>
       )}
 
@@ -377,26 +401,32 @@ function MenuContent() {
         chefRecommendedItems.length > 0 &&
         !selectedCategory &&
         !showChefRecommended && (
-          <div className="mt-6">
-            <div className="flex justify-between items-center px-6 mb-4">
-              <h2 className="text-lg font-semibold">
-                👨‍🍳 Chef&apos;s Recommendations
-              </h2>
+          <div className="mb-8">
+            <div className="flex justify-between items-center px-6 mb-6">
+              <div>
+                <h2 className="text-heading-lg text-neutral-900 mb-1">
+                  👨‍🍳 Chef&apos;s Recommendations
+                </h2>
+                <p className="text-body-md text-neutral-600">
+                  Hand-picked favorites from our kitchen
+                </p>
+              </div>
               <button
                 onClick={() => setShowChefRecommended(true)}
-                className="text-[#fa4a0c] text-sm"
+                className="text-blue-600 text-label-md font-medium interactive"
               >
-                see more
+                See all
               </button>
             </div>
-            <div className="flex gap-4 px-6 overflow-x-auto hide-scrollbar pb-4">
-              {chefRecommendedItems.slice(0, 5).map((item) => (
+            <div className="flex gap-6 px-6 overflow-x-auto scrollbar-hidden pb-4">
+              {chefRecommendedItems.slice(0, 5).map((item, index) => (
                 <Link
                   key={item.id}
                   href={`/menu/${item.id}?token=${currentToken}`}
-                  className="flex-shrink-0 w-48 bg-white rounded-3xl shadow-lg overflow-hidden pt-12 pb-4 px-4 relative"
+                  className="card card-interactive flex-shrink-0 w-52 p-0 relative overflow-hidden animate-slide-in-left"
+                  style={{ animationDelay: `${index * 100}ms` }}
                 >
-                  <div className="absolute -top-6 left-1/2 -translate-x-1/2 w-28 h-28 rounded-full overflow-hidden bg-gray-100">
+                  <div className="h-32 bg-gradient-to-br from-neutral-100 to-neutral-200 relative overflow-hidden">
                     {item.primaryPhotoUrl ? (
                       <Image
                         src={item.primaryPhotoUrl}
@@ -410,13 +440,20 @@ function MenuContent() {
                         🍽️
                       </div>
                     )}
+                    <div className="absolute top-3 left-3">
+                      <div className="badge badge-success text-xs">
+                        Chef's Pick
+                      </div>
+                    </div>
                   </div>
-                  <p className="text-center font-semibold mt-12 line-clamp-2">
-                    {item.name}
-                  </p>
-                  <p className="text-center text-[#fa4a0c] font-bold mt-2">
-                    ${item.price.toFixed(2)}
-                  </p>
+                  <div className="p-4">
+                    <h3 className="text-label-lg text-neutral-900 mb-1 line-clamp-2 leading-tight">
+                      {item.name}
+                    </h3>
+                    <p className="text-heading-md text-blue-600 font-semibold">
+                      ${item.price.toFixed(2)}
+                    </p>
+                  </div>
                 </Link>
               ))}
             </div>
@@ -428,24 +465,32 @@ function MenuContent() {
         popularItems.length > 0 &&
         !selectedCategory &&
         !showChefRecommended && (
-          <div className="mt-6">
-            <div className="flex justify-between items-center px-6 mb-4">
-              <h2 className="text-lg font-semibold">🔥 Popular Items</h2>
+          <div className="mb-8">
+            <div className="flex justify-between items-center px-6 mb-6">
+              <div>
+                <h2 className="text-heading-lg text-neutral-900 mb-1">
+                  🔥 Popular Items
+                </h2>
+                <p className="text-body-md text-neutral-600">
+                  Customer favorites you'll love
+                </p>
+              </div>
               <button
                 onClick={() => setSortBy("popularity")}
-                className="text-[#fa4a0c] text-sm"
+                className="text-blue-600 text-label-md font-medium interactive"
               >
-                see more
+                See all
               </button>
             </div>
-            <div className="flex gap-4 px-6 overflow-x-auto hide-scrollbar pb-4">
-              {popularItems.map((item) => (
+            <div className="flex gap-6 px-6 overflow-x-auto scrollbar-hidden pb-4">
+              {popularItems.map((item, index) => (
                 <Link
                   key={item.id}
                   href={`/menu/${item.id}?token=${currentToken}`}
-                  className="flex-shrink-0 w-48 bg-white rounded-3xl shadow-lg overflow-hidden pt-12 pb-4 px-4 relative"
+                  className="card card-interactive flex-shrink-0 w-52 p-0 relative overflow-hidden animate-slide-in-left"
+                  style={{ animationDelay: `${index * 100}ms` }}
                 >
-                  <div className="absolute -top-6 left-1/2 -translate-x-1/2 w-28 h-28 rounded-full overflow-hidden bg-gray-100">
+                  <div className="h-32 bg-gradient-to-br from-neutral-100 to-neutral-200 relative overflow-hidden">
                     {item.primaryPhotoUrl ? (
                       <Image
                         src={item.primaryPhotoUrl}
@@ -459,13 +504,18 @@ function MenuContent() {
                         🍽️
                       </div>
                     )}
+                    <div className="absolute top-3 left-3">
+                      <div className="badge badge-warning text-xs">Popular</div>
+                    </div>
                   </div>
-                  <p className="text-center font-semibold mt-12 line-clamp-2">
-                    {item.name}
-                  </p>
-                  <p className="text-center text-[#fa4a0c] font-bold mt-2">
-                    ${item.price.toFixed(2)}
-                  </p>
+                  <div className="p-4">
+                    <h3 className="text-label-lg text-neutral-900 mb-1 line-clamp-2 leading-tight">
+                      {item.name}
+                    </h3>
+                    <p className="text-heading-md text-blue-600 font-semibold">
+                      ${item.price.toFixed(2)}
+                    </p>
+                  </div>
                 </Link>
               ))}
             </div>
@@ -474,31 +524,28 @@ function MenuContent() {
 
       {/* All Items Grid */}
       {!loading && items.length > 0 && (
-        <div className="mt-6 px-6">
-          <h2 className="text-lg font-semibold mb-4">
-            {showChefRecommended
-              ? "Chef's Recommendations"
-              : selectedCategory
-                ? categories.find((c) => c.id === selectedCategory)?.name
-                : "All Items"}
-            <span className="text-gray-400 text-sm font-normal ml-2">
-              ({totalItems})
+        <div className="px-6 mb-8">
+          <div className="flex items-baseline justify-between mb-6">
+            <h2 className="text-heading-lg text-neutral-900">
+              {showChefRecommended
+                ? "Chef's Recommendations"
+                : selectedCategory
+                  ? categories.find((c) => c.id === selectedCategory)?.name
+                  : "All Items"}
+            </h2>
+            <span className="text-body-md text-neutral-500">
+              {totalItems} items
             </span>
-          </h2>
+          </div>
           <div className="grid grid-cols-2 gap-4">
-            {items.map((item) => (
+            {items.map((item, index) => (
               <Link
                 key={item.id}
                 href={`/menu/${item.id}?token=${currentToken}`}
-                className="bg-white rounded-3xl shadow-lg overflow-hidden pt-14 pb-4 px-4 relative"
+                className="card card-interactive p-0 overflow-hidden animate-fade-in"
+                style={{ animationDelay: `${index * 50}ms` }}
               >
-                <div className="absolute top-2 left-2">
-                  {getStatusBadge(item.status)}
-                </div>
-                {item.isChefRecommended && (
-                  <div className="absolute top-2 right-2 text-lg">👨‍🍳</div>
-                )}
-                <div className="absolute -top-4 left-1/2 -translate-x-1/2 w-24 h-24 rounded-full overflow-hidden bg-gray-100">
+                <div className="h-32 bg-gradient-to-br from-neutral-100 to-neutral-200 relative overflow-hidden">
                   {item.primaryPhotoUrl ? (
                     <Image
                       src={item.primaryPhotoUrl}
@@ -508,22 +555,46 @@ function MenuContent() {
                       unoptimized
                     />
                   ) : (
-                    <div className="w-full h-full flex items-center justify-center text-3xl">
+                    <div className="w-full h-full flex items-center justify-center text-4xl">
                       🍽️
                     </div>
                   )}
+
+                  {/* Status and Chef Badge */}
+                  <div className="absolute top-3 left-3 flex gap-2">
+                    {getStatusBadge(item.status)}
+                    {item.isChefRecommended && (
+                      <div className="badge badge-success text-xs">👨‍🍳 Chef</div>
+                    )}
+                  </div>
                 </div>
-                <p className="text-center font-semibold mt-8 line-clamp-2 text-sm">
-                  {item.name}
-                </p>
-                <p className="text-center text-[#fa4a0c] font-bold mt-1">
-                  ${item.price.toFixed(2)}
-                </p>
-                {item.prepTimeMinutes > 0 && (
-                  <p className="text-center text-gray-400 text-xs mt-1">
-                    ~{item.prepTimeMinutes} min
-                  </p>
-                )}
+
+                <div className="p-4">
+                  <h3 className="text-label-lg text-neutral-900 mb-1 line-clamp-2 leading-tight">
+                    {item.name}
+                  </h3>
+                  <div className="flex items-center justify-between">
+                    <p className="text-heading-md text-blue-600 font-semibold">
+                      ${item.price.toFixed(2)}
+                    </p>
+                    {item.prepTimeMinutes > 0 && (
+                      <div className="flex items-center gap-1 text-neutral-500 text-xs">
+                        <svg
+                          className="w-3 h-3"
+                          fill="currentColor"
+                          viewBox="0 0 20 20"
+                        >
+                          <path
+                            fillRule="evenodd"
+                            d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-13a1 1 0 10-2 0v5a1 1 0 00.293.707l3 3a1 1 0 001.414-1.414L11 10.586V5z"
+                            clipRule="evenodd"
+                          />
+                        </svg>
+                        {item.prepTimeMinutes}min
+                      </div>
+                    )}
+                  </div>
+                </div>
               </Link>
             ))}
           </div>
@@ -532,8 +603,8 @@ function MenuContent() {
 
       {/* Loading more indicator */}
       {loadingMore && (
-        <div className="flex justify-center py-6">
-          <div className="w-8 h-8 border-4 border-[#fa4a0c] border-t-transparent rounded-full spinner"></div>
+        <div className="flex justify-center py-8 animate-fade-in">
+          <div className="w-8 h-8 border-3 border-neutral-200 border-t-blue-600 rounded-full spinner"></div>
         </div>
       )}
 
@@ -542,13 +613,17 @@ function MenuContent() {
 
       {/* Empty state */}
       {!loading && items.length === 0 && (
-        <div className="flex flex-col items-center justify-center py-12 px-6">
-          <div className="text-6xl mb-4">🍽️</div>
-          <h2 className="text-xl font-semibold mb-2">No items found</h2>
-          <p className="text-gray-500 text-center">
+        <div className="flex flex-col items-center justify-center py-16 px-6">
+          <div className="w-24 h-24 bg-neutral-100 rounded-3xl flex items-center justify-center mb-6">
+            <div className="text-5xl">🍽️</div>
+          </div>
+          <h3 className="text-heading-lg text-neutral-900 mb-2">
+            No items found
+          </h3>
+          <p className="text-body-lg text-neutral-600 text-center mb-6 max-w-sm">
             {searchQuery
-              ? "Try a different search term"
-              : "No menu items available in this category"}
+              ? "We couldn't find any dishes matching your search. Try a different term."
+              : "No menu items are available in this category right now."}
           </p>
           {(searchQuery || selectedCategory) && (
             <button
@@ -557,7 +632,7 @@ function MenuContent() {
                 setSelectedCategory(null);
                 setShowChefRecommended(false);
               }}
-              className="mt-4 px-6 py-2 bg-[#fa4a0c] text-white rounded-full"
+              className="btn btn-primary btn-lg"
             >
               Clear Filters
             </button>
