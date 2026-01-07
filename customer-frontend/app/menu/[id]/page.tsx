@@ -7,9 +7,10 @@ import Link from "next/link";
 import { useApp } from "@/lib/context";
 import { useCart } from "@/lib/cart-context";
 import { menuApi } from "@/lib/api";
-import { MenuItem, MenuResponse, CartItemModifier, Review } from "@/lib/types";
+import { MenuItem, MenuResponse, Review } from "@/lib/types";
 
 function ItemDetailContent({ itemId }: { itemId: string }) {
+  // NEW MODERN DESIGN
   const router = useRouter();
   const searchParams = useSearchParams();
   const { token, isAuthenticated } = useApp();
@@ -172,7 +173,13 @@ function ItemDetailContent({ itemId }: { itemId: string }) {
     }
 
     // Build modifiers array
-    const modifiers: CartItemModifier[] = [];
+    const modifiers: Array<{
+      groupId: string;
+      groupName: string;
+      optionId: string;
+      optionName: string;
+      priceAdjustment: number;
+    }> = [];
     Object.entries(selectedModifiers).forEach(([groupId, optionIds]) => {
       const group = item.modifierGroups.find((g) => g.id === groupId);
       if (group) {

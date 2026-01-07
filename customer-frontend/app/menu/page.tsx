@@ -31,8 +31,6 @@ function MenuContent() {
   const [totalItems, setTotalItems] = useState(0);
 
   const observerRef = useRef<HTMLDivElement>(null);
-
-  // Get token from URL or context
   const currentToken = searchParams.get("token") || token;
 
   // Redirect if not authenticated
@@ -50,19 +48,6 @@ function MenuContent() {
       router.replace(`/login?token=${currentToken}`);
     }
   }, [currentToken, token, isAuthenticated, router, setToken]);
-
-  // Update URL with current filters
-  const updateUrl = useCallback((params: Record<string, string | null>) => {
-    const url = new URL(window.location.href);
-    Object.entries(params).forEach(([key, value]) => {
-      if (value) {
-        url.searchParams.set(key, value);
-      } else {
-        url.searchParams.delete(key);
-      }
-    });
-    window.history.replaceState({}, "", url.toString());
-  }, []);
 
   // Fetch menu data
   const fetchMenu = useCallback(
@@ -86,21 +71,18 @@ function MenuContent() {
         })) as MenuResponse;
 
         if (response.success) {
-          // Set table info
           if (response.table) {
             setTableInfo({
               tableId: response.table.id,
-              restaurantId: "", // Will be set from token
+              restaurantId: "",
               tableNumber: response.table.tableNumber,
             });
           }
 
-          // Set categories (only on first load)
           if (pageNum === 1) {
             setCategories(response.menu.categories);
           }
 
-          // Set items
           if (append) {
             setItems((prev) => [...prev, ...response.menu.items]);
           } else {
@@ -132,12 +114,6 @@ function MenuContent() {
   useEffect(() => {
     if (currentToken && isAuthenticated) {
       fetchMenu(1, false);
-      updateUrl({
-        q: searchQuery || null,
-        category: selectedCategory,
-        sort: sortBy !== "name" ? sortBy : null,
-        chefRecommended: showChefRecommended ? "true" : null,
-      });
     }
   }, [
     currentToken,
@@ -147,7 +123,6 @@ function MenuContent() {
     sortBy,
     showChefRecommended,
     fetchMenu,
-    updateUrl,
   ]);
 
   // Infinite scroll observer
@@ -170,35 +145,38 @@ function MenuContent() {
   // Get chef recommended items
   const chefRecommendedItems = items.filter((item) => item.isChefRecommended);
 
-  // Get popular items (top 5 by popularity score)
+  // Get popular items
   const popularItems = [...items]
     .filter((item) => item.popularityScore > 0)
     .sort((a, b) => b.popularityScore - a.popularityScore)
     .slice(0, 5);
 
   const getStatusBadge = (status: string) => {
-    switch (status) {
-      case "available":
-        return (
-          <span className="px-2 py-0.5 text-xs rounded-full status-available">
-            Available
-          </span>
-        );
-      case "unavailable":
-        return (
-          <span className="px-2 py-0.5 text-xs rounded-full status-unavailable">
-            Unavailable
-          </span>
-        );
-      case "sold_out":
-        return (
-          <span className="px-2 py-0.5 text-xs rounded-full status-sold-out">
-            Sold Out
-          </span>
-        );
-      default:
-        return null;
-    }
+    const statusConfig = {
+      available: {
+        label: "Available",
+        color: "bg-emerald-100 text-emerald-700 border-emerald-300",
+      },
+      unavailable: {
+        label: "Unavailable",
+        color: "bg-amber-100 text-amber-700 border-amber-300",
+      },
+      sold_out: {
+        label: "Sold Out",
+        color: "bg-red-100 text-red-700 border-red-300",
+      },
+    };
+
+    const config =
+      statusConfig[status as keyof typeof statusConfig] ||
+      statusConfig.available;
+    return (
+      <span
+        className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border ${config.color}`}
+      >
+        {config.label}
+      </span>
+    );
   };
 
   if (!isAuthenticated) {
@@ -206,39 +184,28 @@ function MenuContent() {
   }
 
   return (
-    <div className="min-h-screen pb-24 safe-bottom bg-neutral-50">
-      {/* Header */}
-      <div className="pt-12 px-6 bg-gradient-to-b from-white to-transparent">
-        <div className="flex justify-between items-start mb-8">
-          <div className="flex items-center gap-4">
-            <button className="w-8 h-8 rounded-xl bg-white shadow-sm border border-neutral-200 flex items-center justify-center interactive focus-ring">
-              <svg
-                className="w-5 h-5 text-neutral-700"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={1.5}
-                  d="M4 6h16M4 12h16M4 18h16"
-                />
-              </svg>
-            </button>
-            {tableNumber && (
-              <div className="badge bg-blue-50 text-blue-700 border border-blue-200">
-                Table {tableNumber}
+    <div className="min-h-screen bg-white pb-24 safe-bottom">
+      {/* Header Section */}
+      <div className="sticky top-0 z-30 bg-white border-b border-gray-100">
+        <div className="px-6 py-4">
+          <div className="flex justify-between items-center mb-6">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-400 to-red-500 flex items-center justify-center">
+                <span className="text-white font-bold text-lg">🍽️</span>
               </div>
-            )}
-          </div>
-          <Link
-            href={`/cart?token=${currentToken}`}
-            className="relative interactive focus-ring rounded-xl"
-          >
-            <div className="w-10 h-10 bg-white rounded-xl shadow-sm border border-neutral-200 flex items-center justify-center">
+              <div>
+                <h1 className="text-lg font-bold text-gray-900">Menu</h1>
+                {tableNumber && (
+                  <p className="text-xs text-gray-500">Table {tableNumber}</p>
+                )}
+              </div>
+            </div>
+            <Link
+              href={`/cart?token=${currentToken}`}
+              className="relative p-2.5 hover:bg-gray-50 rounded-lg transition-colors"
+            >
               <svg
-                className="w-5 h-5 text-neutral-700"
+                className="w-6 h-6 text-gray-700"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -246,37 +213,22 @@ function MenuContent() {
                 <path
                   strokeLinecap="round"
                   strokeLinejoin="round"
-                  strokeWidth={1.5}
+                  strokeWidth={2}
                   d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"
                 />
               </svg>
-            </div>
-            {getTotalItems() > 0 && (
-              <div className="absolute -top-2 -right-2 w-6 h-6 bg-blue-600 text-white text-xs rounded-full flex items-center justify-center font-medium shadow-lg">
-                {getTotalItems()}
-              </div>
-            )}
-          </Link>
-        </div>
+              {getTotalItems() > 0 && (
+                <div className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center font-bold">
+                  {getTotalItems()}
+                </div>
+              )}
+            </Link>
+          </div>
 
-        <div className="mb-8">
-          <h1 className="text-display-lg text-neutral-900 mb-2 animate-fade-in">
-            Delicious
-            <br />
-            food for you
-          </h1>
-          <p className="text-body-lg text-neutral-600">
-            Fresh meals crafted with care
-          </p>
-        </div>
-      </div>
-
-      {/* Search bar */}
-      <div className="px-6 mb-8">
-        <div className="input-with-icon animate-slide-in-up">
-          <div className="input-icon">
+          {/* Search Bar */}
+          <div className="relative mb-4">
             <svg
-              className="w-5 h-5"
+              className="absolute left-3.5 top-3 w-5 h-5 text-gray-400"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -288,171 +240,301 @@ function MenuContent() {
                 d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
               />
             </svg>
+            <input
+              type="text"
+              placeholder="Search dishes..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-11 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:bg-white transition-all text-sm"
+            />
           </div>
-          <input
-            type="text"
-            placeholder="Search for dishes..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="input text-body-lg h-14 shadow-sm"
-          />
-        </div>
-      </div>
 
-      {/* Categories */}
-      <div className="mb-6">
-        <div className="flex gap-8 px-6 overflow-x-auto scrollbar-hidden pb-4">
-          <button
-            onClick={() => {
-              setSelectedCategory(null);
-              setShowChefRecommended(false);
-            }}
-            className={`whitespace-nowrap text-label-lg transition-all interactive ${
-              !selectedCategory && !showChefRecommended
-                ? "text-blue-600 font-medium"
-                : "text-neutral-500 hover:text-neutral-700"
-            }`}
-          >
-            All
-          </button>
-          {categories.map((category, index) => (
+          {/* Sort & Filter Pills */}
+          <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hidden">
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+              className="px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-orange-500 transition-all whitespace-nowrap cursor-pointer"
+            >
+              <option value="name">Name</option>
+              <option value="popularity">Popular</option>
+            </select>
+
             <button
-              key={category.id}
+              onClick={() => setShowChefRecommended(!showChefRecommended)}
+              className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-all ${
+                showChefRecommended
+                  ? "bg-orange-500 text-white border border-orange-500"
+                  : "bg-gray-50 text-gray-700 border border-gray-200 hover:bg-gray-100"
+              }`}
+            >
+              👨‍🍳 Chef&apos;s Pick
+            </button>
+          </div>
+        </div>
+
+        {/* Category Tabs */}
+        <div className="px-6 border-t border-gray-100">
+          <div className="flex gap-2 overflow-x-auto pb-0 scrollbar-hidden">
+            <button
               onClick={() => {
-                setSelectedCategory(category.id);
+                setSelectedCategory(null);
                 setShowChefRecommended(false);
               }}
-              className={`whitespace-nowrap text-label-lg transition-all interactive ${
-                selectedCategory === category.id
-                  ? "text-blue-600 font-medium"
-                  : "text-neutral-500 hover:text-neutral-700"
+              className={`px-4 py-3 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${
+                !selectedCategory && !showChefRecommended
+                  ? "border-orange-500 text-orange-600"
+                  : "border-transparent text-gray-600 hover:text-gray-900"
               }`}
-              style={{ animationDelay: `${index * 50}ms` }}
             >
-              {category.name}
+              All
             </button>
-          ))}
-        </div>
-        <div className="px-6">
-          <div
-            className="h-0.5 bg-blue-600 rounded-full transition-all duration-300 ease-out"
-            style={{
-              width: "64px",
-              marginLeft: selectedCategory
-                ? `${(categories.findIndex((c) => c.id === selectedCategory) + 1) * 80}px`
-                : "0px",
-            }}
-          />
+            {categories.map((category) => (
+              <button
+                key={category.id}
+                onClick={() => {
+                  setSelectedCategory(category.id);
+                  setShowChefRecommended(false);
+                }}
+                className={`px-4 py-3 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${
+                  selectedCategory === category.id
+                    ? "border-orange-500 text-orange-600"
+                    : "border-transparent text-gray-600 hover:text-gray-900"
+                }`}
+              >
+                {category.name}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
-      {/* Sort and filter options */}
-      <div className="flex gap-3 px-6 mb-8 overflow-x-auto scrollbar-hidden">
-        <select
-          value={sortBy}
-          onChange={(e) => setSortBy(e.target.value)}
-          className="btn btn-secondary btn-md min-w-max focus-ring"
-        >
-          <option value="name">Sort by Name</option>
-          <option value="popularity">Sort by Popularity</option>
-        </select>
-        <button
-          onClick={() => setShowChefRecommended(!showChefRecommended)}
-          className={`btn btn-md whitespace-nowrap transition-all ${
-            showChefRecommended ? "btn-primary" : "btn-secondary"
-          }`}
-        >
-          <span className="mr-2">👨‍🍳</span>
-          Chef's Pick
-        </button>
-      </div>
+      {/* Main Content */}
+      <div className="px-6 py-6">
+        {/* Loading State */}
+        {loading && (
+          <div className="flex flex-col items-center justify-center py-16">
+            <div className="w-12 h-12 border-4 border-gray-200 border-t-orange-500 rounded-full animate-spin mb-4"></div>
+            <p className="text-gray-600">Loading delicious items...</p>
+          </div>
+        )}
 
-      {/* Loading state */}
-      {loading && (
-        <div className="flex flex-col items-center justify-center py-16 px-6 animate-fade-in">
-          <div className="w-12 h-12 border-3 border-neutral-200 border-t-blue-600 rounded-full spinner mb-4"></div>
-          <p className="text-body-lg text-neutral-600">
-            Loading delicious options...
-          </p>
-        </div>
-      )}
-
-      {/* Error state */}
-      {error && (
-        <div className="mx-6 mb-6">
-          <div className="card card-body bg-red-50 border-red-200 text-center animate-slide-in-up">
-            <div className="text-4xl mb-3">😔</div>
-            <h3 className="text-heading-sm text-red-900 mb-2">
-              Oops! Something went wrong
-            </h3>
-            <p className="text-body-md text-red-700 mb-4">{error}</p>
+        {/* Error State */}
+        {error && !loading && (
+          <div className="bg-red-50 border border-red-200 rounded-xl p-6 text-center mb-6">
+            <p className="text-red-700 font-medium mb-4">{error}</p>
             <button
               onClick={() => fetchMenu(1)}
-              className="btn btn-primary btn-md mx-auto"
+              className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium"
             >
               Try Again
             </button>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* Chef Recommended Section */}
-      {!loading &&
-        chefRecommendedItems.length > 0 &&
-        !selectedCategory &&
-        !showChefRecommended && (
-          <div className="mb-8">
-            <div className="flex justify-between items-center px-6 mb-6">
-              <div>
-                <h2 className="text-heading-lg text-neutral-900 mb-1">
-                  👨‍🍳 Chef&apos;s Recommendations
-                </h2>
-                <p className="text-body-md text-neutral-600">
-                  Hand-picked favorites from our kitchen
-                </p>
+        {/* Chef Recommendations Section */}
+        {!loading &&
+          chefRecommendedItems.length > 0 &&
+          !selectedCategory &&
+          !showChefRecommended && (
+            <div className="mb-8">
+              <div className="flex justify-between items-center mb-4">
+                <div>
+                  <h2 className="text-lg font-bold text-gray-900 mb-1">
+                    👨‍🍳 Chef&apos;s Recommendations
+                  </h2>
+                  <p className="text-sm text-gray-600">
+                    Hand-picked favorites from our kitchen
+                  </p>
+                </div>
+                <button
+                  onClick={() => setShowChefRecommended(true)}
+                  className="text-orange-600 text-sm font-semibold hover:text-orange-700 transition-colors"
+                >
+                  View all →
+                </button>
               </div>
-              <button
-                onClick={() => setShowChefRecommended(true)}
-                className="text-blue-600 text-label-md font-medium interactive"
-              >
-                See all
-              </button>
+              <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-hidden -mx-6 px-6">
+                {chefRecommendedItems.slice(0, 5).map((item) => (
+                  <Link
+                    key={item.id}
+                    href={`/menu/${item.id}?token=${currentToken}`}
+                    className="flex-shrink-0 w-44 bg-white border border-gray-200 rounded-xl overflow-hidden hover:shadow-lg hover:border-orange-300 transition-all"
+                  >
+                    <div className="h-28 bg-gray-100 relative overflow-hidden">
+                      {item.primaryPhotoUrl ? (
+                        <Image
+                          src={item.primaryPhotoUrl}
+                          alt={item.name}
+                          fill
+                          className="object-cover"
+                          unoptimized
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-3xl">
+                          🍽️
+                        </div>
+                      )}
+                      <div className="absolute top-2 left-2">
+                        <span className="inline-block bg-orange-500 text-white text-xs font-bold px-2 py-1 rounded-full">
+                          Chef Pick
+                        </span>
+                      </div>
+                    </div>
+                    <div className="p-3">
+                      <h3 className="font-semibold text-gray-900 text-sm line-clamp-2 mb-1">
+                        {item.name}
+                      </h3>
+                      <div className="flex justify-between items-center">
+                        <span className="text-orange-600 font-bold text-lg">
+                          ${item.price.toFixed(2)}
+                        </span>
+                        {item.prepTimeMinutes > 0 && (
+                          <span className="text-xs text-gray-500">
+                            {item.prepTimeMinutes}m
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </Link>
+                ))}
+              </div>
             </div>
-            <div className="flex gap-6 px-6 overflow-x-auto scrollbar-hidden pb-4">
-              {chefRecommendedItems.slice(0, 5).map((item, index) => (
+          )}
+
+        {/* Popular Items Section */}
+        {!loading &&
+          popularItems.length > 0 &&
+          !selectedCategory &&
+          !showChefRecommended && (
+            <div className="mb-8">
+              <div className="flex justify-between items-center mb-4">
+                <div>
+                  <h2 className="text-lg font-bold text-gray-900 mb-1">
+                    🔥 Popular Right Now
+                  </h2>
+                  <p className="text-sm text-gray-600">Customer favorites</p>
+                </div>
+                <button
+                  onClick={() => setSortBy("popularity")}
+                  className="text-orange-600 text-sm font-semibold hover:text-orange-700 transition-colors"
+                >
+                  View all →
+                </button>
+              </div>
+              <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-hidden -mx-6 px-6">
+                {popularItems.map((item) => (
+                  <Link
+                    key={item.id}
+                    href={`/menu/${item.id}?token=${currentToken}`}
+                    className="flex-shrink-0 w-44 bg-white border border-gray-200 rounded-xl overflow-hidden hover:shadow-lg hover:border-orange-300 transition-all"
+                  >
+                    <div className="h-28 bg-gray-100 relative overflow-hidden">
+                      {item.primaryPhotoUrl ? (
+                        <Image
+                          src={item.primaryPhotoUrl}
+                          alt={item.name}
+                          fill
+                          className="object-cover"
+                          unoptimized
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-3xl">
+                          🍽️
+                        </div>
+                      )}
+                      <div className="absolute top-2 left-2">
+                        <span className="inline-block bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full">
+                          Popular
+                        </span>
+                      </div>
+                    </div>
+                    <div className="p-3">
+                      <h3 className="font-semibold text-gray-900 text-sm line-clamp-2 mb-1">
+                        {item.name}
+                      </h3>
+                      <div className="flex justify-between items-center">
+                        <span className="text-orange-600 font-bold text-lg">
+                          ${item.price.toFixed(2)}
+                        </span>
+                        {item.prepTimeMinutes > 0 && (
+                          <span className="text-xs text-gray-500">
+                            {item.prepTimeMinutes}m
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          )}
+
+        {/* Items Grid */}
+        {!loading && items.length > 0 && (
+          <div>
+            <div className="mb-5">
+              <h2 className="text-lg font-bold text-gray-900">
+                {showChefRecommended
+                  ? "Chef's Recommendations"
+                  : selectedCategory
+                    ? categories.find((c) => c.id === selectedCategory)?.name
+                    : "All Items"}
+              </h2>
+              <p className="text-sm text-gray-600 mt-1">
+                {totalItems} items available
+              </p>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              {items.map((item) => (
                 <Link
                   key={item.id}
                   href={`/menu/${item.id}?token=${currentToken}`}
-                  className="card card-interactive flex-shrink-0 w-52 p-0 relative overflow-hidden animate-slide-in-left"
-                  style={{ animationDelay: `${index * 100}ms` }}
+                  className="bg-white border border-gray-200 rounded-xl overflow-hidden hover:shadow-md hover:border-orange-300 transition-all group"
                 >
-                  <div className="h-32 bg-gradient-to-br from-neutral-100 to-neutral-200 relative overflow-hidden">
+                  <div className="h-32 bg-gray-100 relative overflow-hidden">
                     {item.primaryPhotoUrl ? (
                       <Image
                         src={item.primaryPhotoUrl}
                         alt={item.name}
                         fill
-                        className="object-cover"
+                        className="object-cover group-hover:scale-105 transition-transform"
                         unoptimized
                       />
                     ) : (
-                      <div className="w-full h-full flex items-center justify-center text-4xl">
+                      <div className="w-full h-full flex items-center justify-center text-3xl">
                         🍽️
                       </div>
                     )}
-                    <div className="absolute top-3 left-3">
-                      <div className="badge badge-success text-xs">
-                        Chef's Pick
+
+                    {/* Badges */}
+                    <div className="absolute top-2 left-2 flex gap-1.5">
+                      {item.isChefRecommended && (
+                        <span className="inline-block bg-orange-500 text-white text-xs font-bold px-2 py-1 rounded-full">
+                          👨‍🍳
+                        </span>
+                      )}
+                      <div className="text-xs">
+                        {getStatusBadge(item.status)}
                       </div>
                     </div>
                   </div>
-                  <div className="p-4">
-                    <h3 className="text-label-lg text-neutral-900 mb-1 line-clamp-2 leading-tight">
+
+                  <div className="p-3">
+                    <h3 className="font-semibold text-gray-900 text-sm line-clamp-2 mb-2">
                       {item.name}
                     </h3>
-                    <p className="text-heading-md text-blue-600 font-semibold">
-                      ${item.price.toFixed(2)}
-                    </p>
+                    <div className="flex justify-between items-center">
+                      <span className="text-orange-600 font-bold">
+                        ${item.price.toFixed(2)}
+                      </span>
+                      {item.prepTimeMinutes > 0 && (
+                        <span className="text-xs text-gray-500 bg-gray-50 px-2 py-1 rounded">
+                          {item.prepTimeMinutes}m
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </Link>
               ))}
@@ -460,185 +542,43 @@ function MenuContent() {
           </div>
         )}
 
-      {/* Popular Items Section */}
-      {!loading &&
-        popularItems.length > 0 &&
-        !selectedCategory &&
-        !showChefRecommended && (
-          <div className="mb-8">
-            <div className="flex justify-between items-center px-6 mb-6">
-              <div>
-                <h2 className="text-heading-lg text-neutral-900 mb-1">
-                  🔥 Popular Items
-                </h2>
-                <p className="text-body-md text-neutral-600">
-                  Customer favorites you'll love
-                </p>
-              </div>
+        {/* Empty State */}
+        {!loading && items.length === 0 && (
+          <div className="flex flex-col items-center justify-center py-16 text-center">
+            <div className="text-5xl mb-4">🍽️</div>
+            <h3 className="text-lg font-bold text-gray-900 mb-2">
+              No items found
+            </h3>
+            <p className="text-gray-600 mb-6">
+              {searchQuery
+                ? "Try a different search term"
+                : "No items available in this category"}
+            </p>
+            {(searchQuery || selectedCategory) && (
               <button
-                onClick={() => setSortBy("popularity")}
-                className="text-blue-600 text-label-md font-medium interactive"
+                onClick={() => {
+                  setSearchQuery("");
+                  setSelectedCategory(null);
+                  setShowChefRecommended(false);
+                }}
+                className="px-6 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors font-medium"
               >
-                See all
+                Clear Filters
               </button>
-            </div>
-            <div className="flex gap-6 px-6 overflow-x-auto scrollbar-hidden pb-4">
-              {popularItems.map((item, index) => (
-                <Link
-                  key={item.id}
-                  href={`/menu/${item.id}?token=${currentToken}`}
-                  className="card card-interactive flex-shrink-0 w-52 p-0 relative overflow-hidden animate-slide-in-left"
-                  style={{ animationDelay: `${index * 100}ms` }}
-                >
-                  <div className="h-32 bg-gradient-to-br from-neutral-100 to-neutral-200 relative overflow-hidden">
-                    {item.primaryPhotoUrl ? (
-                      <Image
-                        src={item.primaryPhotoUrl}
-                        alt={item.name}
-                        fill
-                        className="object-cover"
-                        unoptimized
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center text-4xl">
-                        🍽️
-                      </div>
-                    )}
-                    <div className="absolute top-3 left-3">
-                      <div className="badge badge-warning text-xs">Popular</div>
-                    </div>
-                  </div>
-                  <div className="p-4">
-                    <h3 className="text-label-lg text-neutral-900 mb-1 line-clamp-2 leading-tight">
-                      {item.name}
-                    </h3>
-                    <p className="text-heading-md text-blue-600 font-semibold">
-                      ${item.price.toFixed(2)}
-                    </p>
-                  </div>
-                </Link>
-              ))}
-            </div>
+            )}
           </div>
         )}
 
-      {/* All Items Grid */}
-      {!loading && items.length > 0 && (
-        <div className="px-6 mb-8">
-          <div className="flex items-baseline justify-between mb-6">
-            <h2 className="text-heading-lg text-neutral-900">
-              {showChefRecommended
-                ? "Chef's Recommendations"
-                : selectedCategory
-                  ? categories.find((c) => c.id === selectedCategory)?.name
-                  : "All Items"}
-            </h2>
-            <span className="text-body-md text-neutral-500">
-              {totalItems} items
-            </span>
+        {/* Loading more */}
+        {loadingMore && (
+          <div className="flex justify-center py-8">
+            <div className="w-8 h-8 border-4 border-gray-200 border-t-orange-500 rounded-full animate-spin"></div>
           </div>
-          <div className="grid grid-cols-2 gap-4">
-            {items.map((item, index) => (
-              <Link
-                key={item.id}
-                href={`/menu/${item.id}?token=${currentToken}`}
-                className="card card-interactive p-0 overflow-hidden animate-fade-in"
-                style={{ animationDelay: `${index * 50}ms` }}
-              >
-                <div className="h-32 bg-gradient-to-br from-neutral-100 to-neutral-200 relative overflow-hidden">
-                  {item.primaryPhotoUrl ? (
-                    <Image
-                      src={item.primaryPhotoUrl}
-                      alt={item.name}
-                      fill
-                      className="object-cover"
-                      unoptimized
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center text-4xl">
-                      🍽️
-                    </div>
-                  )}
-
-                  {/* Status and Chef Badge */}
-                  <div className="absolute top-3 left-3 flex gap-2">
-                    {getStatusBadge(item.status)}
-                    {item.isChefRecommended && (
-                      <div className="badge badge-success text-xs">👨‍🍳 Chef</div>
-                    )}
-                  </div>
-                </div>
-
-                <div className="p-4">
-                  <h3 className="text-label-lg text-neutral-900 mb-1 line-clamp-2 leading-tight">
-                    {item.name}
-                  </h3>
-                  <div className="flex items-center justify-between">
-                    <p className="text-heading-md text-blue-600 font-semibold">
-                      ${item.price.toFixed(2)}
-                    </p>
-                    {item.prepTimeMinutes > 0 && (
-                      <div className="flex items-center gap-1 text-neutral-500 text-xs">
-                        <svg
-                          className="w-3 h-3"
-                          fill="currentColor"
-                          viewBox="0 0 20 20"
-                        >
-                          <path
-                            fillRule="evenodd"
-                            d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-13a1 1 0 10-2 0v5a1 1 0 00.293.707l3 3a1 1 0 001.414-1.414L11 10.586V5z"
-                            clipRule="evenodd"
-                          />
-                        </svg>
-                        {item.prepTimeMinutes}min
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </Link>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Loading more indicator */}
-      {loadingMore && (
-        <div className="flex justify-center py-8 animate-fade-in">
-          <div className="w-8 h-8 border-3 border-neutral-200 border-t-blue-600 rounded-full spinner"></div>
-        </div>
-      )}
+        )}
+      </div>
 
       {/* Infinite scroll trigger */}
       <div ref={observerRef} className="h-4" />
-
-      {/* Empty state */}
-      {!loading && items.length === 0 && (
-        <div className="flex flex-col items-center justify-center py-16 px-6">
-          <div className="w-24 h-24 bg-neutral-100 rounded-3xl flex items-center justify-center mb-6">
-            <div className="text-5xl">🍽️</div>
-          </div>
-          <h3 className="text-heading-lg text-neutral-900 mb-2">
-            No items found
-          </h3>
-          <p className="text-body-lg text-neutral-600 text-center mb-6 max-w-sm">
-            {searchQuery
-              ? "We couldn't find any dishes matching your search. Try a different term."
-              : "No menu items are available in this category right now."}
-          </p>
-          {(searchQuery || selectedCategory) && (
-            <button
-              onClick={() => {
-                setSearchQuery("");
-                setSelectedCategory(null);
-                setShowChefRecommended(false);
-              }}
-              className="btn btn-primary btn-lg"
-            >
-              Clear Filters
-            </button>
-          )}
-        </div>
-      )}
 
       <BottomNav token={currentToken || ""} />
     </div>
@@ -649,8 +589,8 @@ export default function MenuPage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen flex items-center justify-center">
-          <div className="w-12 h-12 border-4 border-[#fa4a0c] border-t-transparent rounded-full spinner"></div>
+        <div className="min-h-screen flex items-center justify-center bg-white">
+          <div className="w-12 h-12 border-4 border-gray-200 border-t-orange-500 rounded-full animate-spin"></div>
         </div>
       }
     >
