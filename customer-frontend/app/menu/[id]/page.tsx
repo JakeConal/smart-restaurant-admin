@@ -14,7 +14,7 @@ function ItemDetailContent({ itemId }: { itemId: string }) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { token, isAuthenticated } = useApp();
-  const { addItem } = useCart();
+  const { addItem, getTotalItems } = useCart();
 
   const [item, setItem] = useState<MenuItem | null>(null);
   const [relatedItems, setRelatedItems] = useState<MenuItem[]>([]);
@@ -251,213 +251,359 @@ function ItemDetailContent({ itemId }: { itemId: string }) {
   }
 
   return (
-    <div className="min-h-screen pb-32">
-      {/* Header */}
-      <div className="absolute top-0 left-0 right-0 z-10 flex justify-between items-center p-6">
-        <button
-          onClick={() => router.back()}
-          className="w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-md"
-        >
-          <svg
-            className="w-6 h-6"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
+    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-orange-25">
+      {/* Enhanced Header with Glass Effect */}
+      <div className="sticky top-0 z-20 backdrop-blur-xl bg-white/80 border-b border-orange-100/50 shadow-sm">
+        <div className="flex justify-between items-center p-6">
+          <button
+            onClick={() => router.back()}
+            className="group w-12 h-12 bg-white/90 hover:bg-white rounded-2xl flex items-center justify-center shadow-lg hover:shadow-xl transition-all duration-300 border border-orange-100/50"
           >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M15 19l-7-7 7-7"
-            />
-          </svg>
-        </button>
-        <Link
-          href={`/cart?token=${currentToken}`}
-          className="w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-md"
-        >
-          <svg
-            className="w-6 h-6"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
-            />
-          </svg>
-        </Link>
+            <svg
+              className="w-6 h-6 text-gray-700 group-hover:text-orange-600 transition-colors duration-300"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2.5}
+                d="M15 19l-7-7 7-7"
+              />
+            </svg>
+          </button>
+
+          <div className="flex items-center gap-3">
+            <Link
+              href={`/favorites?token=${currentToken}`}
+              className="group w-12 h-12 bg-white/90 hover:bg-white rounded-2xl flex items-center justify-center shadow-lg hover:shadow-xl transition-all duration-300 border border-orange-100/50"
+            >
+              <svg
+                className="w-6 h-6 text-gray-700 group-hover:text-orange-600 transition-colors duration-300"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2.5}
+                  d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
+                />
+              </svg>
+            </Link>
+
+            <Link
+              href={`/cart?token=${currentToken}`}
+              className="group relative w-12 h-12 bg-white/90 hover:bg-white rounded-2xl flex items-center justify-center shadow-lg hover:shadow-xl transition-all duration-300 border border-orange-100/50"
+            >
+              <svg
+                className="w-6 h-6 text-gray-700 group-hover:text-orange-600 transition-colors duration-300"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2.5}
+                  d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"
+                />
+              </svg>
+              {getTotalItems() > 0 && (
+                <div className="absolute -top-1 -right-1 w-5 h-5 bg-orange-500 text-white text-xs font-bold rounded-full flex items-center justify-center shadow-lg animate-pulse">
+                  {getTotalItems() > 99 ? "99+" : getTotalItems()}
+                </div>
+              )}
+            </Link>
+          </div>
+        </div>
       </div>
 
-      {/* Image */}
-      <div className="relative h-80 bg-gradient-to-b from-orange-50 to-[#f2f2f2]">
-        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/3 w-64 h-64 rounded-full overflow-hidden bg-white shadow-2xl">
-          {item.primaryPhotoUrl ? (
-            <Image
-              src={item.primaryPhotoUrl}
-              alt={item.name}
-              fill
-              className="object-cover"
-            />
-          ) : (
-            <div className="w-full h-full flex items-center justify-center text-8xl">
-              🍽️
+      {/* Hero Image Section with Enhanced Design */}
+      <div className="relative">
+        <div className="h-80 bg-gradient-to-br from-orange-100 via-orange-50 to-white relative overflow-hidden">
+          {/* Background Pattern */}
+          <div className="absolute inset-0 opacity-5">
+            <div className="absolute top-10 left-10 w-32 h-32 bg-orange-200 rounded-full blur-3xl"></div>
+            <div className="absolute bottom-10 right-10 w-40 h-40 bg-orange-300 rounded-full blur-3xl"></div>
+          </div>
+
+          {/* Floating Action Buttons */}
+          <div className="absolute top-6 right-6 flex flex-col gap-3">
+            <button className="w-12 h-12 bg-white/90 backdrop-blur-sm rounded-2xl flex items-center justify-center shadow-lg hover:shadow-xl transition-all duration-300 group">
+              <svg
+                className="w-6 h-6 text-gray-700 group-hover:text-red-500 transition-colors"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
+                />
+              </svg>
+            </button>
+            <button className="w-12 h-12 bg-white/90 backdrop-blur-sm rounded-2xl flex items-center justify-center shadow-lg hover:shadow-xl transition-all duration-300 group">
+              <svg
+                className="w-6 h-6 text-gray-700 group-hover:text-blue-500 transition-colors"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.367 2.684 3 3 0 00-5.367-2.684z"
+                />
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        {/* Main Product Image with Enhanced Styling */}
+        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/4">
+          <div className="relative">
+            <div className="w-72 h-72 rounded-full overflow-hidden bg-white shadow-2xl ring-8 ring-white/50 backdrop-blur-sm">
+              {item.primaryPhotoUrl ? (
+                <Image
+                  src={item.primaryPhotoUrl}
+                  alt={item.name}
+                  fill
+                  className="object-cover hover:scale-105 transition-transform duration-700"
+                  priority
+                />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center text-9xl bg-gradient-to-br from-orange-50 to-orange-100">
+                  🍽️
+                </div>
+              )}
+            </div>
+
+            {/* Image Glow Effect */}
+            <div className="absolute inset-0 rounded-full bg-gradient-to-r from-orange-400/20 to-orange-600/20 blur-xl scale-110 -z-10"></div>
+          </div>
+        </div>
+      </div>
+
+      {/* Content Container with Enhanced Spacing */}
+      <div className="mt-32 px-6 pb-32">
+        {/* Status Badges with Premium Design */}
+        <div className="flex items-center gap-3 mb-4">
+          {statusInfo && (
+            <div
+              className={`px-4 py-2 text-sm font-medium rounded-full shadow-sm border backdrop-blur-sm ${statusInfo.class}`}
+            >
+              <span className="flex items-center gap-2">
+                <div
+                  className={`w-2 h-2 rounded-full ${
+                    statusInfo.canOrder
+                      ? "bg-green-500 animate-pulse"
+                      : "bg-red-500"
+                  }`}
+                ></div>
+                {statusInfo.text}
+              </span>
+            </div>
+          )}
+          {item.isChefRecommended && (
+            <div className="px-4 py-2 text-sm font-medium bg-gradient-to-r from-amber-100 to-orange-100 text-amber-800 rounded-full shadow-sm border border-amber-200/50 backdrop-blur-sm">
+              <span className="flex items-center gap-2">
+                👨‍🍳 Chef&apos;s Recommendation
+              </span>
             </div>
           )}
         </div>
-      </div>
 
-      {/* Content */}
-      <div className="mt-24 px-6">
-        {/* Status and chef recommended badges */}
-        <div className="flex items-center gap-2 mb-2">
-          {statusInfo && (
-            <span
-              className={`px-3 py-1 text-sm rounded-full ${statusInfo.class}`}
-            >
-              {statusInfo.text}
+        {/* Product Title and Price with Enhanced Typography */}
+        <div className="mb-6">
+          <h1 className="text-3xl font-bold text-gray-900 mb-2 leading-tight">
+            {item.name}
+          </h1>
+          <div className="flex items-center gap-3">
+            <span className="text-3xl font-bold text-orange-600">
+              ${item.price.toFixed(2)}
             </span>
-          )}
-          {item.isChefRecommended && (
-            <span className="px-3 py-1 text-sm bg-amber-100 text-amber-800 rounded-full">
-              👨‍🍳 Chef&apos;s Pick
-            </span>
-          )}
+            {item.prepTimeMinutes > 0 && (
+              <div className="flex items-center gap-2 px-3 py-1 bg-orange-50 text-orange-700 rounded-full text-sm font-medium">
+                <svg
+                  className="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <polyline points="12,6 12,12 16,14"></polyline>
+                </svg>
+                {item.prepTimeMinutes} min
+              </div>
+            )}
+          </div>
         </div>
 
-        <h1 className="text-2xl font-bold mb-2">{item.name}</h1>
-        <p className="text-[#fa4a0c] text-xl font-bold mb-4">
-          ${item.price.toFixed(2)}
-        </p>
-
-        {item.prepTimeMinutes > 0 && (
-          <p className="text-gray-500 mb-4">
-            ⏱️ Prep time: ~{item.prepTimeMinutes} minutes
-          </p>
-        )}
-
+        {/* Description with Better Formatting */}
         {item.description && (
-          <div className="mb-6">
-            <h2 className="font-semibold mb-2">Description</h2>
-            <p className="text-gray-600">{item.description}</p>
+          <div className="mb-8 p-6 bg-white/70 backdrop-blur-sm rounded-3xl shadow-sm border border-white/50">
+            <h2 className="font-bold text-lg mb-3 text-gray-900">
+              About this dish
+            </h2>
+            <p className="text-gray-700 leading-relaxed">{item.description}</p>
           </div>
         )}
 
-        {/* Modifiers */}
+        {/* Enhanced Modifiers Section */}
         {item.modifierGroups.length > 0 && (
-          <div className="mb-6">
-            <h2 className="font-semibold mb-4">Customize Your Order</h2>
-            {item.modifierGroups.map((group) => (
-              <div key={group.id} className="mb-4 p-4 bg-white rounded-xl">
-                <div className="flex justify-between items-center mb-3">
-                  <span className="font-medium">{group.name}</span>
-                  {group.isRequired && (
-                    <span className="text-xs text-red-500">Required</span>
-                  )}
-                </div>
-                <div className="space-y-2">
-                  {group.options.map((option) => (
-                    <label
-                      key={option.id}
-                      className="flex items-center justify-between p-3 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors"
-                    >
-                      <div className="flex items-center gap-3">
-                        <input
-                          type={
-                            group.selectionType === "single"
-                              ? "radio"
-                              : "checkbox"
-                          }
-                          name={group.id}
-                          checked={selectedModifiers[group.id]?.includes(
-                            option.id,
-                          )}
-                          onChange={() =>
-                            handleModifierChange(
-                              group.id,
+          <div className="mb-8">
+            <h2 className="font-bold text-xl mb-6 text-gray-900">
+              Customize your order
+            </h2>
+            <div className="space-y-6">
+              {item.modifierGroups.map((group) => (
+                <div
+                  key={group.id}
+                  className="p-6 bg-white/70 backdrop-blur-sm rounded-3xl shadow-sm border border-white/50"
+                >
+                  <div className="flex justify-between items-center mb-4">
+                    <span className="font-bold text-lg text-gray-900">
+                      {group.name}
+                    </span>
+                    {group.isRequired && (
+                      <span className="px-3 py-1 bg-red-50 text-red-600 rounded-full text-sm font-medium border border-red-200">
+                        Required
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="space-y-3">
+                    {group.options.map((option) => (
+                      <label
+                        key={option.id}
+                        className="group flex items-center justify-between p-4 bg-gray-50/50 hover:bg-white rounded-2xl cursor-pointer transition-all duration-300 border border-transparent hover:border-orange-200 hover:shadow-sm"
+                      >
+                        <div className="flex items-center gap-4">
+                          <div
+                            className={`relative w-6 h-6 rounded-full border-2 transition-all duration-300 ${
+                              selectedModifiers[group.id]?.includes(option.id)
+                                ? "border-orange-500 bg-orange-500"
+                                : "border-gray-300 group-hover:border-orange-300"
+                            }`}
+                          >
+                            {selectedModifiers[group.id]?.includes(
                               option.id,
-                              group.selectionType,
-                            )
-                          }
-                          className="w-5 h-5 accent-[#fa4a0c]"
-                        />
-                        <span>{option.name}</span>
-                      </div>
-                      {option.priceAdjustment > 0 && (
-                        <span className="text-gray-500">
-                          +${option.priceAdjustment.toFixed(2)}
-                        </span>
-                      )}
-                    </label>
-                  ))}
+                            ) && (
+                              <div className="absolute inset-0 flex items-center justify-center">
+                                <div className="w-2 h-2 bg-white rounded-full"></div>
+                              </div>
+                            )}
+                          </div>
+                          <span className="font-medium text-gray-900">
+                            {option.name}
+                          </span>
+                        </div>
+                        {option.priceAdjustment > 0 && (
+                          <span className="text-orange-600 font-bold">
+                            +${option.priceAdjustment.toFixed(2)}
+                          </span>
+                        )}
+                      </label>
+                    ))}
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         )}
 
-        {/* Special instructions */}
-        <div className="mb-6">
-          <h2 className="font-semibold mb-2">Special Instructions</h2>
+        {/* Enhanced Special Instructions */}
+        <div className="mb-8 p-6 bg-white/70 backdrop-blur-sm rounded-3xl shadow-sm border border-white/50">
+          <h2 className="font-bold text-lg mb-4 text-gray-900">
+            Special instructions
+          </h2>
           <textarea
             value={specialInstructions}
             onChange={(e) => setSpecialInstructions(e.target.value)}
-            placeholder="Any allergies or special requests?"
-            className="w-full p-4 bg-white rounded-xl border-none resize-none h-24"
+            placeholder="Any allergies, dietary restrictions, or special requests?"
+            className="w-full p-4 bg-gray-50/50 rounded-2xl border-none resize-none h-24 focus:ring-2 focus:ring-orange-500/50 focus:bg-white transition-all duration-300 placeholder:text-gray-400"
           />
         </div>
 
-        {/* Quantity selector */}
-        <div className="flex items-center justify-between mb-6">
-          <span className="font-semibold">Quantity</span>
-          <div className="flex items-center gap-4">
-            <button
-              onClick={() => setQuantity(Math.max(1, quantity - 1))}
-              className="w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-sm hover:bg-gray-50"
-            >
-              -
-            </button>
-            <span className="text-lg font-semibold w-8 text-center">
-              {quantity}
-            </span>
-            <button
-              onClick={() => setQuantity(quantity + 1)}
-              className="w-10 h-10 bg-[#fa4a0c] text-white rounded-full flex items-center justify-center shadow-sm hover:bg-[#e04009]"
-            >
-              +
-            </button>
+        {/* Enhanced Quantity Selector */}
+        <div className="mb-8 p-6 bg-white/70 backdrop-blur-sm rounded-3xl shadow-sm border border-white/50">
+          <div className="flex items-center justify-between">
+            <span className="font-bold text-lg text-gray-900">Quantity</span>
+            <div className="flex items-center gap-4">
+              <button
+                onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                className="w-12 h-12 bg-gray-100 hover:bg-gray-200 rounded-2xl flex items-center justify-center shadow-sm hover:shadow-md transition-all duration-300 font-bold text-gray-700"
+              >
+                −
+              </button>
+              <div className="w-16 h-12 bg-orange-50 rounded-2xl flex items-center justify-center">
+                <span className="text-xl font-bold text-orange-600">
+                  {quantity}
+                </span>
+              </div>
+              <button
+                onClick={() => setQuantity(quantity + 1)}
+                className="w-12 h-12 bg-orange-500 hover:bg-orange-600 rounded-2xl flex items-center justify-center shadow-sm hover:shadow-md transition-all duration-300 font-bold text-white"
+              >
+                +
+              </button>
+            </div>
           </div>
         </div>
 
-        {/* Reviews */}
+        {/* Enhanced Reviews Section */}
         {reviews.length > 0 && (
-          <div className="mb-6">
-            <h2 className="font-semibold mb-4">Reviews ({reviews.length})</h2>
-            <div className="space-y-3">
+          <div className="mb-8">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="font-bold text-xl text-gray-900">
+                Customer reviews
+              </h2>
+              <span className="px-3 py-1 bg-orange-50 text-orange-700 rounded-full text-sm font-medium">
+                {reviews.length} reviews
+              </span>
+            </div>
+
+            <div className="space-y-4">
               {reviews.map((review) => (
-                <div key={review.id} className="p-4 bg-white rounded-xl">
-                  <div className="flex justify-between items-start mb-2">
-                    <span className="font-medium">{review.customerName}</span>
+                <div
+                  key={review.id}
+                  className="p-6 bg-white/70 backdrop-blur-sm rounded-3xl shadow-sm border border-white/50"
+                >
+                  <div className="flex justify-between items-start mb-3">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 bg-gradient-to-br from-orange-400 to-orange-600 rounded-full flex items-center justify-center text-white font-bold">
+                        {review.customerName.charAt(0)}
+                      </div>
+                      <span className="font-bold text-gray-900">
+                        {review.customerName}
+                      </span>
+                    </div>
                     <div className="flex gap-1">
                       {[...Array(5)].map((_, i) => (
-                        <span
+                        <svg
                           key={i}
-                          className={
+                          className={`w-5 h-5 ${
                             i < review.rating
-                              ? "text-yellow-400"
+                              ? "text-yellow-400 fill-current"
                               : "text-gray-300"
-                          }
+                          }`}
+                          viewBox="0 0 24 24"
                         >
-                          ★
-                        </span>
+                          <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                        </svg>
                       ))}
                     </div>
                   </div>
                   {review.comment && (
-                    <p className="text-gray-600 text-sm">{review.comment}</p>
+                    <p className="text-gray-700 leading-relaxed">
+                      {review.comment}
+                    </p>
                   )}
                 </div>
               ))}
@@ -465,38 +611,42 @@ function ItemDetailContent({ itemId }: { itemId: string }) {
           </div>
         )}
 
-        {/* Related items */}
+        {/* Enhanced Related Items */}
         {relatedItems.length > 0 && (
-          <div className="mb-6">
-            <h2 className="font-semibold mb-4">You might also like</h2>
-            <div className="flex gap-4 overflow-x-auto hide-scrollbar pb-2">
+          <div className="mb-8">
+            <h2 className="font-bold text-xl mb-6 text-gray-900">
+              You might also like
+            </h2>
+            <div className="flex gap-4 overflow-x-auto hide-scrollbar pb-4">
               {relatedItems.map((relatedItem) => (
                 <Link
                   key={relatedItem.id}
                   href={`/menu/${relatedItem.id}?token=${currentToken}`}
-                  className="flex-shrink-0 w-36 bg-white rounded-2xl shadow-sm p-3 text-center"
+                  className="flex-shrink-0 w-40 group"
                 >
-                  <div className="w-20 h-20 mx-auto rounded-full overflow-hidden bg-gray-100 mb-2">
-                    {relatedItem.primaryPhotoUrl ? (
-                      <Image
-                        src={relatedItem.primaryPhotoUrl}
-                        alt={relatedItem.name}
-                        width={80}
-                        height={80}
-                        className="object-cover w-full h-full"
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center text-2xl">
-                        🍽️
-                      </div>
-                    )}
+                  <div className="bg-white/70 backdrop-blur-sm rounded-3xl shadow-sm border border-white/50 p-4 text-center hover:shadow-xl hover:scale-105 transition-all duration-300">
+                    <div className="w-24 h-24 mx-auto rounded-2xl overflow-hidden bg-gradient-to-br from-gray-100 to-gray-200 mb-3 group-hover:shadow-lg transition-shadow">
+                      {relatedItem.primaryPhotoUrl ? (
+                        <Image
+                          src={relatedItem.primaryPhotoUrl}
+                          alt={relatedItem.name}
+                          width={96}
+                          height={96}
+                          className="object-cover w-full h-full group-hover:scale-110 transition-transform duration-300"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-3xl">
+                          🍽️
+                        </div>
+                      )}
+                    </div>
+                    <p className="text-sm font-bold text-gray-900 line-clamp-2 mb-2 leading-tight">
+                      {relatedItem.name}
+                    </p>
+                    <p className="text-orange-600 font-bold text-lg">
+                      ${relatedItem.price.toFixed(2)}
+                    </p>
                   </div>
-                  <p className="text-sm font-medium line-clamp-1">
-                    {relatedItem.name}
-                  </p>
-                  <p className="text-[#fa4a0c] text-sm font-bold">
-                    ${relatedItem.price.toFixed(2)}
-                  </p>
                 </Link>
               ))}
             </div>
@@ -504,43 +654,71 @@ function ItemDetailContent({ itemId }: { itemId: string }) {
         )}
       </div>
 
-      {/* Add to cart button */}
-      <div className="fixed bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-[#f2f2f2] via-[#f2f2f2] to-transparent pt-12">
+      {/* Enhanced Bottom CTA with Premium Design */}
+      <div className="fixed bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-white via-white/95 to-transparent backdrop-blur-xl border-t border-white/50">
         <div className="max-w-md mx-auto">
-          <button
-            onClick={handleAddToCart}
-            disabled={!item.canOrder || addedToCart}
-            className={`w-full h-14 rounded-full font-semibold btn-press transition-all ${
-              addedToCart
-                ? "bg-green-500 text-white"
-                : item.canOrder
-                  ? "bg-[#fa4a0c] text-white hover:bg-[#e04009]"
-                  : "bg-gray-300 text-gray-500 cursor-not-allowed"
-            }`}
-          >
-            {addedToCart ? (
-              <span className="flex items-center justify-center gap-2">
-                <svg
-                  className="w-5 h-5"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M5 13l4 4L19 7"
-                  />
-                </svg>
-                Added to Cart!
-              </span>
-            ) : item.canOrder ? (
-              `Add to Cart - $${calculateTotalPrice().toFixed(2)}`
-            ) : (
-              "Currently Unavailable"
-            )}
-          </button>
+          <div className="flex gap-4">
+            {/* Quantity Preview */}
+            <div className="flex-1 bg-white/70 backdrop-blur-sm rounded-2xl p-4 shadow-sm border border-white/50">
+              <div className="text-center">
+                <div className="text-sm text-gray-600 mb-1">Total</div>
+                <div className="text-2xl font-bold text-orange-600">
+                  ${calculateTotalPrice().toFixed(2)}
+                </div>
+              </div>
+            </div>
+
+            {/* Add to Cart Button */}
+            <button
+              onClick={handleAddToCart}
+              disabled={!item.canOrder || addedToCart}
+              className={`flex-1 h-16 rounded-2xl font-bold text-lg shadow-lg transition-all duration-300 ${
+                addedToCart
+                  ? "bg-green-500 text-white shadow-green-200"
+                  : item.canOrder
+                    ? "bg-gradient-to-r from-orange-500 to-orange-600 text-white hover:from-orange-600 hover:to-orange-700 shadow-orange-200 hover:shadow-xl hover:scale-105"
+                    : "bg-gray-300 text-gray-500 cursor-not-allowed"
+              }`}
+            >
+              {addedToCart ? (
+                <span className="flex items-center justify-center gap-2">
+                  <svg
+                    className="w-6 h-6"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M5 13l4 4L19 7"
+                    />
+                  </svg>
+                  Added!
+                </span>
+              ) : item.canOrder ? (
+                <span className="flex items-center justify-center gap-2">
+                  <svg
+                    className="w-6 h-6"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"
+                    />
+                  </svg>
+                  Add to Cart
+                </span>
+              ) : (
+                "Unavailable"
+              )}
+            </button>
+          </div>
         </div>
       </div>
     </div>
