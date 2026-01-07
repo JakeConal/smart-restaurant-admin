@@ -1,13 +1,13 @@
-'use client';
+"use client";
 
-import { useState, useEffect, Suspense, use } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
-import Image from 'next/image';
-import Link from 'next/link';
-import { useApp } from '@/lib/context';
-import { useCart } from '@/lib/cart-context';
-import { menuApi } from '@/lib/api';
-import { MenuItem, MenuResponse, CartItemModifier, Review } from '@/lib/types';
+import { useState, useEffect, Suspense, use } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import Image from "next/image";
+import Link from "next/link";
+import { useApp } from "@/lib/context";
+import { useCart } from "@/lib/cart-context";
+import { menuApi } from "@/lib/api";
+import { MenuItem, MenuResponse, CartItemModifier, Review } from "@/lib/types";
 
 function ItemDetailContent({ itemId }: { itemId: string }) {
   const router = useRouter();
@@ -19,13 +19,15 @@ function ItemDetailContent({ itemId }: { itemId: string }) {
   const [relatedItems, setRelatedItems] = useState<MenuItem[]>([]);
   const [reviews, setReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   const [quantity, setQuantity] = useState(1);
-  const [selectedModifiers, setSelectedModifiers] = useState<Record<string, string[]>>({});
-  const [specialInstructions, setSpecialInstructions] = useState('');
+  const [selectedModifiers, setSelectedModifiers] = useState<
+    Record<string, string[]>
+  >({});
+  const [specialInstructions, setSpecialInstructions] = useState("");
   const [addedToCart, setAddedToCart] = useState(false);
 
-  const currentToken = searchParams.get('token') || token;
+  const currentToken = searchParams.get("token") || token;
 
   // Redirect if not authenticated
   useEffect(() => {
@@ -41,31 +43,33 @@ function ItemDetailContent({ itemId }: { itemId: string }) {
 
       try {
         setLoading(true);
-        const response = await menuApi.getMenu(currentToken) as MenuResponse;
-        
+        const response = (await menuApi.getMenu(currentToken)) as MenuResponse;
+
         if (response.success) {
-          const foundItem = response.menu.items.find(i => i.id === itemId);
+          const foundItem = response.menu.items.find((i) => i.id === itemId);
           if (foundItem) {
             setItem(foundItem);
-            
+
             // Get related items from same category
             const related = response.menu.items
-              .filter(i => i.id !== itemId && i.categoryId === foundItem.categoryId)
+              .filter(
+                (i) => i.id !== itemId && i.categoryId === foundItem.categoryId,
+              )
               .slice(0, 4);
             setRelatedItems(related);
 
             // Initialize modifiers
             const initialModifiers: Record<string, string[]> = {};
-            foundItem.modifierGroups.forEach(group => {
+            foundItem.modifierGroups.forEach((group) => {
               initialModifiers[group.id] = [];
             });
             setSelectedModifiers(initialModifiers);
           } else {
-            setError('Item not found');
+            setError("Item not found");
           }
         }
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to load item');
+        setError(err instanceof Error ? err.message : "Failed to load item");
       } finally {
         setLoading(false);
       }
@@ -83,43 +87,50 @@ function ItemDetailContent({ itemId }: { itemId: string }) {
         // Placeholder reviews
         setReviews([
           {
-            id: '1',
-            customerId: '1',
-            customerName: 'John D.',
+            id: "1",
+            customerId: "1",
+            customerName: "John D.",
             menuItemId: itemId,
-            orderId: '1',
+            orderId: "1",
             rating: 5,
-            comment: 'Absolutely delicious! Will order again.',
+            comment: "Absolutely delicious! Will order again.",
             createdAt: new Date().toISOString(),
           },
           {
-            id: '2',
-            customerId: '2',
-            customerName: 'Sarah M.',
+            id: "2",
+            customerId: "2",
+            customerName: "Sarah M.",
             menuItemId: itemId,
-            orderId: '2',
+            orderId: "2",
             rating: 4,
-            comment: 'Great taste, portion could be bigger.',
+            comment: "Great taste, portion could be bigger.",
             createdAt: new Date().toISOString(),
           },
         ]);
       } catch (err) {
-        console.error('Failed to load reviews:', err);
+        console.error("Failed to load reviews:", err);
       }
     };
 
     fetchReviews();
   }, [itemId]);
 
-  const handleModifierChange = (groupId: string, optionId: string, selectionType: 'single' | 'multiple') => {
-    setSelectedModifiers(prev => {
+  const handleModifierChange = (
+    groupId: string,
+    optionId: string,
+    selectionType: "single" | "multiple",
+  ) => {
+    setSelectedModifiers((prev) => {
       const current = prev[groupId] || [];
-      
-      if (selectionType === 'single') {
+
+      if (selectionType === "single") {
         return { ...prev, [groupId]: [optionId] };
       } else {
         if (current.includes(optionId)) {
-          return { ...prev, [groupId]: current.filter(id => id !== optionId) };
+          return {
+            ...prev,
+            [groupId]: current.filter((id) => id !== optionId),
+          };
         } else {
           return { ...prev, [groupId]: [...current, optionId] };
         }
@@ -129,21 +140,21 @@ function ItemDetailContent({ itemId }: { itemId: string }) {
 
   const calculateTotalPrice = () => {
     if (!item) return 0;
-    
+
     let total = item.price;
-    
+
     Object.entries(selectedModifiers).forEach(([groupId, optionIds]) => {
-      const group = item.modifierGroups.find(g => g.id === groupId);
+      const group = item.modifierGroups.find((g) => g.id === groupId);
       if (group) {
-        optionIds.forEach(optionId => {
-          const option = group.options.find(o => o.id === optionId);
+        optionIds.forEach((optionId) => {
+          const option = group.options.find((o) => o.id === optionId);
           if (option) {
             total += option.priceAdjustment;
           }
         });
       }
     });
-    
+
     return total * quantity;
   };
 
@@ -152,9 +163,9 @@ function ItemDetailContent({ itemId }: { itemId: string }) {
 
     // Check required modifiers
     const missingRequired = item.modifierGroups
-      .filter(g => g.isRequired)
-      .find(g => !selectedModifiers[g.id]?.length);
-    
+      .filter((g) => g.isRequired)
+      .find((g) => !selectedModifiers[g.id]?.length);
+
     if (missingRequired) {
       alert(`Please select an option for "${missingRequired.name}"`);
       return;
@@ -163,10 +174,10 @@ function ItemDetailContent({ itemId }: { itemId: string }) {
     // Build modifiers array
     const modifiers: CartItemModifier[] = [];
     Object.entries(selectedModifiers).forEach(([groupId, optionIds]) => {
-      const group = item.modifierGroups.find(g => g.id === groupId);
+      const group = item.modifierGroups.find((g) => g.id === groupId);
       if (group) {
-        optionIds.forEach(optionId => {
-          const option = group.options.find(o => o.id === optionId);
+        optionIds.forEach((optionId) => {
+          const option = group.options.find((o) => o.id === optionId);
           if (option) {
             modifiers.push({
               groupId: group.id,
@@ -187,14 +198,18 @@ function ItemDetailContent({ itemId }: { itemId: string }) {
 
   const getStatusInfo = () => {
     if (!item) return null;
-    
+
     switch (item.status) {
-      case 'available':
-        return { text: 'Available', class: 'status-available', canOrder: true };
-      case 'unavailable':
-        return { text: 'Unavailable', class: 'status-unavailable', canOrder: false };
-      case 'sold_out':
-        return { text: 'Sold Out', class: 'status-sold-out', canOrder: false };
+      case "available":
+        return { text: "Available", class: "status-available", canOrder: true };
+      case "unavailable":
+        return {
+          text: "Unavailable",
+          class: "status-unavailable",
+          canOrder: false,
+        };
+      case "sold_out":
+        return { text: "Sold Out", class: "status-sold-out", canOrder: false };
       default:
         return null;
     }
@@ -236,16 +251,36 @@ function ItemDetailContent({ itemId }: { itemId: string }) {
           onClick={() => router.back()}
           className="w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-md"
         >
-          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+          <svg
+            className="w-6 h-6"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M15 19l-7-7 7-7"
+            />
           </svg>
         </button>
         <Link
           href={`/cart?token=${currentToken}`}
           className="w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-md"
         >
-          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+          <svg
+            className="w-6 h-6"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
+            />
           </svg>
         </Link>
       </div>
@@ -253,15 +288,17 @@ function ItemDetailContent({ itemId }: { itemId: string }) {
       {/* Image */}
       <div className="relative h-80 bg-gradient-to-b from-orange-50 to-[#f2f2f2]">
         <div className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/3 w-64 h-64 rounded-full overflow-hidden bg-white shadow-2xl">
-          {item.primaryPhotoId ? (
+          {item.primaryPhotoUrl ? (
             <Image
-              src={menuApi.getItemPhoto(item.primaryPhotoId)}
+              src={item.primaryPhotoUrl}
               alt={item.name}
               fill
               className="object-cover"
             />
           ) : (
-            <div className="w-full h-full flex items-center justify-center text-8xl">🍽️</div>
+            <div className="w-full h-full flex items-center justify-center text-8xl">
+              🍽️
+            </div>
           )}
         </div>
       </div>
@@ -271,7 +308,9 @@ function ItemDetailContent({ itemId }: { itemId: string }) {
         {/* Status and chef recommended badges */}
         <div className="flex items-center gap-2 mb-2">
           {statusInfo && (
-            <span className={`px-3 py-1 text-sm rounded-full ${statusInfo.class}`}>
+            <span
+              className={`px-3 py-1 text-sm rounded-full ${statusInfo.class}`}
+            >
               {statusInfo.text}
             </span>
           )}
@@ -283,7 +322,9 @@ function ItemDetailContent({ itemId }: { itemId: string }) {
         </div>
 
         <h1 className="text-2xl font-bold mb-2">{item.name}</h1>
-        <p className="text-[#fa4a0c] text-xl font-bold mb-4">${item.price.toFixed(2)}</p>
+        <p className="text-[#fa4a0c] text-xl font-bold mb-4">
+          ${item.price.toFixed(2)}
+        </p>
 
         {item.prepTimeMinutes > 0 && (
           <p className="text-gray-500 mb-4">
@@ -318,16 +359,30 @@ function ItemDetailContent({ itemId }: { itemId: string }) {
                     >
                       <div className="flex items-center gap-3">
                         <input
-                          type={group.selectionType === 'single' ? 'radio' : 'checkbox'}
+                          type={
+                            group.selectionType === "single"
+                              ? "radio"
+                              : "checkbox"
+                          }
                           name={group.id}
-                          checked={selectedModifiers[group.id]?.includes(option.id)}
-                          onChange={() => handleModifierChange(group.id, option.id, group.selectionType)}
+                          checked={selectedModifiers[group.id]?.includes(
+                            option.id,
+                          )}
+                          onChange={() =>
+                            handleModifierChange(
+                              group.id,
+                              option.id,
+                              group.selectionType,
+                            )
+                          }
                           className="w-5 h-5 accent-[#fa4a0c]"
                         />
                         <span>{option.name}</span>
                       </div>
                       {option.priceAdjustment > 0 && (
-                        <span className="text-gray-500">+${option.priceAdjustment.toFixed(2)}</span>
+                        <span className="text-gray-500">
+                          +${option.priceAdjustment.toFixed(2)}
+                        </span>
                       )}
                     </label>
                   ))}
@@ -358,7 +413,9 @@ function ItemDetailContent({ itemId }: { itemId: string }) {
             >
               -
             </button>
-            <span className="text-lg font-semibold w-8 text-center">{quantity}</span>
+            <span className="text-lg font-semibold w-8 text-center">
+              {quantity}
+            </span>
             <button
               onClick={() => setQuantity(quantity + 1)}
               className="w-10 h-10 bg-[#fa4a0c] text-white rounded-full flex items-center justify-center shadow-sm hover:bg-[#e04009]"
@@ -379,7 +436,14 @@ function ItemDetailContent({ itemId }: { itemId: string }) {
                     <span className="font-medium">{review.customerName}</span>
                     <div className="flex gap-1">
                       {[...Array(5)].map((_, i) => (
-                        <span key={i} className={i < review.rating ? 'text-yellow-400' : 'text-gray-300'}>
+                        <span
+                          key={i}
+                          className={
+                            i < review.rating
+                              ? "text-yellow-400"
+                              : "text-gray-300"
+                          }
+                        >
                           ★
                         </span>
                       ))}
@@ -406,20 +470,26 @@ function ItemDetailContent({ itemId }: { itemId: string }) {
                   className="flex-shrink-0 w-36 bg-white rounded-2xl shadow-sm p-3 text-center"
                 >
                   <div className="w-20 h-20 mx-auto rounded-full overflow-hidden bg-gray-100 mb-2">
-                    {relatedItem.primaryPhotoId ? (
+                    {relatedItem.primaryPhotoUrl ? (
                       <Image
-                        src={menuApi.getItemPhoto(relatedItem.primaryPhotoId)}
+                        src={relatedItem.primaryPhotoUrl}
                         alt={relatedItem.name}
                         width={80}
                         height={80}
                         className="object-cover w-full h-full"
                       />
                     ) : (
-                      <div className="w-full h-full flex items-center justify-center text-2xl">🍽️</div>
+                      <div className="w-full h-full flex items-center justify-center text-2xl">
+                        🍽️
+                      </div>
                     )}
                   </div>
-                  <p className="text-sm font-medium line-clamp-1">{relatedItem.name}</p>
-                  <p className="text-[#fa4a0c] text-sm font-bold">${relatedItem.price.toFixed(2)}</p>
+                  <p className="text-sm font-medium line-clamp-1">
+                    {relatedItem.name}
+                  </p>
+                  <p className="text-[#fa4a0c] text-sm font-bold">
+                    ${relatedItem.price.toFixed(2)}
+                  </p>
                 </Link>
               ))}
             </div>
@@ -435,23 +505,33 @@ function ItemDetailContent({ itemId }: { itemId: string }) {
             disabled={!item.canOrder || addedToCart}
             className={`w-full h-14 rounded-full font-semibold btn-press transition-all ${
               addedToCart
-                ? 'bg-green-500 text-white'
+                ? "bg-green-500 text-white"
                 : item.canOrder
-                  ? 'bg-[#fa4a0c] text-white hover:bg-[#e04009]'
-                  : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                  ? "bg-[#fa4a0c] text-white hover:bg-[#e04009]"
+                  : "bg-gray-300 text-gray-500 cursor-not-allowed"
             }`}
           >
             {addedToCart ? (
               <span className="flex items-center justify-center gap-2">
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                <svg
+                  className="w-5 h-5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M5 13l4 4L19 7"
+                  />
                 </svg>
                 Added to Cart!
               </span>
             ) : item.canOrder ? (
               `Add to Cart - $${calculateTotalPrice().toFixed(2)}`
             ) : (
-              'Currently Unavailable'
+              "Currently Unavailable"
             )}
           </button>
         </div>
@@ -460,15 +540,21 @@ function ItemDetailContent({ itemId }: { itemId: string }) {
   );
 }
 
-export default function ItemDetailPage({ params }: { params: Promise<{ id: string }> }) {
+export default function ItemDetailPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
   const { id } = use(params);
-  
+
   return (
-    <Suspense fallback={
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="w-12 h-12 border-4 border-[#fa4a0c] border-t-transparent rounded-full spinner"></div>
-      </div>
-    }>
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center">
+          <div className="w-12 h-12 border-4 border-[#fa4a0c] border-t-transparent rounded-full spinner"></div>
+        </div>
+      }
+    >
       <ItemDetailContent itemId={id} />
     </Suspense>
   );

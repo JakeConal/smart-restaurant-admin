@@ -43,7 +43,7 @@ export interface MenuItem {
   status: "available" | "unavailable" | "sold_out";
   isChefRecommended: boolean;
   isDeleted: boolean;
-  primaryPhotoId?: string;
+  primaryPhotoUrl?: string;
   photos?: MenuItemPhoto[];
   modifierGroups?: ModifierGroup[];
   createdAt: string;
@@ -175,7 +175,7 @@ export interface GuestMenuItem {
   price: number;
   prepTimeMinutes?: number;
   isChefRecommended: boolean;
-  primaryPhotoId?: string;
+  primaryPhotoUrl?: string;
   modifierGroups?: ModifierGroup[];
 }
 

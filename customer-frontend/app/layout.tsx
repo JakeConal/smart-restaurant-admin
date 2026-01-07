@@ -39,11 +39,7 @@ export default function RootLayout({
     <html lang="en" className={inter.variable}>
       <body className="font-sans antialiased">
         <AppProvider>
-          <CartProvider>
-            <div className="min-h-screen max-w-md mx-auto bg-neutral-50 relative">
-              {children}
-            </div>
-          </CartProvider>
+          <CartProvider>{children}</CartProvider>
         </AppProvider>
       </body>
     </html>
