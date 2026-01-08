@@ -373,122 +373,17 @@ function CartContent() {
 
   // Cart with items view
   return (
-    <div className="min-h-screen pb-48 safe-bottom">
-      {/* Header */}
-      <div className="pt-8 px-6">
-        <div className="flex items-center gap-4 mb-4">
-          <button onClick={() => router.back()}>
-            <svg
-              className="w-6 h-6"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M15 19l-7-7 7-7"
-              />
-            </svg>
-          </button>
-          <h1 className="text-2xl font-bold flex-1 text-center pr-6">Cart</h1>
-        </div>
-
-        {tableNumber && (
-          <div className="text-center text-gray-500 mb-4">
-            Table {tableNumber}
-          </div>
-        )}
-
-        <div className="flex items-center justify-center gap-2 text-sm text-gray-500">
-          <svg
-            className="w-5 h-5"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"
-            />
-          </svg>
-          <span>swipe on an item to delete</span>
-        </div>
-      </div>
-
-      {/* Error message */}
-      {error && (
-        <div className="mx-6 mt-4 p-3 bg-red-50 border border-red-200 rounded-xl text-red-600 text-sm">
-          {error}
-        </div>
-      )}
-
-      {/* Cart items */}
-      <div className="px-6 mt-6 space-y-4">
-        {items.map((item) => (
-          <div
-            key={item.id}
-            className="bg-white rounded-2xl p-4 shadow-sm flex gap-4 relative overflow-hidden group"
-          >
-            {/* Item image */}
-            <div className="w-20 h-20 rounded-xl overflow-hidden bg-gray-100 flex-shrink-0">
-              {item.menuItem.primaryPhotoUrl ? (
-                <Image
-                  src={item.menuItem.primaryPhotoUrl}
-                  alt={item.menuItem.name}
-                  width={80}
-                  height={80}
-                  className="object-cover w-full h-full"
-                />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center text-3xl">
-                  🍽️
-                </div>
-              )}
-            </div>
-
-            {/* Item details */}
-            <div className="flex-1 min-w-0">
-              <h3 className="font-semibold line-clamp-1">
-                {item.menuItem.name}
-              </h3>
-              <p className="text-[#fa4a0c] font-semibold mt-1">
-                ${item.totalPrice.toFixed(2)}
-              </p>
-              {item.modifiers.length > 0 && (
-                <p className="text-gray-400 text-xs mt-1 line-clamp-1">
-                  {item.modifiers.map((m) => m.optionName).join(", ")}
-                </p>
-              )}
-
-              {/* Quantity controls */}
-              <div className="flex items-center gap-3 mt-2">
-                <button
-                  onClick={() => updateItemQuantity(item.id, item.quantity - 1)}
-                  className="w-7 h-7 bg-[#fa4a0c] text-white rounded-full flex items-center justify-center text-sm"
-                >
-                  -
-                </button>
-                <span className="font-medium">{item.quantity}</span>
-                <button
-                  onClick={() => updateItemQuantity(item.id, item.quantity + 1)}
-                  className="w-7 h-7 bg-[#fa4a0c] text-white rounded-full flex items-center justify-center text-sm"
-                >
-                  +
-                </button>
-              </div>
-            </div>
-
-            {/* Delete button (visible on hover/swipe) */}
+    <div className="min-h-screen bg-gradient-to-br from-orange-25 via-white to-orange-50 pb-24 safe-bottom">
+      {/* Sticky Header */}
+      <div className="sticky top-0 z-30 backdrop-blur-xl bg-white/90 border-b border-orange-100/50 shadow-sm">
+        <div className="px-6 py-5">
+          <div className="flex items-center gap-4 mb-4">
             <button
-              onClick={() => removeItem(item.id)}
-              className="absolute right-0 top-0 bottom-0 w-16 bg-red-500 text-white flex items-center justify-center translate-x-full group-hover:translate-x-0 transition-transform"
+              onClick={() => router.back()}
+              className="w-10 h-10 rounded-2xl bg-white/70 backdrop-blur-sm border border-white/50 flex items-center justify-center hover:bg-white transition-all"
             >
               <svg
-                className="w-6 h-6"
+                className="w-5 h-5"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -497,57 +392,210 @@ function CartContent() {
                   strokeLinecap="round"
                   strokeLinejoin="round"
                   strokeWidth={2}
-                  d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                  d="M15 19l-7-7 7-7"
                 />
               </svg>
             </button>
+            <h1 className="text-2xl font-bold flex-1 text-center pr-10">
+              Your Order
+            </h1>
+          </div>
+
+          {tableNumber && (
+            <p className="text-center text-gray-600 font-medium text-sm">
+              🍽️ Table {tableNumber}
+            </p>
+          )}
+        </div>
+      </div>
+
+      {/* Error message */}
+      {error && (
+        <div className="mx-6 mt-4 p-4 bg-red-50 border border-red-200 rounded-2xl text-red-700 text-sm font-medium">
+          ⚠️ {error}
+        </div>
+      )}
+
+      {/* Cart Items */}
+      <div className="px-6 mt-6 space-y-3 mb-6">
+        {items.map((item, index) => (
+          <div
+            key={item.id}
+            className="bg-white/70 backdrop-blur-sm border border-white/50 rounded-2xl p-4 shadow-sm hover:shadow-md transition-all group"
+          >
+            <div className="flex gap-4">
+              {/* Item Image */}
+              <div className="w-24 h-24 rounded-xl overflow-hidden bg-gradient-to-br from-gray-100 to-gray-200 flex-shrink-0 relative">
+                {item.menuItem.primaryPhotoUrl ? (
+                  <Image
+                    src={item.menuItem.primaryPhotoUrl}
+                    alt={item.menuItem.name}
+                    width={96}
+                    height={96}
+                    className="object-cover w-full h-full group-hover:scale-110 transition-transform duration-300"
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-4xl">
+                    🍽️
+                  </div>
+                )}
+              </div>
+
+              {/* Item Details */}
+              <div className="flex-1 min-w-0 flex flex-col justify-between">
+                <div>
+                  <h3 className="font-bold text-gray-900 text-sm line-clamp-2">
+                    {item.menuItem.name}
+                  </h3>
+
+                  {/* Modifiers */}
+                  {item.modifiers.length > 0 && (
+                    <div className="mt-2 space-y-1">
+                      {item.modifiers.map((modifier) => (
+                        <div
+                          key={`${item.id}-${modifier.optionId}`}
+                          className="flex items-center gap-2 text-xs text-gray-600"
+                        >
+                          <span className="w-1.5 h-1.5 bg-orange-400 rounded-full"></span>
+                          <span className="line-clamp-1">
+                            {modifier.optionName}
+                            {modifier.priceAdjustment > 0 && (
+                              <span className="text-orange-600 font-medium ml-1">
+                                +${modifier.priceAdjustment.toFixed(2)}
+                              </span>
+                            )}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Special Instructions */}
+                  {item.specialInstructions && (
+                    <div className="mt-3 p-2.5 bg-blue-50/80 rounded-lg border border-blue-200/50">
+                      <p className="text-xs font-medium text-blue-700 mb-1">
+                        📌 Special Note:
+                      </p>
+                      <p className="text-xs text-blue-600 line-clamp-2">
+                        {item.specialInstructions}
+                      </p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Price and Quantity Controls */}
+                <div className="flex items-center justify-between mt-3">
+                  <div className="text-right">
+                    <p className="text-xs text-gray-500">
+                      ${item.menuItem.price.toFixed(2)} × {item.quantity}
+                    </p>
+                    <p className="text-lg font-bold text-orange-600">
+                      ${item.totalPrice.toFixed(2)}
+                    </p>
+                  </div>
+
+                  {/* Quantity Controls */}
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() =>
+                        updateItemQuantity(
+                          item.id,
+                          Math.max(1, item.quantity - 1),
+                        )
+                      }
+                      className="w-8 h-8 rounded-lg bg-white/70 backdrop-blur-sm border border-white/50 flex items-center justify-center hover:bg-white hover:scale-110 transition-all text-orange-600 font-bold"
+                    >
+                      −
+                    </button>
+                    <span className="w-8 text-center font-bold text-gray-900">
+                      {item.quantity}
+                    </span>
+                    <button
+                      onClick={() =>
+                        updateItemQuantity(item.id, item.quantity + 1)
+                      }
+                      className="w-8 h-8 rounded-lg bg-gradient-to-r from-orange-400 to-orange-500 text-white flex items-center justify-center hover:shadow-lg hover:scale-110 transition-all font-bold"
+                    >
+                      +
+                    </button>
+                    <button
+                      onClick={() => removeItem(item.id)}
+                      className="w-8 h-8 rounded-lg bg-red-50 hover:bg-red-100 flex items-center justify-center text-red-600 hover:scale-110 transition-all ml-2"
+                      title="Remove item"
+                    >
+                      <svg
+                        className="w-4 h-4"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M6 18L18 6M6 6l12 12"
+                        />
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         ))}
       </div>
 
-      {/* Special requests */}
-      <div className="px-6 mt-6">
-        <h2 className="font-semibold mb-2">Special Requests</h2>
-        <textarea
-          value={specialRequests}
-          onChange={(e) => setSpecialRequests(e.target.value)}
-          placeholder="Any allergies, dietary restrictions, or special requests for the kitchen?"
-          className="w-full p-4 bg-white rounded-xl border-none resize-none h-24 shadow-sm"
-        />
-      </div>
+      {/* Order Summary - Below Items */}
+      <div className="px-6 mt-8 mb-8">
+        <div className="bg-white/70 backdrop-blur-sm border border-white/50 rounded-2xl p-6 shadow-lg">
+          {/* Summary Header */}
+          <h2 className="font-bold text-gray-900 text-lg mb-4 flex items-center gap-2">
+            <span>💳</span> Order Summary
+          </h2>
 
-      {/* Order summary */}
-      <div className="fixed bottom-20 left-0 right-0 p-6 bg-gradient-to-t from-[#f2f2f2] via-[#f2f2f2] to-transparent pt-8">
-        <div className="max-w-md mx-auto">
-          <div className="bg-white rounded-2xl p-4 shadow-lg mb-4">
-            <div className="flex justify-between text-gray-500 mb-2">
-              <span>Subtotal</span>
-              <span>${getTotalPrice().toFixed(2)}</span>
+          {/* Summary Items */}
+          <div className="space-y-3 mb-4">
+            <div className="flex justify-between items-center text-sm">
+              <span className="text-gray-600">
+                Subtotal ({items.length} items)
+              </span>
+              <span className="font-semibold text-gray-900">
+                ${getTotalPrice().toFixed(2)}
+              </span>
             </div>
-            <div className="flex justify-between text-gray-500 mb-2">
-              <span>Tax (10%)</span>
-              <span>${(getTotalPrice() * 0.1).toFixed(2)}</span>
-            </div>
-            <div className="flex justify-between font-bold text-lg pt-2 border-t">
-              <span>Total</span>
-              <span className="text-[#fa4a0c]">
-                ${(getTotalPrice() * 1.1).toFixed(2)}
+            <div className="flex justify-between items-center text-sm">
+              <span className="text-gray-600">Tax (10%)</span>
+              <span className="font-semibold text-gray-900">
+                ${(getTotalPrice() * 0.1).toFixed(2)}
               </span>
             </div>
           </div>
 
+          {/* Divider */}
+          <div className="h-px bg-gradient-to-r from-orange-200/0 via-orange-300 to-orange-200/0 mb-4"></div>
+
+          {/* Total */}
+          <div className="flex justify-between items-center mb-6">
+            <span className="font-bold text-gray-900 text-lg">Total</span>
+            <span className="text-3xl font-bold text-orange-600">
+              ${(getTotalPrice() * 1.1).toFixed(2)}
+            </span>
+          </div>
+
           <button
             onClick={handlePlaceOrder}
-            disabled={placingOrder || !tableId}
-            className="w-full h-14 bg-[#fa4a0c] text-white rounded-full font-semibold btn-press hover:bg-[#e04009] transition-colors disabled:opacity-50"
+            disabled={placingOrder || !tableId || items.length === 0}
+            className="w-full h-14 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-2xl font-bold text-lg shadow-lg hover:shadow-xl hover:scale-105 transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center justify-center gap-2"
           >
             {placingOrder ? (
-              <span className="flex items-center justify-center gap-2">
-                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full spinner"></div>
+              <>
+                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                 Placing Order...
-              </span>
+              </>
             ) : (
-              "Complete Order"
+              <>
+                <span>✓</span> Complete Order
+              </>
             )}
           </button>
         </div>

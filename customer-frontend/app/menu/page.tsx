@@ -30,9 +30,59 @@ function MenuContent() {
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const [totalItems, setTotalItems] = useState(0);
+  const [urlInitialized, setUrlInitialized] = useState(false);
 
   const observerRef = useRef<HTMLDivElement>(null);
   const currentToken = searchParams.get("token") || token;
+
+  // Initialize state from URL params on mount
+  useEffect(() => {
+    const q = searchParams.get("q") || "";
+    const categoryId = searchParams.get("categoryId") || null;
+    const sort = searchParams.get("sort") || "name";
+    const chefRecommended = searchParams.get("chef") === "true";
+
+    setSearchQuery(q);
+    setSelectedCategory(categoryId);
+    setSortBy(sort);
+    setShowChefRecommended(chefRecommended);
+    setUrlInitialized(true);
+  }, []);
+
+  // Update URL when filters change
+  const updateUrl = useCallback(
+    (
+      newSearch?: string,
+      newCategory?: string | null,
+      newSort?: string,
+      newChef?: boolean,
+    ) => {
+      const params = new URLSearchParams();
+      params.set("token", currentToken);
+
+      const search = newSearch ?? searchQuery;
+      const category =
+        newCategory !== undefined ? newCategory : selectedCategory;
+      const sort = newSort ?? sortBy;
+      const chef = newChef ?? showChefRecommended;
+
+      if (search) params.set("q", search);
+      if (category) params.set("categoryId", category);
+      if (sort !== "name") params.set("sort", sort);
+      if (chef) params.set("chef", "true");
+
+      const queryString = params.toString();
+      router.push(`/menu?${queryString}`);
+    },
+    [
+      currentToken,
+      searchQuery,
+      selectedCategory,
+      sortBy,
+      showChefRecommended,
+      router,
+    ],
+  );
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -112,12 +162,14 @@ function MenuContent() {
 
   // Initial load and filter changes
   useEffect(() => {
-    if (currentToken && isAuthenticated) {
+    if (currentToken && isAuthenticated && urlInitialized) {
+      setPage(1);
       fetchMenu(1, false);
     }
   }, [
     currentToken,
     isAuthenticated,
+    urlInitialized,
     searchQuery,
     selectedCategory,
     sortBy,
@@ -245,7 +297,16 @@ function MenuContent() {
               type="text"
               placeholder="Search your favorite dishes..."
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={(e) => {
+                const newQuery = e.target.value;
+                setSearchQuery(newQuery);
+                updateUrl(
+                  newQuery,
+                  selectedCategory,
+                  sortBy,
+                  showChefRecommended,
+                );
+              }}
               className="w-full pl-12 pr-5 py-3.5 bg-white/70 backdrop-blur-sm border border-white/50 rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-500/50 focus:bg-white transition-all text-sm placeholder:text-gray-400 shadow-sm hover:shadow-md"
             />
           </div>
@@ -301,6 +362,12 @@ function MenuContent() {
                       onClick={() => {
                         setSortBy("name");
                         setShowSortDropdown(false);
+                        updateUrl(
+                          searchQuery,
+                          selectedCategory,
+                          "name",
+                          showChefRecommended,
+                        );
                       }}
                       className={`w-full text-left px-4 py-2 text-xs font-medium hover:bg-orange-50 transition-colors ${
                         sortBy === "name"
@@ -314,6 +381,12 @@ function MenuContent() {
                       onClick={() => {
                         setSortBy("popularity");
                         setShowSortDropdown(false);
+                        updateUrl(
+                          searchQuery,
+                          selectedCategory,
+                          "popularity",
+                          showChefRecommended,
+                        );
                       }}
                       className={`w-full text-left px-4 py-2 text-xs font-medium hover:bg-orange-50 transition-colors ${
                         sortBy === "popularity"
@@ -327,6 +400,12 @@ function MenuContent() {
                       onClick={() => {
                         setSortBy("asc");
                         setShowSortDropdown(false);
+                        updateUrl(
+                          searchQuery,
+                          selectedCategory,
+                          "asc",
+                          showChefRecommended,
+                        );
                       }}
                       className={`w-full text-left px-4 py-2 text-xs font-medium hover:bg-orange-50 transition-colors ${
                         sortBy === "asc"
@@ -340,6 +419,12 @@ function MenuContent() {
                       onClick={() => {
                         setSortBy("desc");
                         setShowSortDropdown(false);
+                        updateUrl(
+                          searchQuery,
+                          selectedCategory,
+                          "desc",
+                          showChefRecommended,
+                        );
                       }}
                       className={`w-full text-left px-4 py-2 text-xs font-medium hover:bg-orange-50 transition-colors ${
                         sortBy === "desc"
@@ -355,7 +440,11 @@ function MenuContent() {
             </div>
 
             <button
-              onClick={() => setShowChefRecommended(!showChefRecommended)}
+              onClick={() => {
+                const newChefState = !showChefRecommended;
+                setShowChefRecommended(newChefState);
+                updateUrl(searchQuery, selectedCategory, sortBy, newChefState);
+              }}
               className={`px-5 py-2.5 rounded-2xl text-xs font-medium whitespace-nowrap transition-all duration-300 shadow-sm ${
                 showChefRecommended
                   ? "bg-gradient-to-r from-orange-400 to-orange-500 text-white shadow-lg hover:shadow-xl hover:scale-105"
@@ -383,6 +472,7 @@ function MenuContent() {
               onClick={() => {
                 setSelectedCategory(null);
                 setShowChefRecommended(false);
+                updateUrl(searchQuery, null, sortBy, false);
               }}
               className={`px-4 py-3 text-sm font-semibold whitespace-nowrap transition-all duration-300 relative ${
                 !selectedCategory && !showChefRecommended
@@ -401,6 +491,7 @@ function MenuContent() {
                 onClick={() => {
                   setSelectedCategory(category.id);
                   setShowChefRecommended(false);
+                  updateUrl(searchQuery, category.id, sortBy, false);
                 }}
                 className={`px-4 py-3 text-sm font-semibold whitespace-nowrap transition-all duration-300 relative ${
                   selectedCategory === category.id
@@ -668,6 +759,11 @@ function MenuContent() {
                     <h3 className="font-bold text-gray-900 text-sm line-clamp-2 mb-2">
                       {item.name}
                     </h3>
+                    {item.description && (
+                      <p className="text-gray-600 text-xs line-clamp-2 mb-3 leading-relaxed">
+                        {item.description}
+                      </p>
+                    )}
                     <div className="flex justify-between items-center">
                       <span className="text-orange-600 font-bold text-base">
                         ${item.price.toFixed(2)}
