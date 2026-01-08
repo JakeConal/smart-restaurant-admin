@@ -104,7 +104,7 @@ export class ReviewService {
       .createQueryBuilder('review')
       .leftJoinAndSelect('review.customer', 'customer')
       .where('review.menuItemId = :menuItemId', { menuItemId })
-      .where('review.restaurantId = :restaurantId', { restaurantId })
+      .andWhere('review.restaurantId = :restaurantId', { restaurantId })
       .andWhere('review.isDeleted = :isDeleted', { isDeleted: false })
       .orderBy('review.createdAt', 'DESC');
 

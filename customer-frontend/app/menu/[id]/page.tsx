@@ -103,6 +103,13 @@ function ItemDetailContent({ itemId }: { itemId: string }) {
     fetchItemDetails();
   }, [currentToken, itemId]);
 
+  // Reset reviews when itemId changes
+  useEffect(() => {
+    setReviews([]);
+    setAverageRating(0);
+    setTotalReviews(0);
+  }, [itemId]);
+
   // Fetch reviews
   useEffect(() => {
     const fetchReviews = async () => {
@@ -126,6 +133,8 @@ function ItemDetailContent({ itemId }: { itemId: string }) {
         };
         if (reviewsResponse?.reviews) {
           setReviews(reviewsResponse.reviews);
+        } else {
+          setReviews([]);
         }
 
         const ratingResponse = ratingData as {
@@ -135,9 +144,15 @@ function ItemDetailContent({ itemId }: { itemId: string }) {
         if (ratingResponse?.averageRating !== undefined) {
           setAverageRating(ratingResponse.averageRating);
           setTotalReviews(ratingResponse.totalReviews || 0);
+        } else {
+          setAverageRating(0);
+          setTotalReviews(0);
         }
       } catch (err) {
         console.error("Failed to load reviews:", err);
+        setReviews([]);
+        setAverageRating(0);
+        setTotalReviews(0);
       }
     };
 
