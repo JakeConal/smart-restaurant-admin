@@ -6,19 +6,21 @@ import Image from "next/image";
 import Link from "next/link";
 import { useApp } from "@/lib/context";
 import { useCart } from "@/lib/cart-context";
-import { menuApi } from "@/lib/api";
+import { menuApi, reviewApi } from "@/lib/api";
 import { MenuItem, MenuResponse, Review } from "@/lib/types";
 
 function ItemDetailContent({ itemId }: { itemId: string }) {
   // NEW MODERN DESIGN
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { token, isAuthenticated } = useApp();
+  const { token, isAuthenticated, authToken, customer } = useApp();
   const { addItem, getTotalItems } = useCart();
 
   const [item, setItem] = useState<MenuItem | null>(null);
   const [relatedItems, setRelatedItems] = useState<MenuItem[]>([]);
   const [reviews, setReviews] = useState<Review[]>([]);
+  const [averageRating, setAverageRating] = useState(0);
+  const [totalReviews, setTotalReviews] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [quantity, setQuantity] = useState(1);
@@ -27,15 +29,34 @@ function ItemDetailContent({ itemId }: { itemId: string }) {
   >({});
   const [specialInstructions, setSpecialInstructions] = useState("");
   const [addedToCart, setAddedToCart] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  // Review form state
+  const [showReviewForm, setShowReviewForm] = useState(false);
+  const [reviewRating, setReviewRating] = useState(5);
+  const [reviewComment, setReviewComment] = useState("");
+  const [submittingReview, setSubmittingReview] = useState(false);
+  const [reviewError, setReviewError] = useState("");
+  const [reviewSuccess, setReviewSuccess] = useState(false);
+  const [reviewsRefreshKey, setReviewsRefreshKey] = useState(0);
+  const [editingReviewId, setEditingReviewId] = useState<string | null>(null);
+  const [editingRating, setEditingRating] = useState(5);
+  const [editingComment, setEditingComment] = useState("");
+  const [deletingReviewId, setDeletingReviewId] = useState<string | null>(null);
 
   const currentToken = searchParams.get("token") || token;
 
+  // Set mounted flag to prevent hydration mismatch
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   // Redirect if not authenticated
   useEffect(() => {
-    if (!isAuthenticated) {
+    if (mounted && !isAuthenticated) {
       router.replace(`/login?token=${currentToken}`);
     }
-  }, [isAuthenticated, currentToken, router]);
+  }, [isAuthenticated, currentToken, router, mounted]);
 
   // Fetch item details
   useEffect(() => {
@@ -79,42 +100,47 @@ function ItemDetailContent({ itemId }: { itemId: string }) {
     fetchItemDetails();
   }, [currentToken, itemId]);
 
-  // Fetch reviews (placeholder - would need backend implementation)
+  // Fetch reviews
   useEffect(() => {
     const fetchReviews = async () => {
+      if (!currentToken) return;
+
       try {
-        // const reviewsData = await reviewApi.getItemReviews(itemId);
-        // setReviews(reviewsData);
-        // Placeholder reviews
-        setReviews([
-          {
-            id: "1",
-            customerId: "1",
-            customerName: "John D.",
-            menuItemId: itemId,
-            orderId: "1",
-            rating: 5,
-            comment: "Absolutely delicious! Will order again.",
-            createdAt: new Date().toISOString(),
-          },
-          {
-            id: "2",
-            customerId: "2",
-            customerName: "Sarah M.",
-            menuItemId: itemId,
-            orderId: "2",
-            rating: 4,
-            comment: "Great taste, portion could be bigger.",
-            createdAt: new Date().toISOString(),
-          },
+        const response = (await menuApi.getMenu(currentToken)) as MenuResponse;
+        const restaurantId = response.table?.restaurantId || "";
+
+        if (!restaurantId) return;
+
+        const [reviewsData, ratingData] = await Promise.all([
+          reviewApi.getItemReviews(itemId, restaurantId, { limit: 5 }),
+          reviewApi.getAverageRating(itemId, restaurantId),
         ]);
+
+        const reviewsResponse = reviewsData as {
+          reviews?: Review[];
+          pagination?: unknown;
+        };
+        if (reviewsResponse?.reviews) {
+          setReviews(reviewsResponse.reviews);
+        }
+
+        const ratingResponse = ratingData as {
+          averageRating?: number;
+          totalReviews?: number;
+        };
+        if (ratingResponse?.averageRating !== undefined) {
+          setAverageRating(ratingResponse.averageRating);
+          setTotalReviews(ratingResponse.totalReviews || 0);
+        }
       } catch (err) {
         console.error("Failed to load reviews:", err);
       }
     };
 
-    fetchReviews();
-  }, [itemId]);
+    if (currentToken && itemId) {
+      fetchReviews();
+    }
+  }, [currentToken, itemId, reviewsRefreshKey]);
 
   const handleModifierChange = (
     groupId: string,
@@ -203,6 +229,199 @@ function ItemDetailContent({ itemId }: { itemId: string }) {
     setTimeout(() => setAddedToCart(false), 2000);
   };
 
+  const handleSubmitReview = async () => {
+    if (!authToken || reviewRating < 1 || reviewRating > 5) {
+      setReviewError(
+        "Please provide a valid rating. You must be logged in to review.",
+      );
+      return;
+    }
+
+    setSubmittingReview(true);
+    setReviewError("");
+    setReviewSuccess(false);
+
+    try {
+      await reviewApi.createReview(authToken, {
+        menuItemId: itemId,
+        rating: reviewRating,
+        comment: reviewComment || undefined,
+      });
+
+      setReviewSuccess(true);
+      setReviewComment("");
+      setReviewRating(5);
+      setShowReviewForm(false);
+
+      // Trigger reviews refresh
+      setReviewsRefreshKey((prev) => prev + 1);
+
+      // Refresh reviews
+      try {
+        const response = (await menuApi.getMenu(currentToken)) as MenuResponse;
+        const restaurantId = response.table?.restaurantId || "";
+
+        if (restaurantId) {
+          const reviewsData = await reviewApi.getItemReviews(
+            itemId,
+            restaurantId,
+            { limit: 5 },
+          );
+          const reviewsResponse = reviewsData as {
+            reviews?: Review[];
+            pagination?: unknown;
+          };
+          if (reviewsResponse?.reviews) {
+            setReviews(reviewsResponse.reviews);
+          }
+
+          const ratingData = await reviewApi.getAverageRating(
+            itemId,
+            restaurantId,
+          );
+          const ratingResponse = ratingData as {
+            averageRating?: number;
+            totalReviews?: number;
+          };
+          if (ratingResponse?.averageRating !== undefined) {
+            setAverageRating(ratingResponse.averageRating);
+            setTotalReviews(ratingResponse.totalReviews || 0);
+          }
+        }
+      } catch (err) {
+        console.error("Failed to refresh reviews:", err);
+      }
+
+      setTimeout(() => setReviewSuccess(false), 3000);
+    } catch (err) {
+      setReviewError(
+        err instanceof Error ? err.message : "Failed to submit review",
+      );
+    } finally {
+      setSubmittingReview(false);
+    }
+  };
+
+  const handleEditReview = async (reviewId: string) => {
+    if (!authToken || editingRating < 1 || editingRating > 5) {
+      setReviewError("Please provide a valid rating");
+      return;
+    }
+
+    setSubmittingReview(true);
+    setReviewError("");
+
+    try {
+      await reviewApi.updateReview(reviewId, authToken, {
+        rating: editingRating,
+        comment: editingComment || undefined,
+      });
+
+      setEditingReviewId(null);
+      setReviewsRefreshKey((prev) => prev + 1);
+
+      // Refresh reviews
+      try {
+        const response = (await menuApi.getMenu(currentToken)) as MenuResponse;
+        const restaurantId = response.table?.restaurantId || "";
+
+        if (restaurantId) {
+          const reviewsData = await reviewApi.getItemReviews(
+            itemId,
+            restaurantId,
+            { limit: 5 },
+          );
+          const reviewsResponse = reviewsData as {
+            reviews?: Review[];
+            pagination?: unknown;
+          };
+          if (reviewsResponse?.reviews) {
+            setReviews(reviewsResponse.reviews);
+          }
+
+          const ratingData = await reviewApi.getAverageRating(
+            itemId,
+            restaurantId,
+          );
+          const ratingResponse = ratingData as {
+            averageRating?: number;
+            totalReviews?: number;
+          };
+          if (ratingResponse?.averageRating !== undefined) {
+            setAverageRating(ratingResponse.averageRating);
+            setTotalReviews(ratingResponse.totalReviews || 0);
+          }
+        }
+      } catch (err) {
+        console.error("Failed to refresh reviews:", err);
+      }
+    } catch (err) {
+      setReviewError(
+        err instanceof Error ? err.message : "Failed to update review",
+      );
+    } finally {
+      setSubmittingReview(false);
+    }
+  };
+
+  const handleDeleteReview = async (reviewId: string) => {
+    if (!authToken) {
+      setReviewError("Not authenticated");
+      return;
+    }
+
+    setSubmittingReview(true);
+
+    try {
+      await reviewApi.deleteReview(reviewId, authToken);
+
+      setDeletingReviewId(null);
+      setReviewsRefreshKey((prev) => prev + 1);
+
+      // Refresh reviews
+      try {
+        const response = (await menuApi.getMenu(currentToken)) as MenuResponse;
+        const restaurantId = response.table?.restaurantId || "";
+
+        if (restaurantId) {
+          const reviewsData = await reviewApi.getItemReviews(
+            itemId,
+            restaurantId,
+            { limit: 5 },
+          );
+          const reviewsResponse = reviewsData as {
+            reviews?: Review[];
+            pagination?: unknown;
+          };
+          if (reviewsResponse?.reviews) {
+            setReviews(reviewsResponse.reviews);
+          }
+
+          const ratingData = await reviewApi.getAverageRating(
+            itemId,
+            restaurantId,
+          );
+          const ratingResponse = ratingData as {
+            averageRating?: number;
+            totalReviews?: number;
+          };
+          if (ratingResponse?.averageRating !== undefined) {
+            setAverageRating(ratingResponse.averageRating);
+            setTotalReviews(ratingResponse.totalReviews || 0);
+          }
+        }
+      } catch (err) {
+        console.error("Failed to refresh reviews:", err);
+      }
+    } catch (err) {
+      setReviewError(
+        err instanceof Error ? err.message : "Failed to delete review",
+      );
+    } finally {
+      setSubmittingReview(false);
+    }
+  };
+
   const getStatusInfo = () => {
     if (!item) return null;
 
@@ -223,6 +442,15 @@ function ItemDetailContent({ itemId }: { itemId: string }) {
   };
 
   const statusInfo = getStatusInfo();
+
+  // Prevent hydration mismatch by checking mounted
+  if (!mounted) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="w-12 h-12 border-4 border-[#fa4a0c] border-t-transparent rounded-full spinner"></div>
+      </div>
+    );
+  }
 
   if (!isAuthenticated) return null;
 
@@ -483,6 +711,13 @@ function ItemDetailContent({ itemId }: { itemId: string }) {
                       <label
                         key={option.id}
                         className="group flex items-center justify-between p-4 bg-gray-50/50 hover:bg-white rounded-2xl cursor-pointer transition-all duration-300 border border-transparent hover:border-orange-200 hover:shadow-sm"
+                        onClick={() =>
+                          handleModifierChange(
+                            group.id,
+                            option.id,
+                            group.selectionType,
+                          )
+                        }
                       >
                         <div className="flex items-center gap-4">
                           <div
@@ -558,38 +793,21 @@ function ItemDetailContent({ itemId }: { itemId: string }) {
         </div>
 
         {/* Enhanced Reviews Section */}
-        {reviews.length > 0 && (
-          <div className="mb-8">
-            <div className="flex items-center justify-between mb-6">
+        <div className="mb-8">
+          <div className="flex items-center justify-between mb-6">
+            <div>
               <h2 className="font-bold text-xl text-gray-900">
                 Customer reviews
               </h2>
-              <span className="px-3 py-1 bg-orange-50 text-orange-700 rounded-full text-sm font-medium">
-                {reviews.length} reviews
-              </span>
-            </div>
-
-            <div className="space-y-4">
-              {reviews.map((review) => (
-                <div
-                  key={review.id}
-                  className="p-6 bg-white/70 backdrop-blur-sm rounded-3xl shadow-sm border border-white/50"
-                >
-                  <div className="flex justify-between items-start mb-3">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-gradient-to-br from-orange-400 to-orange-600 rounded-full flex items-center justify-center text-white font-bold">
-                        {review.customerName.charAt(0)}
-                      </div>
-                      <span className="font-bold text-gray-900">
-                        {review.customerName}
-                      </span>
-                    </div>
+              <div className="flex items-center gap-3 mt-2">
+                {totalReviews > 0 && (
+                  <>
                     <div className="flex gap-1">
                       {[...Array(5)].map((_, i) => (
                         <svg
                           key={i}
                           className={`w-5 h-5 ${
-                            i < review.rating
+                            i < Math.round(averageRating)
                               ? "text-yellow-400 fill-current"
                               : "text-gray-300"
                           }`}
@@ -599,17 +817,279 @@ function ItemDetailContent({ itemId }: { itemId: string }) {
                         </svg>
                       ))}
                     </div>
-                  </div>
-                  {review.comment && (
-                    <p className="text-gray-700 leading-relaxed">
-                      {review.comment}
-                    </p>
+                    <span className="text-sm font-semibold text-gray-700">
+                      {averageRating.toFixed(1)} ({totalReviews} reviews)
+                    </span>
+                  </>
+                )}
+              </div>
+            </div>
+            <button
+              onClick={() => {
+                setShowReviewForm(!showReviewForm);
+                setReviewError("");
+              }}
+              className="px-4 py-2 bg-orange-50 text-orange-700 rounded-full text-sm font-medium hover:bg-orange-100 transition-colors duration-300 border border-orange-200"
+            >
+              {showReviewForm ? "Cancel" : "Write Review"}
+            </button>
+          </div>
+
+          {/* Review Form */}
+          {showReviewForm && (
+            <div className="p-6 bg-white/70 backdrop-blur-sm rounded-3xl shadow-sm border border-white/50 mb-6">
+              <h3 className="font-bold text-lg mb-4 text-gray-900">
+                Share your experience
+              </h3>
+
+              {/* Rating Selection */}
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-gray-900 mb-3">
+                  Rating
+                </label>
+                <div className="flex gap-3">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <button
+                      key={star}
+                      onClick={() => setReviewRating(star)}
+                      className="transition-transform duration-300 hover:scale-110"
+                    >
+                      <svg
+                        className={`w-8 h-8 ${
+                          star <= reviewRating
+                            ? "text-yellow-400 fill-current"
+                            : "text-gray-300"
+                        } cursor-pointer`}
+                        viewBox="0 0 24 24"
+                      >
+                        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                      </svg>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Comment */}
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-gray-900 mb-3">
+                  Comment (optional)
+                </label>
+                <textarea
+                  value={reviewComment}
+                  onChange={(e) => setReviewComment(e.target.value)}
+                  placeholder="Share your thoughts about this dish..."
+                  maxLength={500}
+                  className="w-full p-4 bg-gray-50/50 rounded-2xl border-none resize-none h-24 focus:ring-2 focus:ring-orange-500/50 focus:bg-white transition-all duration-300 placeholder:text-gray-400"
+                />
+                <p className="text-xs text-gray-500 mt-2">
+                  {reviewComment.length}/500 characters
+                </p>
+              </div>
+
+              {/* Error message */}
+              {reviewError && (
+                <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm mb-4">
+                  {reviewError}
+                </div>
+              )}
+
+              {/* Submit Button */}
+              <button
+                onClick={handleSubmitReview}
+                disabled={submittingReview}
+                className={`w-full py-3 rounded-2xl font-bold text-white transition-all duration-300 ${
+                  submittingReview
+                    ? "bg-gray-400 cursor-not-allowed"
+                    : "bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700"
+                }`}
+              >
+                {submittingReview ? "Submitting..." : "Submit Review"}
+              </button>
+            </div>
+          )}
+
+          {/* Success message */}
+          {reviewSuccess && (
+            <div className="p-4 bg-green-50 border border-green-200 rounded-xl text-green-700 text-sm mb-6 flex items-center gap-2">
+              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                <path
+                  fillRule="evenodd"
+                  d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                  clipRule="evenodd"
+                />
+              </svg>
+              Thank you! Your review has been posted successfully.
+            </div>
+          )}
+
+          {/* Reviews List */}
+          {reviews.length > 0 && (
+            <div className="space-y-4">
+              {reviews.map((review) => (
+                <div
+                  key={review.id}
+                  className="p-6 bg-white/70 backdrop-blur-sm rounded-3xl shadow-sm border border-white/50"
+                >
+                  {editingReviewId === review.id ? (
+                    // Edit Mode
+                    <div className="space-y-4">
+                      <div className="flex gap-1">
+                        {[...Array(5)].map((_, i) => (
+                          <button
+                            key={i}
+                            onClick={() => setEditingRating(i + 1)}
+                            className="transition-all duration-300"
+                          >
+                            <svg
+                              className={`w-6 h-6 ${
+                                i < editingRating
+                                  ? "text-yellow-400 fill-current"
+                                  : "text-gray-300"
+                              }`}
+                              viewBox="0 0 24 24"
+                            >
+                              <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                            </svg>
+                          </button>
+                        ))}
+                      </div>
+                      <textarea
+                        value={editingComment}
+                        onChange={(e) => setEditingComment(e.target.value)}
+                        placeholder="Update your review..."
+                        className="w-full p-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500"
+                        rows={3}
+                      />
+                      <div className="flex gap-2 justify-end">
+                        <button
+                          onClick={() => setEditingReviewId(null)}
+                          className="px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors"
+                          disabled={submittingReview}
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          onClick={() => handleEditReview(review.id)}
+                          disabled={submittingReview}
+                          className="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors disabled:opacity-50"
+                        >
+                          {submittingReview ? "Saving..." : "Save Changes"}
+                        </button>
+                      </div>
+                    </div>
+                  ) : deletingReviewId === review.id ? (
+                    // Delete Confirmation
+                    <div className="space-y-4">
+                      <p className="text-gray-700">
+                        Are you sure you want to delete this review?
+                      </p>
+                      <div className="flex gap-2 justify-end">
+                        <button
+                          onClick={() => setDeletingReviewId(null)}
+                          className="px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors"
+                          disabled={submittingReview}
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          onClick={() => handleDeleteReview(review.id)}
+                          disabled={submittingReview}
+                          className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors disabled:opacity-50"
+                        >
+                          {submittingReview ? "Deleting..." : "Delete"}
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    // Review Display
+                    <>
+                      <div className="flex justify-between items-start mb-3">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 bg-gradient-to-br from-orange-400 to-orange-600 rounded-full flex items-center justify-center text-white font-bold">
+                            {review.customerName.charAt(0)}
+                          </div>
+                          <span className="font-bold text-gray-900">
+                            {review.customerName}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <div className="flex gap-1">
+                            {[...Array(5)].map((_, i) => (
+                              <svg
+                                key={i}
+                                className={`w-5 h-5 ${
+                                  i < review.rating
+                                    ? "text-yellow-400 fill-current"
+                                    : "text-gray-300"
+                                }`}
+                                viewBox="0 0 24 24"
+                              >
+                                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                              </svg>
+                            ))}
+                          </div>
+                          {customer?.id === review.customerId && (
+                            <div className="flex gap-2 ml-2">
+                              <button
+                                onClick={() => {
+                                  setEditingReviewId(review.id);
+                                  setEditingRating(review.rating);
+                                  setEditingComment(review.comment || "");
+                                }}
+                                className="text-blue-500 hover:text-blue-700 transition-colors"
+                              >
+                                <svg
+                                  className="w-4 h-4"
+                                  fill="currentColor"
+                                  viewBox="0 0 24 24"
+                                >
+                                  <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25z" />
+                                  <path d="M20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z" />
+                                </svg>
+                              </button>
+                              <button
+                                onClick={() => setDeletingReviewId(review.id)}
+                                className="text-red-500 hover:text-red-700 transition-colors"
+                              >
+                                <svg
+                                  className="w-4 h-4"
+                                  fill="currentColor"
+                                  viewBox="0 0 24 24"
+                                >
+                                  <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-9l-1 1H5v2h14V4z" />
+                                </svg>
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      {review.comment && (
+                        <p className="text-gray-700 leading-relaxed">
+                          {review.comment}
+                        </p>
+                      )}
+                      <p className="text-xs text-gray-500 mt-3">
+                        {new Date(review.createdAt).toLocaleDateString()}
+                      </p>
+                    </>
                   )}
                 </div>
               ))}
             </div>
-          </div>
-        )}
+          )}
+
+          {reviews.length === 0 && !showReviewForm && (
+            <div className="text-center py-8 text-gray-500">
+              <p className="mb-3">No reviews yet. Be the first to review!</p>
+              <button
+                onClick={() => setShowReviewForm(true)}
+                className="px-6 py-2 bg-orange-100 text-orange-700 rounded-full font-medium hover:bg-orange-200 transition-colors duration-300"
+              >
+                Write a Review
+              </button>
+            </div>
+          )}
+        </div>
 
         {/* Enhanced Related Items */}
         {relatedItems.length > 0 && (

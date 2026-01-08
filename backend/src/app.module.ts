@@ -23,6 +23,8 @@ import { ModifierOptionModule } from './modifier-option/modifier-option.module';
 import { MenuItemModifierModule } from './menu-item-modifier/menu-item-modifier.module';
 import { MenuItemModifierGroup } from './schema/menu-item-modifier.schema';
 import { ProfileModule } from './profile/profile.module';
+import { ReviewModule } from './review/review.module';
+import { Review } from './schema/review.schema';
 
 @Module({
   imports: [
@@ -47,6 +49,7 @@ import { ProfileModule } from './profile/profile.module';
           ModifierGroup,
           ModifierOption,
           MenuItemModifierGroup,
+          Review,
         ],
         synchronize: true,
         // Add connection pool and retry settings
@@ -70,6 +73,7 @@ import { ProfileModule } from './profile/profile.module';
     ModifierOptionModule,
     MenuItemModifierModule,
     ProfileModule,
+    ReviewModule,
   ],
   controllers: [AppController],
   providers: [AppService],

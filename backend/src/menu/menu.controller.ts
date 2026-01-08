@@ -65,6 +65,7 @@ export class MenuController {
       message: 'QR code verified successfully',
       table: {
         id: table.id,
+        restaurantId: table.restaurantId,
         tableNumber: table.tableNumber,
         capacity: table.capacity,
         location: table.location,
