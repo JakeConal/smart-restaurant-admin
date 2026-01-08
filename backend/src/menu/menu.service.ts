@@ -76,11 +76,43 @@ export class MenuService {
     // Get item IDs
     const itemIds = items.map((item) => item.id);
 
-    // Get primary photos for items
-    const photos = await this.photoRepo.find({
-      where: { menuItemId: In(itemIds), isPrimary: true },
+    // Get ALL photos for items (not just primary)
+    const allPhotos = await this.photoRepo.find({
+      where: { menuItemId: In(itemIds) },
+      order: { isPrimary: 'DESC', createdAt: 'ASC' },
     });
-    const photoMap = new Map(photos.map((p) => [p.menuItemId, p]));
+
+    // Group photos by menuItemId
+    const photosByItem = new Map<string, any[]>();
+    allPhotos.forEach((photo) => {
+      if (!photosByItem.has(photo.menuItemId)) {
+        photosByItem.set(photo.menuItemId, []);
+      }
+      const photoArray = photosByItem.get(photo.menuItemId)!;
+      if (photo.data && photo.mimeType) {
+        const base64 = photo.data.toString('base64');
+        const photoUrl = `data:${photo.mimeType};base64,${base64}`;
+        photoArray.push({
+          id: photo.id,
+          menuItemId: photo.menuItemId,
+          data: photoUrl,
+          mimeType: photo.mimeType,
+          isPrimary: photo.isPrimary,
+          createdAt: photo.createdAt.toISOString(),
+        });
+      }
+    });
+
+    // Get primary photo for backward compatibility
+    const photoMap = new Map<string, string>();
+    allPhotos.forEach((p) => {
+      if (p.isPrimary && !photoMap.has(p.menuItemId)) {
+        if (p.data && p.mimeType) {
+          const base64 = p.data.toString('base64');
+          photoMap.set(p.menuItemId, `data:${p.mimeType};base64,${base64}`);
+        }
+      }
+    });
 
     // Get modifier groups for items
     const itemModifiers = await this.itemModifierRepo.find({
@@ -122,15 +154,17 @@ export class MenuService {
         .filter(Boolean);
 
       const photo = photoMap.get(item.id);
-      let primaryPhotoUrl = null;
-      if (photo && photo.data && photo.mimeType) {
-        const base64 = photo.data.toString('base64');
-        primaryPhotoUrl = `data:${photo.mimeType};base64,${base64}`;
+      const itemPhotos = photosByItem.get(item.id) || [];
+
+      let primaryPhotoUrl = photo;
+      if (!primaryPhotoUrl && itemPhotos.length > 0) {
+        primaryPhotoUrl = itemPhotos[0].data;
       }
 
       return {
         ...item,
         primaryPhotoUrl,
+        photos: itemPhotos,
         modifierGroups,
         canOrder: item.status === MenuItemStatus.AVAILABLE,
       };

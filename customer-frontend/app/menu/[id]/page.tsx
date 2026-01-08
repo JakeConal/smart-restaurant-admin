@@ -30,6 +30,9 @@ function ItemDetailContent({ itemId }: { itemId: string }) {
   const [specialInstructions, setSpecialInstructions] = useState("");
   const [addedToCart, setAddedToCart] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [selectedPhotoIndex, setSelectedPhotoIndex] = useState(0);
+  const [touchStart, setTouchStart] = useState(0);
+  const [touchEnd, setTouchEnd] = useState(0);
 
   // Review form state
   const [showReviewForm, setShowReviewForm] = useState(false);
@@ -422,6 +425,34 @@ function ItemDetailContent({ itemId }: { itemId: string }) {
     }
   };
 
+  const handleTouchStart = (e: React.TouchEvent) => {
+    setTouchStart(e.targetTouches[0].clientX);
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    setTouchEnd(e.changedTouches[0].clientX);
+    handleSwipe();
+  };
+
+  const handleSwipe = () => {
+    if (!item?.photos || item.photos.length <= 1) return;
+
+    const distance = touchStart - touchEnd;
+    const isLeftSwipe = distance > 50;
+    const isRightSwipe = distance < -50;
+
+    if (isLeftSwipe) {
+      setSelectedPhotoIndex((prev) =>
+        prev === item.photos!.length - 1 ? 0 : prev + 1,
+      );
+    }
+    if (isRightSwipe) {
+      setSelectedPhotoIndex((prev) =>
+        prev === 0 ? item.photos!.length - 1 : prev - 1,
+      );
+    }
+  };
+
   const getStatusInfo = () => {
     if (!item) return null;
 
@@ -596,8 +627,22 @@ function ItemDetailContent({ itemId }: { itemId: string }) {
         {/* Main Product Image with Enhanced Styling */}
         <div className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/4">
           <div className="relative">
-            <div className="w-72 h-72 rounded-full overflow-hidden bg-white shadow-2xl ring-8 ring-white/50 backdrop-blur-sm">
-              {item.primaryPhotoUrl ? (
+            <div
+              className="w-72 h-72 rounded-full overflow-hidden bg-white shadow-2xl ring-8 ring-white/50 backdrop-blur-sm cursor-grab active:cursor-grabbing"
+              onTouchStart={handleTouchStart}
+              onTouchEnd={handleTouchEnd}
+            >
+              {item.photos &&
+              item.photos.length > 0 &&
+              item.photos[selectedPhotoIndex]?.data ? (
+                <Image
+                  src={item.photos[selectedPhotoIndex].data}
+                  alt={`${item.name} - Photo ${selectedPhotoIndex + 1}`}
+                  fill
+                  className="object-cover hover:scale-105 transition-transform duration-700"
+                  priority
+                />
+              ) : item.primaryPhotoUrl ? (
                 <Image
                   src={item.primaryPhotoUrl}
                   alt={item.name}
@@ -614,12 +659,30 @@ function ItemDetailContent({ itemId }: { itemId: string }) {
 
             {/* Image Glow Effect */}
             <div className="absolute inset-0 rounded-full bg-gradient-to-r from-orange-400/20 to-orange-600/20 blur-xl scale-110 -z-10"></div>
+
+            {/* Photo Gallery Indicators */}
+            {item.photos && item.photos.length > 1 && (
+              <div className="absolute -bottom-16 left-1/2 -translate-x-1/2 flex gap-2">
+                {item.photos.map((photo, index) => (
+                  <button
+                    key={photo.id}
+                    onClick={() => setSelectedPhotoIndex(index)}
+                    className={`w-3 h-3 rounded-full transition-all duration-300 ${
+                      index === selectedPhotoIndex
+                        ? "bg-orange-500 w-8"
+                        : "bg-gray-300 hover:bg-gray-400"
+                    }`}
+                    aria-label={`View photo ${index + 1}`}
+                  />
+                ))}
+              </div>
+            )}
           </div>
         </div>
       </div>
 
       {/* Content Container with Enhanced Spacing */}
-      <div className="mt-32 px-6 pb-32">
+      <div className="mt-48 px-6 pb-32">
         {/* Status Badges with Premium Design */}
         <div className="flex items-center gap-3 mb-4">
           {statusInfo && (

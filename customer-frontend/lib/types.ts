@@ -34,6 +34,15 @@ export interface ModifierGroup {
 
 export type MenuItemStatus = "available" | "unavailable" | "sold_out";
 
+export interface MenuItemPhoto {
+  id: string;
+  menuItemId: string;
+  data: string; // base64 encoded or URL
+  mimeType: string;
+  isPrimary: boolean;
+  createdAt: string;
+}
+
 export interface MenuItem {
   id: string;
   restaurantId: string;
@@ -47,6 +56,7 @@ export interface MenuItem {
   isDeleted: boolean;
   popularityScore: number;
   primaryPhotoUrl?: string;
+  photos?: MenuItemPhoto[];
   modifierGroups: ModifierGroup[];
   canOrder: boolean;
   createdAt: string;
