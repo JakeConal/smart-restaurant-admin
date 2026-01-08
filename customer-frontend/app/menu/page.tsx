@@ -58,7 +58,9 @@ function MenuContent() {
       newChef?: boolean,
     ) => {
       const params = new URLSearchParams();
-      params.set("token", currentToken);
+      if (currentToken) {
+        params.set("token", currentToken);
+      }
 
       const search = newSearch ?? searchQuery;
       const category =
@@ -239,8 +241,8 @@ function MenuContent() {
     <div className="min-h-screen bg-gradient-to-br from-orange-25 via-white to-orange-50 pb-24 safe-bottom">
       {/* Header Section */}
       <div className="sticky top-0 z-30 backdrop-blur-xl bg-white/90 border-b border-orange-100/50 shadow-sm overflow-visible">
-        <div className="px-6 py-5">
-          <div className="flex justify-between items-center mb-6">
+        <div className="px-6 py-3">
+          <div className="flex justify-between items-center mb-4">
             <div className="flex items-center gap-4">
               <div>
                 <h1 className="text-2xl font-bold text-gray-900">
@@ -279,7 +281,7 @@ function MenuContent() {
           </div>
 
           {/* Search Bar */}
-          <div className="relative mb-5 group">
+          <div className="relative mb-3 group">
             <svg
               className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 group-focus-within:text-orange-500 transition-colors"
               fill="none"
@@ -312,7 +314,7 @@ function MenuContent() {
           </div>
 
           {/* Sort & Filter Pills */}
-          <div className="flex gap-3 mb-2 overflow-visible pb-2 scrollbar-hidden">
+          <div className="flex gap-3 mb-1 overflow-visible pb-2 scrollbar-hidden">
             {/* Sort Dropdown */}
             <div className="relative sort-dropdown z-[100]">
               <button

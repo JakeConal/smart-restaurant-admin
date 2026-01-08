@@ -110,7 +110,8 @@ function ItemDetailContent({ itemId }: { itemId: string }) {
 
       try {
         const response = (await menuApi.getMenu(currentToken)) as MenuResponse;
-        const restaurantId = response.table?.restaurantId || "";
+        const menuItem = response.menu.items.find((item) => item.id === itemId);
+        const restaurantId = menuItem?.restaurantId || "";
 
         if (!restaurantId) return;
 
@@ -240,6 +241,11 @@ function ItemDetailContent({ itemId }: { itemId: string }) {
       return;
     }
 
+    if (!currentToken) {
+      setReviewError("No valid session token found.");
+      return;
+    }
+
     setSubmittingReview(true);
     setReviewError("");
     setReviewSuccess(false);
@@ -262,7 +268,8 @@ function ItemDetailContent({ itemId }: { itemId: string }) {
       // Refresh reviews
       try {
         const response = (await menuApi.getMenu(currentToken)) as MenuResponse;
-        const restaurantId = response.table?.restaurantId || "";
+        const menuItem = response.menu.items.find((item) => item.id === itemId);
+        const restaurantId = menuItem?.restaurantId || "";
 
         if (restaurantId) {
           const reviewsData = await reviewApi.getItemReviews(
@@ -311,6 +318,11 @@ function ItemDetailContent({ itemId }: { itemId: string }) {
       return;
     }
 
+    if (!currentToken) {
+      setReviewError("No valid session token found.");
+      return;
+    }
+
     setSubmittingReview(true);
     setReviewError("");
 
@@ -326,7 +338,8 @@ function ItemDetailContent({ itemId }: { itemId: string }) {
       // Refresh reviews
       try {
         const response = (await menuApi.getMenu(currentToken)) as MenuResponse;
-        const restaurantId = response.table?.restaurantId || "";
+        const menuItem = response.menu.items.find((item) => item.id === itemId);
+        const restaurantId = menuItem?.restaurantId || "";
 
         if (restaurantId) {
           const reviewsData = await reviewApi.getItemReviews(
@@ -373,6 +386,11 @@ function ItemDetailContent({ itemId }: { itemId: string }) {
       return;
     }
 
+    if (!currentToken) {
+      setReviewError("No valid session token found.");
+      return;
+    }
+
     setSubmittingReview(true);
 
     try {
@@ -384,7 +402,8 @@ function ItemDetailContent({ itemId }: { itemId: string }) {
       // Refresh reviews
       try {
         const response = (await menuApi.getMenu(currentToken)) as MenuResponse;
-        const restaurantId = response.table?.restaurantId || "";
+        const menuItem = response.menu.items.find((item) => item.id === itemId);
+        const restaurantId = menuItem?.restaurantId || "";
 
         if (restaurantId) {
           const reviewsData = await reviewApi.getItemReviews(
@@ -535,25 +554,6 @@ function ItemDetailContent({ itemId }: { itemId: string }) {
 
           <div className="flex items-center gap-3">
             <Link
-              href={`/favorites?token=${currentToken}`}
-              className="group w-12 h-12 bg-white/90 hover:bg-white rounded-2xl flex items-center justify-center shadow-lg hover:shadow-xl transition-all duration-300 border border-orange-100/50"
-            >
-              <svg
-                className="w-6 h-6 text-gray-700 group-hover:text-orange-600 transition-colors duration-300"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2.5}
-                  d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
-                />
-              </svg>
-            </Link>
-
-            <Link
               href={`/cart?token=${currentToken}`}
               className="group relative w-12 h-12 bg-white/90 hover:bg-white rounded-2xl flex items-center justify-center shadow-lg hover:shadow-xl transition-all duration-300 border border-orange-100/50"
             >
@@ -587,40 +587,6 @@ function ItemDetailContent({ itemId }: { itemId: string }) {
           <div className="absolute inset-0 opacity-5">
             <div className="absolute top-10 left-10 w-32 h-32 bg-orange-200 rounded-full blur-3xl"></div>
             <div className="absolute bottom-10 right-10 w-40 h-40 bg-orange-300 rounded-full blur-3xl"></div>
-          </div>
-
-          {/* Floating Action Buttons */}
-          <div className="absolute top-6 right-6 flex flex-col gap-3">
-            <button className="w-12 h-12 bg-white/90 backdrop-blur-sm rounded-2xl flex items-center justify-center shadow-lg hover:shadow-xl transition-all duration-300 group">
-              <svg
-                className="w-6 h-6 text-gray-700 group-hover:text-red-500 transition-colors"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
-                />
-              </svg>
-            </button>
-            <button className="w-12 h-12 bg-white/90 backdrop-blur-sm rounded-2xl flex items-center justify-center shadow-lg hover:shadow-xl transition-all duration-300 group">
-              <svg
-                className="w-6 h-6 text-gray-700 group-hover:text-blue-500 transition-colors"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.367 2.684 3 3 0 00-5.367-2.684z"
-                />
-              </svg>
-            </button>
           </div>
         </div>
 
