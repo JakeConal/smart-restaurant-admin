@@ -5,11 +5,9 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 import { JwtStrategy } from './strategies/jwt.strategy';
-import { GoogleStrategy } from './strategies/google.strategy';
 import { CustomerGoogleStrategy } from './strategies/customer-google.strategy';
 import { JwtAuthGuard } from './guards/jwt.guards';
-import { AdminGuard } from './guards/admin.guards';
-import { Users } from '../schema/user.schema';
+import { CustomerJwtAuthGuard } from './guards/customer-jwt-auth.guard';
 import { Customer } from '../schema/customer.schema';
 import { EmailVerificationToken } from '../schema/email-verification-token.schema';
 import { PasswordResetToken } from '../schema/password-reset-token.schema';
@@ -18,7 +16,6 @@ import { EmailModule } from '../email/email.module';
 @Module({
   imports: [
     TypeOrmModule.forFeature([
-      Users,
       Customer,
       EmailVerificationToken,
       PasswordResetToken,
@@ -33,12 +30,11 @@ import { EmailModule } from '../email/email.module';
   providers: [
     AuthService,
     JwtStrategy,
-    GoogleStrategy,
     CustomerGoogleStrategy,
     JwtAuthGuard,
-    AdminGuard,
+    CustomerJwtAuthGuard,
   ],
   controllers: [AuthController],
-  exports: [JwtAuthGuard, AdminGuard],
+  exports: [JwtAuthGuard, CustomerJwtAuthGuard],
 })
 export class AuthModule {}

@@ -29,6 +29,7 @@ import { Order } from './schema/order.schema';
 import { OrderModule } from './order/order.module';
 import { EmailVerificationToken } from './schema/email-verification-token.schema';
 import { PasswordResetToken } from './schema/password-reset-token.schema';
+import { AdminAuthModule } from './admin-auth/admin-auth.module';
 
 @Module({
   imports: [
@@ -73,6 +74,7 @@ import { PasswordResetToken } from './schema/password-reset-token.schema';
     MenuModule,
     MenuCategoryModule,
     AuthModule,
+    AdminAuthModule,
     UsersModule,
     MenuItemModule,
     MenuItemPhotoModule,

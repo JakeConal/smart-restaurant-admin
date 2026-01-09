@@ -9,8 +9,6 @@ import {
   Query,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
-import { LoginDto } from '../dto/login.dto';
-import { SignupDto } from 'src/dto/sign-up.dto';
 import { CustomerLoginDto } from '../dto/customer-login.dto';
 import { CustomerSignupDto } from '../dto/customer-sign-up.dto';
 import { AuthGuard } from '@nestjs/passport';
@@ -19,11 +17,6 @@ import type { Response } from 'express';
 @Controller('auth')
 export class AuthController {
   constructor(private auth: AuthService) {}
-
-  @Post('signup')
-  signup(@Body() dto: SignupDto) {
-    return this.auth.signup(dto);
-  }
 
   @Post('customer/signup')
   customerSignup(@Body() dto: CustomerSignupDto) {
@@ -34,10 +27,6 @@ export class AuthController {
   customerLogin(@Body() dto: CustomerLoginDto) {
     return this.auth.customerLogin(dto);
   }
-
-  @Get('google')
-  @UseGuards(AuthGuard('google'))
-  async googleAuth(@Req() req) {}
 
   @Get('customer/google')
   async customerGoogleAuth(@Req() req, @Res() res) {

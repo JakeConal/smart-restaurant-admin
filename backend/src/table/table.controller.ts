@@ -17,7 +17,7 @@ import { TableService } from './table.service';
 import { CreateTableDto } from '../dto/create-table.dto';
 import { UpdateTableDto } from '../dto/update-table.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt.guards';
-import { AdminGuard } from '../auth/guards/admin.guards';
+import { AdminGuard } from '../admin-auth/guards/admin.guard';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import type { AuthUser } from '../auth/interfaces/auth-user.interface';
 

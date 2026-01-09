@@ -15,7 +15,7 @@ import { FilesInterceptor } from '@nestjs/platform-express';
 import type { Response } from 'express';
 import { MenuItemPhotoService } from './menu-item-photo.service';
 import { JwtAuthGuard } from '../auth/guards/jwt.guards';
-import { AdminGuard } from '../auth/guards/admin.guards';
+import { AdminGuard } from '../admin-auth/guards/admin.guard';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import type { AuthUser } from '../auth/interfaces/auth-user.interface';
 

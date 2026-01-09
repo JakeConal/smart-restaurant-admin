@@ -10,7 +10,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ReviewService } from './review.service';
-import { JwtAuthGuard } from '../auth/guards/jwt.guards';
+import { CustomerJwtAuthGuard } from '../auth/guards/customer-jwt-auth.guard';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import type { AuthUser } from '../auth/interfaces/auth-user.interface';
 import { CreateReviewDto } from '../dto/create-review.dto';
@@ -40,13 +40,13 @@ export class ReviewController {
     return this.service.getAverageRating(menuItemId, restaurantId);
   }
 
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(CustomerJwtAuthGuard)
   @Post()
   create(@CurrentUser() user: AuthUser, @Body() dto: CreateReviewDto) {
     return this.service.create(user.userId, dto);
   }
 
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(CustomerJwtAuthGuard)
   @Patch(':id')
   update(
     @Param('id') id: string,
@@ -56,7 +56,7 @@ export class ReviewController {
     return this.service.updateReview(id, user.userId, dto);
   }
 
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(CustomerJwtAuthGuard)
   @Delete(':id')
   delete(@Param('id') id: string, @CurrentUser() user: AuthUser) {
     return this.service.deleteReview(id, user.userId);

@@ -12,7 +12,7 @@ import {
 import { ModifierOptionService } from './modifier-option.service';
 import { CreateModifierOptionDto } from '../dto/create-modifier-option.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt.guards';
-import { AdminGuard } from '../auth/guards/admin.guards';
+import { AdminGuard } from '../admin-auth/guards/admin.guard';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import type { AuthUser } from '../auth/interfaces/auth-user.interface';
 

@@ -15,11 +15,11 @@ import {
 import { FileInterceptor } from '@nestjs/platform-express';
 import type { Response } from 'express';
 import { ProfileService } from './profile.service';
-import { JwtAuthGuard } from '../auth/guards/jwt.guards';
+import { CustomerJwtAuthGuard } from '../auth/guards/customer-jwt-auth.guard';
 import { ChangePasswordDto } from '../dto/change-password.dto';
 
 @Controller('profile')
-@UseGuards(JwtAuthGuard)
+@UseGuards(CustomerJwtAuthGuard)
 export class ProfileController {
   constructor(private profileService: ProfileService) {}
 

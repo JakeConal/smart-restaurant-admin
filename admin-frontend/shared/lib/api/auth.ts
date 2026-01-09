@@ -25,17 +25,17 @@ export interface AuthResponse {
 
 export class AuthApi {
   async login(data: LoginRequest): Promise<AuthResponse> {
-    const response = await apiClient.post("/auth/login", data);
+    const response = await apiClient.post("/admin-auth/login", data);
     return response.data;
   }
 
   async signup(data: SignupRequest): Promise<AuthResponse> {
-    const response = await apiClient.post("/auth/signup", data);
+    const response = await apiClient.post("/admin-auth/signup", data);
     return response.data;
   }
 
   async googleLogin(): Promise<void> {
-    window.location.href = `${apiClient.defaults.baseURL}/auth/google`;
+    window.location.href = `${apiClient.defaults.baseURL}/admin-auth/google`;
   }
 }
 
