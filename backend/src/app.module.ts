@@ -27,6 +27,7 @@ import { ReviewModule } from './review/review.module';
 import { Review } from './schema/review.schema';
 import { Order } from './schema/order.schema';
 import { OrderModule } from './order/order.module';
+import { EmailVerificationToken } from './schema/email-verification-token.schema';
 
 @Module({
   imports: [
@@ -53,6 +54,7 @@ import { OrderModule } from './order/order.module';
           MenuItemModifierGroup,
           Review,
           Order,
+          EmailVerificationToken,
         ],
         synchronize: true,
         // Add connection pool and retry settings

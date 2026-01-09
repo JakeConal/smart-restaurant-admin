@@ -6,6 +6,7 @@ import {
   Req,
   UseGuards,
   Res,
+  Query,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { LoginDto } from '../dto/login.dto';
@@ -76,5 +77,15 @@ export class AuthController {
     }
     const redirectUrl = `${frontendUrl}/${redirectPath}?auth_token=${authResponse.access_token}&auth_user=${encodeURIComponent(JSON.stringify(authResponse.user))}${extraParams}`;
     res.redirect(redirectUrl);
+  }
+
+  @Post('verify-email')
+  verifyEmail(@Body('token') token: string) {
+    return this.auth.verifyEmail(token);
+  }
+
+  @Post('resend-verification-email')
+  resendVerificationEmail(@Body('email') email: string) {
+    return this.auth.resendVerificationEmail(email);
   }
 }

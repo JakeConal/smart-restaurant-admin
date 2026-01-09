@@ -37,4 +37,10 @@ export class Customer {
 
   @Column({ nullable: true })
   googleProfilePicUrl: string;
+
+  @Column({ default: false })
+  isEmailVerified: boolean;
+
+  @Column({ nullable: true })
+  emailVerifiedAt: Date;
 }

@@ -5,10 +5,12 @@ import { Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import { Users } from '../schema/user.schema';
 import { Customer } from '../schema/customer.schema';
+import { EmailVerificationToken } from '../schema/email-verification-token.schema';
 import { SignupDto } from '../dto/sign-up.dto';
 import { LoginDto } from '../dto/login.dto';
 import { CustomerSignupDto } from '../dto/customer-sign-up.dto';
 import { CustomerLoginDto } from '../dto/customer-login.dto';
+import { EmailService } from '../email/email.service';
 
 @Injectable()
 export class AuthService {
@@ -17,7 +19,10 @@ export class AuthService {
     private userRepo: Repository<Users>,
     @InjectRepository(Customer)
     private customerRepo: Repository<Customer>,
+    @InjectRepository(EmailVerificationToken)
+    private emailVerificationTokenRepo: Repository<EmailVerificationToken>,
     private jwt: JwtService,
+    private emailService: EmailService,
   ) {}
   async signup(dto: SignupDto) {
     const exists = await this.userRepo.findOne({ where: { email: dto.email } });
@@ -143,8 +148,30 @@ export class AuthService {
       role: 'customer',
       firstName: dto.firstName,
       lastName: dto.lastName,
+      isEmailVerified: false,
     });
     await this.customerRepo.save(customer);
+
+    // Generate email verification token (valid for 24 hours)
+    const verificationToken = this.generateVerificationToken();
+    const expiresAt = new Date();
+    expiresAt.setHours(expiresAt.getHours() + 24);
+
+    await this.emailVerificationTokenRepo.save({
+      customerId: customer.id,
+      email: customer.email,
+      token: verificationToken,
+      tableToken: dto.tableToken, // Save original table token
+      expiresAt,
+      isUsed: false,
+    });
+
+    // Send verification email
+    await this.emailService.sendVerificationEmail(
+      customer.email,
+      verificationToken,
+      `${customer.firstName} ${customer.lastName}`,
+    );
 
     const token = await this.jwt.signAsync({
       sub: customer.id,
@@ -160,7 +187,12 @@ export class AuthService {
         role: customer.role,
         firstName: customer.firstName,
         lastName: customer.lastName,
+        isEmailVerified: customer.isEmailVerified,
       },
+      message:
+        'Signup successful! Please check your email to verify your account.',
+      requiresEmailVerification: true,
+      tableToken: dto.tableToken, // Preserve the original table token
     };
   }
 
@@ -233,5 +265,115 @@ export class AuthService {
         googleProfilePicUrl: existingCustomer.googleProfilePicUrl,
       },
     };
+  }
+
+  /**
+   * Verify email using token
+   */
+  async verifyEmail(token: string) {
+    const verificationRecord = await this.emailVerificationTokenRepo.findOne({
+      where: { token },
+    });
+
+    if (!verificationRecord) {
+      throw new BadRequestException('Invalid verification token');
+    }
+
+    if (verificationRecord.isUsed) {
+      throw new BadRequestException('Verification token has already been used');
+    }
+
+    if (new Date() > verificationRecord.expiresAt) {
+      throw new BadRequestException('Verification token has expired');
+    }
+
+    // Mark customer as verified
+    const customer = await this.customerRepo.findOne({
+      where: { id: verificationRecord.customerId },
+    });
+
+    if (!customer) {
+      throw new BadRequestException('Customer not found');
+    }
+
+    customer.isEmailVerified = true;
+    customer.emailVerifiedAt = new Date();
+    await this.customerRepo.save(customer);
+
+    // Mark token as used
+    verificationRecord.isUsed = true;
+    await this.emailVerificationTokenRepo.save(verificationRecord);
+
+    // Send welcome email
+    await this.emailService.sendWelcomeEmail(
+      customer.email,
+      `${customer.firstName} ${customer.lastName}`,
+    );
+
+    return {
+      message: 'Email verified successfully!',
+      success: true,
+      tableToken: verificationRecord.tableToken, // Return original table token
+    };
+  }
+
+  /**
+   * Resend verification email
+   */
+  async resendVerificationEmail(email: string) {
+    const customer = await this.customerRepo.findOne({ where: { email } });
+
+    if (!customer) {
+      throw new BadRequestException('Customer not found');
+    }
+
+    if (customer.isEmailVerified) {
+      throw new BadRequestException('Email is already verified');
+    }
+
+    // Get old verification record to preserve tableToken
+    const oldRecord = await this.emailVerificationTokenRepo.findOne({
+      where: { email, isUsed: false },
+    });
+
+    // Delete old verification tokens
+    await this.emailVerificationTokenRepo.delete({
+      email,
+      isUsed: false,
+    });
+
+    // Generate new verification token
+    const verificationToken = this.generateVerificationToken();
+    const expiresAt = new Date();
+    expiresAt.setHours(expiresAt.getHours() + 24);
+
+    await this.emailVerificationTokenRepo.save({
+      customerId: customer.id,
+      email: customer.email,
+      token: verificationToken,
+      tableToken: oldRecord?.tableToken, // Preserve tableToken from old record
+      expiresAt,
+      isUsed: false,
+    });
+
+    // Send verification email
+    await this.emailService.sendVerificationEmail(
+      customer.email,
+      verificationToken,
+      `${customer.firstName} ${customer.lastName}`,
+    );
+
+    return {
+      message: 'Verification email sent successfully',
+      success: true,
+      tableToken: oldRecord?.tableToken, // Return tableToken in response
+    };
+  }
+
+  /**
+   * Generate random verification token
+   */
+  private generateVerificationToken(): string {
+    return `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
   }
 }

@@ -112,10 +112,23 @@ export const authApi = {
     password: string;
     firstName: string;
     lastName: string;
+    tableToken?: string;
   }) =>
     apiRequest("/auth/customer/signup", {
       method: "POST",
       body: JSON.stringify(data),
+    }),
+
+  verifyEmail: (token: string) =>
+    apiRequest("/auth/verify-email", {
+      method: "POST",
+      body: JSON.stringify({ token }),
+    }),
+
+  resendVerificationEmail: (email: string) =>
+    apiRequest("/auth/resend-verification-email", {
+      method: "POST",
+      body: JSON.stringify({ email }),
     }),
 
   getGoogleAuthUrl: (params: { token?: string; redirect?: string }) => {

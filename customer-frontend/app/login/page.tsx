@@ -30,6 +30,10 @@ function LoginContent() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [showWelcome, setShowWelcome] = useState(false);
+  const [showEmailVerification, setShowEmailVerification] = useState(false);
+  const [verificationEmail, setVerificationEmail] = useState("");
+  const [resendLoading, setResendLoading] = useState(false);
+  const [resendSuccess, setResendSuccess] = useState(false);
 
   // Get token from URL params (available during SSR)
   const urlToken = searchParams.get("token");
@@ -87,7 +91,19 @@ function LoginContent() {
           password,
           firstName,
           lastName,
+          tableToken: urlToken, // Pass the original table token
         })) as AuthResponse;
+
+        // Check if email verification is required
+        if ((response as any).requiresEmailVerification) {
+          setVerificationEmail(email);
+          setShowEmailVerification(true);
+          setEmail("");
+          setPassword("");
+          setFirstName("");
+          setLastName("");
+          return;
+        }
       }
 
       login(response);
@@ -147,6 +163,36 @@ function LoginContent() {
     const currentToken = token || searchParams.get("token");
     if (currentToken) {
       router.push(`/menu?token=${currentToken}`);
+    }
+  };
+
+  const handleResendVerificationEmail = async () => {
+    setResendLoading(true);
+    setResendSuccess(false);
+
+    try {
+      await authApi.resendVerificationEmail(verificationEmail);
+      setResendSuccess(true);
+      // Reset success message after 3 seconds
+      setTimeout(() => setResendSuccess(false), 3000);
+    } catch (err) {
+      let errorMessage = "Failed to resend verification email";
+
+      if (err instanceof Error) {
+        const message = err.message.toLowerCase();
+
+        if (message.includes("email already verified")) {
+          errorMessage = "This email is already verified. You can log in now.";
+        } else if (message.includes("not found")) {
+          errorMessage = "Account not found. Please sign up again.";
+        } else {
+          errorMessage = err.message;
+        }
+      }
+
+      setError(errorMessage);
+    } finally {
+      setResendLoading(false);
     }
   };
 
@@ -574,6 +620,95 @@ function LoginContent() {
           </form>
         </div>
       </div>
+
+      {/* Email Verification Modal */}
+      {showEmailVerification && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-6 z-50">
+          <div className="bg-white rounded-2xl p-8 w-full max-w-md text-center">
+            <div className="mb-6">
+              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg
+                  className="w-8 h-8 text-green-600"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+                  />
+                </svg>
+              </div>
+              <h2 className="text-2xl font-bold text-gray-900 mb-2">
+                Verify Your Email
+              </h2>
+              <p className="text-gray-600 mb-4">
+                We've sent a verification link to:
+              </p>
+              <p className="text-lg font-semibold text-amber-600 mb-4">
+                {verificationEmail}
+              </p>
+            </div>
+
+            <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-6 text-left">
+              <p className="text-sm text-blue-800 font-medium mb-2">
+                ✓ Check your email inbox (and spam folder)
+              </p>
+              <p className="text-sm text-blue-800 mb-2">
+                ✓ Click the verification link to confirm your email
+              </p>
+              <p className="text-sm text-blue-800">
+                ✓ Link expires in 24 hours
+              </p>
+            </div>
+
+            <div className="space-y-3">
+              <button
+                onClick={() => {
+                  setShowEmailVerification(false);
+                  setActiveTab("login");
+                }}
+                className="w-full bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white font-bold py-3 rounded-xl transition-all duration-200"
+              >
+                Continue to Login
+              </button>
+              <button
+                onClick={handleResendVerificationEmail}
+                disabled={resendLoading}
+                className="w-full border border-gray-300 text-gray-700 font-medium py-3 rounded-xl hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              >
+                {resendLoading ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-gray-300 border-t-gray-700 rounded-full animate-spin"></div>
+                    Sending...
+                  </>
+                ) : resendSuccess ? (
+                  <>
+                    <svg
+                      className="w-5 h-5 text-green-600"
+                      fill="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z" />
+                    </svg>
+                    <span className="text-green-600">
+                      Resent! Check your email
+                    </span>
+                  </>
+                ) : (
+                  "Resend Verification Link"
+                )}
+              </button>
+            </div>
+
+            <p className="text-xs text-gray-500 mt-4">
+              Once verified, you can log in to your account.
+            </p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

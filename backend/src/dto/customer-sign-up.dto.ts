@@ -38,4 +38,7 @@ export class CustomerSignupDto {
 
   @IsString()
   lastName: string;
+
+  @IsString()
+  tableToken?: string; // Optional token to preserve after email verification
 }
