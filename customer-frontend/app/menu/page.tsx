@@ -8,6 +8,11 @@ import { useApp } from "@/lib/context";
 import { useCart } from "@/lib/cart-context";
 import { menuApi } from "@/lib/api";
 import { MenuItem, MenuCategory, MenuResponse } from "@/lib/types";
+import {
+  getMenuFromCache,
+  setMenuInCache,
+  clearPaginationCache,
+} from "@/lib/menu-cache";
 import BottomNav from "@/components/BottomNav";
 
 function MenuContent() {
@@ -113,14 +118,45 @@ function MenuContent() {
           setLoadingMore(true);
         }
 
-        const response = (await menuApi.getMenu(currentToken, {
+        // Check cache first
+        const cachedData = getMenuFromCache({
+          token: currentToken,
           q: searchQuery || undefined,
           categoryId: selectedCategory || undefined,
           sort: sortBy,
           chefRecommended: showChefRecommended || undefined,
           page: pageNum,
-          limit: 10,
-        })) as MenuResponse;
+        });
+
+        let response: MenuResponse;
+
+        if (cachedData) {
+          response = cachedData;
+        } else {
+          response = (await menuApi.getMenu(currentToken, {
+            q: searchQuery || undefined,
+            categoryId: selectedCategory || undefined,
+            sort: sortBy,
+            chefRecommended: showChefRecommended || undefined,
+            page: pageNum,
+            limit: 10,
+          })) as MenuResponse;
+
+          // Cache the response
+          if (response.success) {
+            setMenuInCache(
+              {
+                token: currentToken,
+                q: searchQuery || undefined,
+                categoryId: selectedCategory || undefined,
+                sort: sortBy,
+                chefRecommended: showChefRecommended || undefined,
+                page: pageNum,
+              },
+              response,
+            );
+          }
+        }
 
         if (response.success) {
           if (response.table) {
@@ -161,6 +197,26 @@ function MenuContent() {
       setTableInfo,
     ],
   );
+
+  // Clear pagination cache when filters change
+  useEffect(() => {
+    if (currentToken && urlInitialized) {
+      clearPaginationCache(
+        currentToken,
+        searchQuery || undefined,
+        selectedCategory || undefined,
+        sortBy,
+        showChefRecommended || undefined,
+      );
+    }
+  }, [
+    currentToken,
+    searchQuery,
+    selectedCategory,
+    sortBy,
+    showChefRecommended,
+    urlInitialized,
+  ]);
 
   // Initial load and filter changes
   useEffect(() => {
