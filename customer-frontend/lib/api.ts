@@ -131,6 +131,18 @@ export const authApi = {
       body: JSON.stringify({ email }),
     }),
 
+  forgotPassword: (email: string, tableToken?: string) =>
+    apiRequest("/auth/forgot-password", {
+      method: "POST",
+      body: JSON.stringify({ email, tableToken }),
+    }),
+
+  resetPassword: (token: string, password: string) =>
+    apiRequest("/auth/reset-password", {
+      method: "POST",
+      body: JSON.stringify({ token, password }),
+    }),
+
   getGoogleAuthUrl: (params: { token?: string; redirect?: string }) => {
     const queryParams = new URLSearchParams(
       params as Record<string, string>,

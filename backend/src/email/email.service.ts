@@ -185,9 +185,13 @@ export class EmailService {
   async sendPasswordResetEmail(
     email: string,
     resetToken: string,
+    tableToken?: string,
   ): Promise<boolean> {
     try {
-      const resetUrl = `${process.env.CUSTOMER_FRONTEND_URL || 'http://localhost:3000'}/reset-password?token=${resetToken}`;
+      let resetUrl = `${process.env.CUSTOMER_FRONTEND_URL || 'http://localhost:3000'}/reset-password?token=${resetToken}`;
+      if (tableToken) {
+        resetUrl += `&tableToken=${encodeURIComponent(tableToken)}`;
+      }
       const gmailUser = this.configService.get<string>('GMAIL_USER');
 
       const htmlContent = `

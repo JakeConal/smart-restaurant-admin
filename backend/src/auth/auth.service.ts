@@ -6,6 +6,7 @@ import * as bcrypt from 'bcrypt';
 import { Users } from '../schema/user.schema';
 import { Customer } from '../schema/customer.schema';
 import { EmailVerificationToken } from '../schema/email-verification-token.schema';
+import { PasswordResetToken } from '../schema/password-reset-token.schema';
 import { SignupDto } from '../dto/sign-up.dto';
 import { LoginDto } from '../dto/login.dto';
 import { CustomerSignupDto } from '../dto/customer-sign-up.dto';
@@ -21,6 +22,8 @@ export class AuthService {
     private customerRepo: Repository<Customer>,
     @InjectRepository(EmailVerificationToken)
     private emailVerificationTokenRepo: Repository<EmailVerificationToken>,
+    @InjectRepository(PasswordResetToken)
+    private passwordResetTokenRepo: Repository<PasswordResetToken>,
     private jwt: JwtService,
     private emailService: EmailService,
   ) {}
@@ -375,5 +378,101 @@ export class AuthService {
    */
   private generateVerificationToken(): string {
     return `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  }
+
+  /**
+   * Forgot password - send reset link via email
+   */
+  async forgotPassword(email: string, tableToken?: string) {
+    const customer = await this.customerRepo.findOne({ where: { email } });
+
+    if (!customer) {
+      // Don't reveal if email exists (security)
+      return {
+        message:
+          'If an account exists with this email, you will receive a password reset link',
+        success: true,
+      };
+    }
+
+    // Delete old reset tokens
+    await this.passwordResetTokenRepo.delete({
+      email,
+      isUsed: false,
+    });
+
+    // Generate reset token (valid for 1 hour)
+    const resetToken = this.generateVerificationToken();
+    const expiresAt = new Date();
+    expiresAt.setHours(expiresAt.getHours() + 1);
+
+    await this.passwordResetTokenRepo.save({
+      customerId: customer.id,
+      email: customer.email,
+      token: resetToken,
+      expiresAt,
+      isUsed: false,
+      tableToken: tableToken, // Store the original table token
+    });
+
+    // Send reset email
+    await this.emailService.sendPasswordResetEmail(
+      customer.email,
+      resetToken,
+      tableToken,
+    );
+
+    return {
+      message:
+        'If an account exists with this email, you will receive a password reset link',
+      success: true,
+    };
+  }
+
+  /**
+   * Reset password using token
+   */
+  async resetPassword(token: string, newPassword: string) {
+    const resetRecord = await this.passwordResetTokenRepo.findOne({
+      where: { token },
+    });
+
+    if (!resetRecord) {
+      throw new BadRequestException('Invalid password reset token');
+    }
+
+    if (resetRecord.isUsed) {
+      throw new BadRequestException(
+        'Password reset token has already been used',
+      );
+    }
+
+    if (new Date() > resetRecord.expiresAt) {
+      throw new BadRequestException('Password reset token has expired');
+    }
+
+    // Find customer and update password
+    const customer = await this.customerRepo.findOne({
+      where: { id: resetRecord.customerId },
+    });
+
+    if (!customer) {
+      throw new BadRequestException('Customer not found');
+    }
+
+    // Hash new password
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    customer.password = hashedPassword;
+    await this.customerRepo.save(customer);
+
+    // Mark token as used
+    resetRecord.isUsed = true;
+    await this.passwordResetTokenRepo.save(resetRecord);
+
+    return {
+      message: 'Password reset successfully!',
+      success: true,
+      tableToken: resetRecord.tableToken, // Return original table token
+    };
   }
 }

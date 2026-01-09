@@ -28,6 +28,7 @@ import { Review } from './schema/review.schema';
 import { Order } from './schema/order.schema';
 import { OrderModule } from './order/order.module';
 import { EmailVerificationToken } from './schema/email-verification-token.schema';
+import { PasswordResetToken } from './schema/password-reset-token.schema';
 
 @Module({
   imports: [
@@ -55,6 +56,7 @@ import { EmailVerificationToken } from './schema/email-verification-token.schema
           Review,
           Order,
           EmailVerificationToken,
+          PasswordResetToken,
         ],
         synchronize: true,
         // Add connection pool and retry settings

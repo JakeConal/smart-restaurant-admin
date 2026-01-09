@@ -88,4 +88,20 @@ export class AuthController {
   resendVerificationEmail(@Body('email') email: string) {
     return this.auth.resendVerificationEmail(email);
   }
+
+  @Post('forgot-password')
+  forgotPassword(
+    @Body('email') email: string,
+    @Body('tableToken') tableToken?: string,
+  ) {
+    return this.auth.forgotPassword(email, tableToken);
+  }
+
+  @Post('reset-password')
+  resetPassword(
+    @Body('token') token: string,
+    @Body('password') password: string,
+  ) {
+    return this.auth.resetPassword(token, password);
+  }
 }

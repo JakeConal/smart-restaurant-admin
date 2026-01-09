@@ -12,11 +12,17 @@ import { AdminGuard } from './guards/admin.guards';
 import { Users } from '../schema/user.schema';
 import { Customer } from '../schema/customer.schema';
 import { EmailVerificationToken } from '../schema/email-verification-token.schema';
+import { PasswordResetToken } from '../schema/password-reset-token.schema';
 import { EmailModule } from '../email/email.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Users, Customer, EmailVerificationToken]),
+    TypeOrmModule.forFeature([
+      Users,
+      Customer,
+      EmailVerificationToken,
+      PasswordResetToken,
+    ]),
     PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.register({
       secret: process.env.JWT_SECRET || 'secretKey123',

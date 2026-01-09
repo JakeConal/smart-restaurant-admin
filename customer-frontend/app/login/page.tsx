@@ -359,9 +359,19 @@ function LoginContent() {
 
             {/* Password */}
             <div>
-              <label className="block text-sm font-semibold text-gray-900 mb-3">
-                Password
-              </label>
+              <div className="flex justify-between items-center mb-3">
+                <label className="block text-sm font-semibold text-gray-900">
+                  Password
+                </label>
+                {activeTab === "login" && (
+                  <Link
+                    href={`/forgot-password${urlToken ? `?token=${urlToken}` : ""}`}
+                    className="text-xs text-amber-600 hover:text-amber-700 font-medium transition-colors"
+                  >
+                    Forgot Password?
+                  </Link>
+                )}
+              </div>
               <div className="relative">
                 <input
                   type="password"
@@ -379,13 +389,6 @@ function LoginContent() {
                   required
                   minLength={activeTab === "signup" ? 8 : 1}
                 />
-                <svg
-                  className="w-5 h-5 text-amber-600 absolute right-4 top-1/2 transform -translate-y-1/2"
-                  fill="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z" />
-                </svg>
               </div>
 
               {/* Password Strength Indicator (Sign Up Only) */}
@@ -518,18 +521,6 @@ function LoginContent() {
                 </div>
               )}
             </div>
-
-            {/* Forgot Password Link */}
-            {activeTab === "login" && (
-              <div className="text-right">
-                <Link
-                  href={`/forgot-password${urlToken ? `?token=${urlToken}` : ""}`}
-                  className="text-amber-600 text-sm font-medium hover:text-amber-700 transition-colors"
-                >
-                  Forgot Password
-                </Link>
-              </div>
-            )}
 
             {/* Submit Button */}
             <button
