@@ -36,11 +36,64 @@ async function apiRequest<T>(
 
     console.error(`❌ API Error [${response.status}] ${url}:`, errorDetails);
     console.error(`📄 Response text:`, responseText);
-    throw new Error(
+
+    // Handle NestJS error format
+    let errorMessage =
       errorDetails.error ||
-        errorDetails.message ||
-        `HTTP error! status: ${response.status}`,
-    );
+      errorDetails.message ||
+      `HTTP error! status: ${response.status}`;
+
+    const messageLower =
+      errorDetails.message?.toLowerCase() ||
+      errorDetails.error?.toLowerCase() ||
+      "";
+
+    // For authentication/login errors - "Invalid credentials" error
+    if (
+      response.status === 400 &&
+      messageLower.includes("invalid credentials")
+    ) {
+      errorMessage =
+        "Invalid email or password. Please check your credentials.";
+    }
+    // For password change errors
+    else if (
+      response.status === 401 &&
+      messageLower.includes("current password")
+    ) {
+      errorMessage = "Current password is incorrect";
+    } else if (
+      response.status === 400 &&
+      messageLower.includes("password does not meet")
+    ) {
+      errorMessage = "New password does not meet complexity requirements";
+    } else if (
+      response.status === 400 &&
+      messageLower.includes("cannot change password for google")
+    ) {
+      errorMessage = "Cannot change password for Google login accounts";
+    } else if (
+      response.status === 400 &&
+      messageLower.includes("account does not have a password")
+    ) {
+      errorMessage =
+        "Account does not have a password. Please use forgot password to set one.";
+    } else if (
+      response.status === 400 &&
+      messageLower.includes("new password must be different")
+    ) {
+      errorMessage = "New password must be different from current password";
+    }
+    // For signup errors
+    else if (
+      response.status === 400 &&
+      messageLower.includes("email already exists")
+    ) {
+      errorMessage =
+        "An account with this email already exists. Please try logging in instead.";
+    }
+
+    throw new Error(errorMessage);
   }
 
   return response.json();

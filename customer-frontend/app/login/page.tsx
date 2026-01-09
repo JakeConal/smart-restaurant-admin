@@ -6,6 +6,12 @@ import Link from "next/link";
 import { useApp } from "@/lib/context";
 import { authApi } from "@/lib/api";
 import { AuthResponse } from "@/lib/types";
+import {
+  validatePasswordComplexity,
+  getPasswordStrengthColor,
+  getPasswordStrengthLabel,
+  getPasswordStrengthBarColor,
+} from "@/lib/password-validator";
 
 function LoginContent() {
   const router = useRouter();
@@ -18,6 +24,9 @@ function LoginContent() {
   const [password, setPassword] = useState("");
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
+  const [passwordStrength, setPasswordStrength] = useState(
+    validatePasswordComplexity(""),
+  );
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [showWelcome, setShowWelcome] = useState(false);
@@ -84,7 +93,41 @@ function LoginContent() {
       login(response);
       setShowWelcome(true);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Authentication failed");
+      let errorMessage = "Authentication failed";
+
+      if (err instanceof Error) {
+        const message = err.message.toLowerCase();
+
+        // For signup validation errors
+        if (message.includes("password does not meet complexity")) {
+          errorMessage =
+            "Password does not meet complexity requirements. Please check the requirements below.";
+        }
+        // For signup duplicate email
+        else if (message.includes("email already exists")) {
+          errorMessage =
+            "An account with this email already exists. Please try logging in instead.";
+        }
+        // For login/signup invalid credentials or wrong password
+        else if (
+          message.includes("invalid") &&
+          message.includes("credentials")
+        ) {
+          errorMessage =
+            "Invalid email or password. Please check your credentials.";
+        }
+        // For user not found during signup
+        else if (message.includes("user not found")) {
+          errorMessage =
+            "No account found with this email. Please sign up first.";
+        }
+        // Default: show the API error message as-is
+        else {
+          errorMessage = err.message;
+        }
+      }
+
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -277,11 +320,18 @@ function LoginContent() {
                 <input
                   type="password"
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  onChange={(e) => {
+                    setPassword(e.target.value);
+                    if (activeTab === "signup") {
+                      setPasswordStrength(
+                        validatePasswordComplexity(e.target.value),
+                      );
+                    }
+                  }}
                   className="w-full px-4 py-3 bg-yellow-100 rounded-xl text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-amber-500"
                   placeholder="••••••••••"
                   required
-                  minLength={6}
+                  minLength={activeTab === "signup" ? 8 : 1}
                 />
                 <svg
                   className="w-5 h-5 text-amber-600 absolute right-4 top-1/2 transform -translate-y-1/2"
@@ -291,6 +341,136 @@ function LoginContent() {
                   <path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z" />
                 </svg>
               </div>
+
+              {/* Password Strength Indicator (Sign Up Only) */}
+              {activeTab === "signup" && password.length > 0 && (
+                <div className="mt-4 space-y-3">
+                  {/* Strength Bar */}
+                  <div className="space-y-1">
+                    <div className="flex justify-between items-center">
+                      <span className="text-xs font-medium text-gray-700">
+                        Password Strength
+                      </span>
+                      <span
+                        className={`text-xs font-bold ${getPasswordStrengthColor(
+                          passwordStrength.score,
+                        )}`}
+                      >
+                        {getPasswordStrengthLabel(passwordStrength.score)}
+                      </span>
+                    </div>
+                    <div className="w-full bg-gray-300 rounded-full h-2">
+                      <div
+                        className={`h-full rounded-full transition-all duration-300 ${getPasswordStrengthBarColor(
+                          passwordStrength.score,
+                        )}`}
+                        style={{
+                          width: `${(passwordStrength.score / 5) * 100}%`,
+                        }}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Requirements List */}
+                  <div className="space-y-2">
+                    <p className="text-xs font-medium text-gray-700">
+                      Password must include:
+                    </p>
+                    <div className="space-y-1 text-xs">
+                      <div
+                        className={
+                          passwordStrength.requirements.minLength
+                            ? "text-green-600 flex items-center gap-2"
+                            : "text-gray-500 flex items-center gap-2"
+                        }
+                      >
+                        <span
+                          className={
+                            passwordStrength.requirements.minLength
+                              ? "text-green-500"
+                              : "text-gray-400"
+                          }
+                        >
+                          ✓
+                        </span>
+                        At least 8 characters
+                      </div>
+                      <div
+                        className={
+                          passwordStrength.requirements.hasUpperCase
+                            ? "text-green-600 flex items-center gap-2"
+                            : "text-gray-500 flex items-center gap-2"
+                        }
+                      >
+                        <span
+                          className={
+                            passwordStrength.requirements.hasUpperCase
+                              ? "text-green-500"
+                              : "text-gray-400"
+                          }
+                        >
+                          ✓
+                        </span>
+                        One uppercase letter (A-Z)
+                      </div>
+                      <div
+                        className={
+                          passwordStrength.requirements.hasLowerCase
+                            ? "text-green-600 flex items-center gap-2"
+                            : "text-gray-500 flex items-center gap-2"
+                        }
+                      >
+                        <span
+                          className={
+                            passwordStrength.requirements.hasLowerCase
+                              ? "text-green-500"
+                              : "text-gray-400"
+                          }
+                        >
+                          ✓
+                        </span>
+                        One lowercase letter (a-z)
+                      </div>
+                      <div
+                        className={
+                          passwordStrength.requirements.hasNumber
+                            ? "text-green-600 flex items-center gap-2"
+                            : "text-gray-500 flex items-center gap-2"
+                        }
+                      >
+                        <span
+                          className={
+                            passwordStrength.requirements.hasNumber
+                              ? "text-green-500"
+                              : "text-gray-400"
+                          }
+                        >
+                          ✓
+                        </span>
+                        One number (0-9)
+                      </div>
+                      <div
+                        className={
+                          passwordStrength.requirements.hasSpecialChar
+                            ? "text-green-600 flex items-center gap-2"
+                            : "text-gray-500 flex items-center gap-2"
+                        }
+                      >
+                        <span
+                          className={
+                            passwordStrength.requirements.hasSpecialChar
+                              ? "text-green-500"
+                              : "text-gray-400"
+                          }
+                        >
+                          ✓
+                        </span>
+                        One special character (!@#$%...)
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Forgot Password Link */}

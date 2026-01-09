@@ -6,6 +6,12 @@ import Image from "next/image";
 import { useApp } from "@/lib/context";
 import { profileApi, orderApi } from "@/lib/api";
 import BottomNav from "@/components/BottomNav";
+import {
+  validatePasswordComplexity,
+  getPasswordStrengthColor,
+  getPasswordStrengthLabel,
+  getPasswordStrengthBarColor,
+} from "@/lib/password-validator";
 
 function ProfileContent() {
   const router = useRouter();
@@ -60,6 +66,9 @@ function ProfileContent() {
   const [passwordValidationErrors, setPasswordValidationErrors] = useState<
     Record<string, string>
   >({});
+  const [newPasswordStrength, setNewPasswordStrength] = useState(
+    validatePasswordComplexity(""),
+  );
 
   // Photo upload
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
@@ -180,10 +189,12 @@ function ProfileContent() {
 
     if (!newPassword) {
       errors.newPassword = "New password is required";
-    } else if (newPassword.length < 6) {
-      errors.newPassword = "Password must be at least 6 characters";
+    } else if (newPassword.length < 8) {
+      errors.newPassword = "Password must be at least 8 characters";
     } else if (newPassword.length > 50) {
       errors.newPassword = "Password must be less than 50 characters";
+    } else if (!newPasswordStrength.isValid) {
+      errors.newPassword = "Password does not meet complexity requirements";
     }
 
     if (!confirmPassword) {
@@ -329,9 +340,33 @@ function ProfileContent() {
       setSuccess("Password changed successfully!");
       setTimeout(() => setSuccess(""), 3000);
     } catch (err) {
-      setPasswordError(
-        err instanceof Error ? err.message : "Failed to change password",
-      );
+      let errorMessage = "Failed to change password";
+
+      if (err instanceof Error) {
+        // Try to parse the error message for better user experience
+        const message = err.message.toLowerCase();
+
+        if (message.includes("current password is incorrect")) {
+          errorMessage = "Current password is incorrect";
+        } else if (message.includes("password does not meet complexity")) {
+          errorMessage = "New password does not meet complexity requirements";
+        } else if (message.includes("cannot change password for google")) {
+          errorMessage = "Cannot change password for Google login accounts";
+        } else if (message.includes("account does not have a password")) {
+          errorMessage =
+            "Account does not have a password. Please use forgot password to set one.";
+        } else if (message.includes("new password must be different")) {
+          errorMessage = "New password must be different from current password";
+        } else if (message.includes("unauthorized")) {
+          errorMessage = "Current password is incorrect";
+        } else if (message.includes("bad request")) {
+          errorMessage = "Please check your input and try again";
+        } else {
+          errorMessage = err.message;
+        }
+      }
+
+      setPasswordError(errorMessage);
     } finally {
       setPasswordLoading(false);
     }
@@ -840,7 +875,12 @@ function ProfileContent() {
                 <input
                   type="password"
                   value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
+                  onChange={(e) => {
+                    setNewPassword(e.target.value);
+                    setNewPasswordStrength(
+                      validatePasswordComplexity(e.target.value),
+                    );
+                  }}
                   className={`w-full px-4 py-3 border rounded-xl ${
                     passwordValidationErrors.newPassword
                       ? "border-red-300 bg-red-50"
@@ -853,9 +893,146 @@ function ProfileContent() {
                     {passwordValidationErrors.newPassword}
                   </p>
                 )}
-                <p className="text-xs text-gray-500 mt-1">
-                  At least 6 characters, max 50 characters
-                </p>
+
+                {/* Password Strength Indicator */}
+                {newPassword.length > 0 && (
+                  <div className="mt-3 space-y-2 p-3 bg-gray-50 rounded-lg">
+                    {/* Strength Bar */}
+                    <div className="space-y-1">
+                      <div className="flex justify-between items-center">
+                        <span className="text-xs font-medium text-gray-700">
+                          Strength
+                        </span>
+                        <span
+                          className={`text-xs font-bold ${getPasswordStrengthColor(
+                            newPasswordStrength.score,
+                          )}`}
+                        >
+                          {getPasswordStrengthLabel(newPasswordStrength.score)}
+                        </span>
+                      </div>
+                      <div className="w-full bg-gray-300 rounded-full h-1.5">
+                        <div
+                          className={`h-full rounded-full transition-all duration-300 ${getPasswordStrengthBarColor(
+                            newPasswordStrength.score,
+                          )}`}
+                          style={{
+                            width: `${(newPasswordStrength.score / 5) * 100}%`,
+                          }}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Requirements */}
+                    <div className="space-y-1">
+                      <p className="text-xs font-medium text-gray-700">
+                        Requirements:
+                      </p>
+                      <div className="space-y-0.5 text-xs">
+                        <div
+                          className={
+                            newPasswordStrength.requirements.minLength
+                              ? "text-green-600 flex items-center gap-1"
+                              : "text-gray-500 flex items-center gap-1"
+                          }
+                        >
+                          <span
+                            className={
+                              newPasswordStrength.requirements.minLength
+                                ? "text-green-500"
+                                : "text-gray-400"
+                            }
+                          >
+                            {newPasswordStrength.requirements.minLength
+                              ? "✓"
+                              : "○"}
+                          </span>
+                          8+ characters
+                        </div>
+                        <div
+                          className={
+                            newPasswordStrength.requirements.hasUpperCase
+                              ? "text-green-600 flex items-center gap-1"
+                              : "text-gray-500 flex items-center gap-1"
+                          }
+                        >
+                          <span
+                            className={
+                              newPasswordStrength.requirements.hasUpperCase
+                                ? "text-green-500"
+                                : "text-gray-400"
+                            }
+                          >
+                            {newPasswordStrength.requirements.hasUpperCase
+                              ? "✓"
+                              : "○"}
+                          </span>
+                          Uppercase (A-Z)
+                        </div>
+                        <div
+                          className={
+                            newPasswordStrength.requirements.hasLowerCase
+                              ? "text-green-600 flex items-center gap-1"
+                              : "text-gray-500 flex items-center gap-1"
+                          }
+                        >
+                          <span
+                            className={
+                              newPasswordStrength.requirements.hasLowerCase
+                                ? "text-green-500"
+                                : "text-gray-400"
+                            }
+                          >
+                            {newPasswordStrength.requirements.hasLowerCase
+                              ? "✓"
+                              : "○"}
+                          </span>
+                          Lowercase (a-z)
+                        </div>
+                        <div
+                          className={
+                            newPasswordStrength.requirements.hasNumber
+                              ? "text-green-600 flex items-center gap-1"
+                              : "text-gray-500 flex items-center gap-1"
+                          }
+                        >
+                          <span
+                            className={
+                              newPasswordStrength.requirements.hasNumber
+                                ? "text-green-500"
+                                : "text-gray-400"
+                            }
+                          >
+                            {newPasswordStrength.requirements.hasNumber
+                              ? "✓"
+                              : "○"}
+                          </span>
+                          Number (0-9)
+                        </div>
+                        <div
+                          className={
+                            newPasswordStrength.requirements.hasSpecialChar
+                              ? "text-green-600 flex items-center gap-1"
+                              : "text-gray-500 flex items-center gap-1"
+                          }
+                        >
+                          <span
+                            className={
+                              newPasswordStrength.requirements.hasSpecialChar
+                                ? "text-green-500"
+                                : "text-gray-400"
+                            }
+                          >
+                            {newPasswordStrength.requirements.hasSpecialChar
+                              ? "✓"
+                              : "○"}
+                          </span>
+                          Special char (!@#$%...)
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
               <div>
                 <label className="block text-sm text-gray-500 mb-1">
