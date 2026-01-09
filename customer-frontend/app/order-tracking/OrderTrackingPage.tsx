@@ -155,81 +155,86 @@ export default function OrderTrackingPage({
           </div>
         </div>
 
-        {/* Status Progress */}
-        <div className="mb-8 p-6 bg-white rounded-3xl border border-orange-100/50 shadow-sm">
-          {/* Animated Status Card */}
-          <div
-            className={`bg-gradient-to-r ${statusInfo.color} rounded-2xl p-6 text-white mb-6 transform transition-all duration-500`}
-          >
-            <div className="text-5xl mb-3">{statusInfo.icon}</div>
-            <h2 className="text-2xl font-bold mb-1">{statusInfo.label}</h2>
-            <p className="text-white/90">{statusInfo.description}</p>
-          </div>
-
-          {/* Progress Bar */}
-          <div className="mb-6">
-            <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
-              <div
-                className={`h-full bg-gradient-to-r ${statusInfo.color} rounded-full transition-all duration-1000 ease-out`}
-                style={{ width: `${statusInfo.progress}%` }}
-              />
-            </div>
-            <div className="flex justify-between mt-3 text-xs text-gray-500 font-semibold">
-              <span>Received</span>
-              <span>Preparing</span>
-              <span>Ready</span>
-            </div>
-          </div>
-
-          {/* Estimated Time */}
-          <div className="p-3 bg-blue-50 rounded-xl border border-blue-100">
-            <p className="text-sm text-blue-900">
-              <span className="font-semibold">Estimated time:</span>{" "}
-              {displayOrder.status === "received"
-                ? "~20-25 minutes"
-                : displayOrder.status === "preparing"
-                  ? "~10-15 minutes"
-                  : "Ready now!"}
-            </p>
-          </div>
-        </div>
-
         {/* Order Summary */}
         <div className="mb-8 p-6 bg-white rounded-3xl border border-orange-100/50 shadow-sm">
           <h3 className="text-lg font-bold text-gray-900 mb-4">
             Order Details
           </h3>
 
-          {/* Items List */}
-          <div className="space-y-3 mb-4">
-            {displayOrder.items.map((item) => (
-              <div
-                key={item.id}
-                className="flex justify-between items-start p-3 bg-gray-50 rounded-xl"
-              >
-                <div className="flex-1">
-                  <p className="font-semibold text-gray-900">
-                    {item.menuItemName}
-                  </p>
-                  {item.modifiers.length > 0 && (
-                    <p className="text-xs text-gray-500 mt-1">
-                      {item.modifiers.map((m) => m.optionName).join(", ")}
+          {/* Items List with Individual Progress */}
+          <div className="space-y-4 mb-4">
+            {displayOrder.items.map((item) => {
+              // Calculate progress for each item based on order status
+              const getItemProgress = () => {
+                switch (displayOrder.status) {
+                  case "received":
+                    return 33;
+                  case "preparing":
+                    return 66;
+                  case "ready":
+                  case "completed":
+                    return 100;
+                  default:
+                    return 0;
+                }
+              };
+
+              const itemProgress = getItemProgress();
+
+              return (
+                <div
+                  key={item.id}
+                  className="p-4 bg-gray-50 rounded-xl border border-gray-100"
+                >
+                  {/* Item Info */}
+                  <div className="flex justify-between items-start mb-3">
+                    <div className="flex-1">
+                      <p className="font-semibold text-gray-900">
+                        {item.menuItemName}
+                      </p>
+                      {item.modifiers.length > 0 && (
+                        <p className="text-xs text-gray-500 mt-1">
+                          {item.modifiers.map((m) => m.optionName).join(", ")}
+                        </p>
+                      )}
+                      {item.specialInstructions && (
+                        <p className="text-xs text-gray-500 mt-1 italic">
+                          {item.specialInstructions}
+                        </p>
+                      )}
+                      <p className="text-sm text-gray-600 mt-2">
+                        × {item.quantity}
+                      </p>
+                    </div>
+                    <span className="font-bold text-gray-900">
+                      ${item.totalPrice?.toFixed(2) || "0.00"}
+                    </span>
+                  </div>
+
+                  {/* Individual Item Progress Bar */}
+                  <div className="pt-3 border-t border-gray-200">
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="h-1.5 flex-1 bg-gray-300 rounded-full overflow-hidden">
+                        <div
+                          className={`h-full bg-gradient-to-r ${statusInfo.color} rounded-full transition-all duration-1000 ease-out`}
+                          style={{ width: `${itemProgress}%` }}
+                        />
+                      </div>
+                      <span className="text-xs font-semibold text-gray-600 w-8 text-right">
+                        {itemProgress}%
+                      </span>
+                    </div>
+                    <p className="text-xs text-gray-500">
+                      {displayOrder.status === "received"
+                        ? "Order Received"
+                        : displayOrder.status === "preparing"
+                          ? "Preparing"
+                          : "Ready"}
                     </p>
-                  )}
-                  {item.specialInstructions && (
-                    <p className="text-xs text-gray-500 mt-1 italic">
-                      {item.specialInstructions}
-                    </p>
-                  )}
-                  <p className="text-sm text-gray-600 mt-2">
-                    × {item.quantity}
-                  </p>
+                  </div>
                 </div>
-                <span className="font-bold text-gray-900">
-                  ${item.totalPrice?.toFixed(2) || "0.00"}
-                </span>
-              </div>
-            ))}
+              );
+            })}
           </div>
 
           {/* Price Summary */}
