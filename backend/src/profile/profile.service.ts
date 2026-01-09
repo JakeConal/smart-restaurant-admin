@@ -6,6 +6,7 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Customer } from '../schema/customer.schema';
+import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class ProfileService {
@@ -30,13 +31,22 @@ export class ProfileService {
       lastName: customer.lastName,
       dateOfBirth: customer.dateOfBirth,
       phoneNumber: customer.phoneNumber,
+      googleId: customer.googleId,
       isGoogleLogin: customer.isGoogleLogin,
       googleProfilePicUrl: customer.googleProfilePicUrl,
       hasProfilePicture: !!customer.profilePicture,
     };
   }
 
-  async updateProfile(customerId: string, updateData: any) {
+  async updateProfile(
+    customerId: string,
+    updateData: {
+      firstName?: string;
+      lastName?: string;
+      dateOfBirth?: string;
+      phoneNumber?: string;
+    },
+  ) {
     const customer = await this.customerRepo.findOne({
       where: { id: customerId },
     });
@@ -99,5 +109,62 @@ export class ProfileService {
     }
 
     return customer.profilePicture;
+  }
+
+  async updatePassword(
+    customerId: string,
+    currentPassword: string,
+    newPassword: string,
+  ) {
+    const customer = await this.customerRepo.findOne({
+      where: { id: customerId },
+    });
+
+    if (!customer) {
+      throw new NotFoundException('Customer not found');
+    }
+
+    // Check if account is a Google login account (using isGoogleLogin flag)
+    if (customer.isGoogleLogin) {
+      throw new BadRequestException(
+        'Cannot change password for Google login accounts',
+      );
+    }
+
+    // Check if customer has a password (for non-Google accounts)
+    if (!customer.password) {
+      throw new BadRequestException(
+        'Account does not have a password. Please use forgot password to set one.',
+      );
+    }
+
+    // Verify current password
+    const isPasswordValid = await bcrypt.compare(
+      currentPassword,
+      customer.password,
+    );
+
+    if (!isPasswordValid) {
+      throw new BadRequestException('Current password is incorrect');
+    }
+
+    // Validate new password is different from current
+    if (currentPassword === newPassword) {
+      throw new BadRequestException(
+        'New password must be different from current password',
+      );
+    }
+
+    // Hash new password
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    customer.password = hashedPassword;
+
+    // Save to database
+    await this.customerRepo.save(customer);
+
+    return {
+      message: 'Password changed successfully',
+      id: customer.id,
+    };
   }
 }

@@ -100,7 +100,7 @@ export class AuthService {
 
       existingUser = this.userRepo.create({
         email,
-        password: '', // No password for Google users
+        password: null, // No password for Google users
         restaurantId,
         restaurantName: `${firstName} ${lastName}'s Restaurant`,
         role: 'admin',
@@ -200,7 +200,7 @@ export class AuthService {
     if (!existingCustomer) {
       existingCustomer = this.customerRepo.create({
         email,
-        password: '', // No password for Google users
+        password: null, // No password for Google users
         role: 'customer',
         firstName,
         lastName,

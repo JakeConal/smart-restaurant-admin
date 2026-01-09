@@ -107,7 +107,7 @@ export const menuApi = {
 // Customer profile API
 export const profileApi = {
   getProfile: (authToken: string) =>
-    apiRequest("/api/customer/profile", {
+    apiRequest("/profile", {
       headers: {
         Authorization: `Bearer ${authToken}`,
       },
@@ -122,8 +122,8 @@ export const profileApi = {
       dateOfBirth?: string;
     },
   ) =>
-    apiRequest("/api/customer/profile", {
-      method: "PATCH",
+    apiRequest("/profile", {
+      method: "PUT",
       headers: {
         Authorization: `Bearer ${authToken}`,
       },
@@ -137,8 +137,8 @@ export const profileApi = {
       newPassword: string;
     },
   ) =>
-    apiRequest("/api/customer/profile/password", {
-      method: "PATCH",
+    apiRequest("/profile/password", {
+      method: "PUT",
       headers: {
         Authorization: `Bearer ${authToken}`,
       },
@@ -147,9 +147,9 @@ export const profileApi = {
 
   uploadPhoto: async (authToken: string, file: File) => {
     const formData = new FormData();
-    formData.append("photo", file);
+    formData.append("file", file);
 
-    const response = await fetch(`${API_BASE_URL}/api/customer/profile/photo`, {
+    const response = await fetch(`${API_BASE_URL}/profile/picture`, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${authToken}`,
@@ -166,9 +166,6 @@ export const profileApi = {
 
     return response.json();
   },
-
-  getProfilePhoto: (customerId: string) =>
-    `${API_BASE_URL}/api/customer/${customerId}/photo`,
 };
 
 // Reviews API

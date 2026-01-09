@@ -9,7 +9,7 @@ import { useCart } from "@/lib/cart-context";
 import { orderApi } from "@/lib/api";
 import { Order } from "@/lib/types";
 import BottomNav from "@/components/BottomNav";
-import OrderInfoModal from "./OrderInfoModal";
+import OrderInfoModal from "../../components/OrderInfoModal";
 
 function CartContent() {
   const router = useRouter();

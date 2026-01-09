@@ -95,6 +95,7 @@ export interface Customer {
   phoneNumber?: string;
   profilePicture?: string;
   googleProfilePicUrl?: string;
+  googleId?: string;
   isGoogleLogin?: boolean;
 }
 
