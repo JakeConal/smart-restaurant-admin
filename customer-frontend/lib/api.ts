@@ -278,13 +278,28 @@ export const orderApi = {
       method: "PUT",
     }),
 
-  getOrderHistory: (customerId: number) =>
+  getOrderHistory: (customerId: string, authToken?: string) =>
     apiRequest(`/api/orders/history/${customerId}`, {
+      method: "GET",
+      headers: authToken
+        ? {
+            Authorization: `Bearer ${authToken}`,
+          }
+        : {},
+    }),
+
+  getOrdersByTable: (tableId: string) =>
+    apiRequest(`/api/orders/table/${tableId}`, {
       method: "GET",
     }),
 
-  getOrdersByTable: (tableId: number) =>
-    apiRequest(`/api/orders/table/${tableId}`, {
+  getOrdersByCustomer: (customerId: string, authToken?: string) =>
+    apiRequest(`/api/orders/customer/${customerId}`, {
       method: "GET",
+      headers: authToken
+        ? {
+            Authorization: `Bearer ${authToken}`,
+          }
+        : {},
     }),
 };

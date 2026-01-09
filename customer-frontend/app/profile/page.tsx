@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
 import { useApp } from "@/lib/context";
-import { profileApi } from "@/lib/api";
+import { profileApi, orderApi } from "@/lib/api";
 import BottomNav from "@/components/BottomNav";
 
 function ProfileContent() {
@@ -39,12 +39,13 @@ function ProfileContent() {
   const [showOrderHistory, setShowOrderHistory] = useState(false);
   const [orderHistory, setOrderHistory] = useState<
     Array<{
-      id: string;
+      id: number;
       orderId: string;
-      paidAt: string;
+      paidAt?: string;
+      createdAt?: string;
       total: number;
-      items: Array<{ id: string; name: string }>;
-      status: string;
+      items: Array<{ menuItemName?: string; name?: string; quantity: number }>;
+      status?: string;
     }>
   >([]);
   const [loadingOrders, setLoadingOrders] = useState(false);
@@ -386,22 +387,25 @@ function ProfileContent() {
     if (!authToken || !customer?.id) return;
 
     setLoadingOrders(true);
+    setError("");
     try {
-      // Fetch order history from API
-      const response = await fetch(`/api/orders/history/${customer.id}`, {
-        headers: {
-          Authorization: `Bearer ${authToken}`,
-        },
-      });
+      // Use the orderApi from lib
+      const response: any = await orderApi.getOrderHistory(
+        customer.id,
+        authToken,
+      );
 
-      if (!response.ok) {
-        throw new Error("Failed to fetch order history");
+      // The response structure might be { success: true, data: [] } or just []
+      const orders = response.data || response;
+
+      if (Array.isArray(orders)) {
+        setOrderHistory(orders);
+        setShowOrderHistory(true);
+      } else {
+        throw new Error("Invalid order data format");
       }
-
-      const data = await response.json();
-      setOrderHistory(data.data || []);
-      setShowOrderHistory(true);
     } catch (err) {
+      console.error("Error loading order history:", err);
       setError(
         err instanceof Error ? err.message : "Failed to load order history",
       );
@@ -931,34 +935,88 @@ function ProfileContent() {
 
             {orderHistory.length === 0 ? (
               <div className="text-center py-8">
-                <p className="text-gray-500">No orders yet</p>
+                <div className="mb-3">
+                  <svg
+                    className="w-12 h-12 text-gray-300 mx-auto"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={1.5}
+                      d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"
+                    />
+                  </svg>
+                </div>
+                <p className="text-gray-500 font-medium">No orders yet</p>
+                <p className="text-gray-400 text-sm mt-1">
+                  Start ordering to see your history here
+                </p>
               </div>
             ) : (
               <div className="space-y-3">
-                {orderHistory.map((order) => (
+                {orderHistory.map((order: Record<string, any>) => (
                   <div
                     key={order.id}
-                    className="border border-gray-200 rounded-lg p-4"
+                    className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors"
                   >
-                    <div className="flex justify-between items-start mb-2">
+                    <div className="flex justify-between items-start mb-3">
                       <div>
-                        <p className="font-semibold text-sm">{order.orderId}</p>
+                        <p className="font-semibold text-sm text-gray-900">
+                          {order.orderId}
+                        </p>
                         <p className="text-xs text-gray-500">
-                          {new Date(order.paidAt).toLocaleDateString()}
+                          {new Date(
+                            order.paidAt || order.createdAt,
+                          ).toLocaleDateString("en-US", {
+                            year: "numeric",
+                            month: "short",
+                            day: "numeric",
+                          })}
                         </p>
                       </div>
-                      <p className="font-semibold">₫{order.total.toFixed(2)}</p>
+                      <div className="text-right">
+                        <p className="font-semibold text-sm">
+                          ${Number(order.total).toLocaleString("vi-VN")}
+                        </p>
+                      </div>
                     </div>
-                    <p className="text-xs text-gray-600 mb-2">
-                      {order.items.length} item
-                      {order.items.length !== 1 ? "s" : ""}
-                    </p>
-                    <div className="flex gap-2">
-                      <span className="inline-block px-2 py-1 bg-green-100 text-green-800 text-xs rounded">
-                        {order.status}
+
+                    <div className="mb-3">
+                      <p className="text-xs text-gray-600">
+                        {Array.isArray(order.items) && order.items.length > 0
+                          ? `${order.items.length} item${order.items.length !== 1 ? "s" : ""}`
+                          : "No items"}
+                      </p>
+                      {Array.isArray(order.items) && order.items.length > 0 && (
+                        <div className="text-xs text-gray-500 mt-1 space-y-1">
+                          {order.items
+                            .slice(0, 2)
+                            .map((item: Record<string, any>, idx: number) => (
+                              <div key={idx} className="flex justify-between">
+                                <span>{item.menuItemName || item.name}</span>
+                                <span className="text-gray-400">
+                                  x{item.quantity}
+                                </span>
+                              </div>
+                            ))}
+                          {order.items.length > 2 && (
+                            <div className="text-gray-400">
+                              +{order.items.length - 2} more item(s)
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="flex gap-2 items-center">
+                      <span className="inline-block px-3 py-1 bg-green-100 text-green-800 text-xs font-medium rounded-full">
+                        ✓ Paid
                       </span>
-                      <span className="inline-block px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded">
-                        Paid
+                      <span className="inline-block px-3 py-1 bg-blue-100 text-blue-800 text-xs font-medium rounded-full">
+                        {order.status || "Completed"}
                       </span>
                     </div>
                   </div>
