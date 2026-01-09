@@ -1,6 +1,15 @@
-import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, PrimaryGeneratedColumn, ManyToOne, OneToOne, OneToMany, CreateDateColumn, UpdateDateColumn, JoinColumn } from 'typeorm';
+import { Role } from './Role';
+import { UserCredentials } from './UserCredentials';
+import { RefreshToken } from './RefreshToken';
 
-@Entity()
+export enum UserStatus {
+  ACTIVE = 'ACTIVE',
+  SUSPENDED = 'SUSPENDED',
+  DELETED = 'DELETED',
+}
+
+@Entity('users')
 export class Users {
   @PrimaryGeneratedColumn('uuid')
   id: string;
@@ -8,21 +17,39 @@ export class Users {
   @Column({ unique: true })
   email: string;
 
-  @Column({ nullable: true })
-  password: string;
+  @Column({ length: 255 })
+  full_name: string;
 
   @Column({ nullable: true })
-  restaurantId: string;
+  avatar_url: string;
 
-  @Column({ default: 'admin' })
-  role: string;
+  @Column('uuid', { nullable: true })
+  role_id: string;
 
-  @Column({ nullable: true })
-  restaurantName: string;
+  @Column({
+    type: 'enum',
+    enum: UserStatus,
+    default: UserStatus.ACTIVE,
+  })
+  status: UserStatus;
 
-  @Column({ nullable: true })
-  firstName: string;
+  @Column({ type: 'timestamp', nullable: true })
+  last_login_at: Date;
 
-  @Column({ nullable: true })
-  lastName: string;
+  @CreateDateColumn()
+  created_at: Date;
+
+  @UpdateDateColumn()
+  updated_at: Date;
+
+  // Relations
+  @ManyToOne(() => Role, role => role.users)
+  @JoinColumn({ name: 'role_id' })
+  role: Role;
+
+  @OneToOne(() => UserCredentials, credentials => credentials.user)
+  credentials: UserCredentials;
+
+  @OneToMany(() => RefreshToken, refreshToken => refreshToken.user)
+  refreshTokens: RefreshToken[];
 }
