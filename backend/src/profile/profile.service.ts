@@ -2,6 +2,7 @@ import {
   Injectable,
   NotFoundException,
   BadRequestException,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -160,7 +161,7 @@ export class ProfileService {
     );
 
     if (!isPasswordValid) {
-      throw new BadRequestException('Current password is incorrect');
+      throw new UnauthorizedException('Current password is incorrect');
     }
 
     // Validate new password is different from current
