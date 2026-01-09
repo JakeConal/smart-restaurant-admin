@@ -65,7 +65,55 @@ function ProfileContent() {
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [loadedAvatar, setLoadedAvatar] = useState<string | null>(null);
 
+  // FAQ
+  const [showFAQ, setShowFAQ] = useState(false);
+  const [expandedFAQ, setExpandedFAQ] = useState<number | null>(null);
+
   const currentToken = searchParams.get("token") || token;
+
+  // FAQ data
+  const faqData = [
+    {
+      question: "How do I place an order?",
+      answer:
+        "Browse our menu, add items to your cart, and proceed to checkout. You can pay with cash or online payment methods.",
+    },
+    {
+      question: "Can I modify my order after placing it?",
+      answer:
+        "Once an order is confirmed, modifications are not possible. Please contact the restaurant directly if you need to make changes.",
+    },
+    {
+      question: "What payment methods do you accept?",
+      answer:
+        "We accept cash on delivery, credit/debit cards, and various digital payment methods like VNPay.",
+    },
+    {
+      question: "Can I cancel my order?",
+      answer:
+        "Orders can be cancelled within 2 minutes of placement. After that, please contact the restaurant directly.",
+    },
+    {
+      question: "How do I update my profile information?",
+      answer:
+        "Go to your profile page and click 'change' next to Personal details. You can update your name, phone number, and date of birth.",
+    },
+    {
+      question: "Can I change my password?",
+      answer:
+        "Yes, you can change your password in the profile section. This option is not available for Google login accounts.",
+    },
+    {
+      question: "How do I upload a profile picture?",
+      answer:
+        "Click on your profile picture in the Personal details section and select a new image. Supported formats: JPG, PNG, max 5MB.",
+    },
+    {
+      question: "What should I do if I forgot my password?",
+      answer:
+        "Use the 'Forgot Password' link on the login page. We'll send you a reset link via email.",
+    },
+  ];
 
   // Validation functions
   const validateProfile = (): boolean => {
@@ -693,7 +741,7 @@ function ProfileContent() {
         </button>
 
         {/* Change password (only for non-Google users) */}
-        {!customer?.googleId && (
+        {!customer?.isGoogleLogin && (
           <button
             onClick={() => setShowPasswordModal(true)}
             className="w-full bg-white rounded-2xl p-4 shadow-sm flex justify-between items-center hover:bg-gray-50 transition-colors"
@@ -715,45 +763,12 @@ function ProfileContent() {
           </button>
         )}
 
-        {/* Pending reviews */}
-        <button className="w-full bg-white rounded-2xl p-4 shadow-sm flex justify-between items-center hover:bg-gray-50 transition-colors">
-          <span className="font-semibold">Pending reviews</span>
-          <svg
-            className="w-6 h-6 text-gray-400"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M9 5l7 7-7 7"
-            />
-          </svg>
-        </button>
-
         {/* FAQ */}
-        <button className="w-full bg-white rounded-2xl p-4 shadow-sm flex justify-between items-center hover:bg-gray-50 transition-colors">
+        <button
+          onClick={() => setShowFAQ(true)}
+          className="w-full bg-white rounded-2xl p-4 shadow-sm flex justify-between items-center hover:bg-gray-50 transition-colors"
+        >
           <span className="font-semibold">FAQ</span>
-          <svg
-            className="w-6 h-6 text-gray-400"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M9 5l7 7-7 7"
-            />
-          </svg>
-        </button>
-
-        {/* Help */}
-        <button className="w-full bg-white rounded-2xl p-4 shadow-sm flex justify-between items-center hover:bg-gray-50 transition-colors">
-          <span className="font-semibold">Help</span>
           <svg
             className="w-6 h-6 text-gray-400"
             fill="none"
@@ -950,6 +965,78 @@ function ProfileContent() {
                 ))}
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* FAQ modal */}
+      {showFAQ && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-6 z-50">
+          <div className="bg-white rounded-2xl p-6 w-full max-w-md fade-in max-h-[80vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-xl font-bold">Frequently Asked Questions</h2>
+              <button
+                onClick={() => setShowFAQ(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <svg
+                  className="w-6 h-6"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+              </button>
+            </div>
+
+            <div className="space-y-3">
+              {faqData.map((faq, index) => (
+                <div
+                  key={index}
+                  className="border border-gray-200 rounded-lg overflow-hidden"
+                >
+                  <button
+                    onClick={() =>
+                      setExpandedFAQ(expandedFAQ === index ? null : index)
+                    }
+                    className="w-full px-4 py-3 text-left flex justify-between items-center hover:bg-gray-50 transition-colors"
+                  >
+                    <span className="font-medium text-sm pr-2">
+                      {faq.question}
+                    </span>
+                    <svg
+                      className={`w-5 h-5 text-gray-400 transform transition-transform ${
+                        expandedFAQ === index ? "rotate-180" : ""
+                      }`}
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M19 9l-7 7-7-7"
+                      />
+                    </svg>
+                  </button>
+
+                  {expandedFAQ === index && (
+                    <div className="px-4 pb-3">
+                      <p className="text-gray-600 text-sm leading-relaxed">
+                        {faq.answer}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       )}
