@@ -18,20 +18,24 @@ import { CreateTableDto } from '../dto/create-table.dto';
 import { UpdateTableDto } from '../dto/update-table.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt.guards';
 import { AdminGuard } from '../admin-auth/guards/admin.guard';
+import { PermissionGuard } from '../admin-auth/guards/permission.guard';
+import { RequirePermission } from '../admin-auth/decorators/require-permission.decorator';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import type { AuthUser } from '../auth/interfaces/auth-user.interface';
 
 @Controller('/api/admin/tables')
-@UseGuards(AdminGuard)
+@UseGuards(AdminGuard, PermissionGuard)
 export class TableController {
   constructor(private readonly tableService: TableService) {}
 
   @Post()
+  @RequirePermission('table:manage')
   create(@Body() dto: CreateTableDto, @CurrentUser() user: AuthUser) {
     return this.tableService.create(dto, user.restaurantId);
   }
 
   @Get()
+  @RequirePermission('table:read')
   findAll(
     @CurrentUser() user: AuthUser,
     @Query('status') status?: 'active' | 'inactive',

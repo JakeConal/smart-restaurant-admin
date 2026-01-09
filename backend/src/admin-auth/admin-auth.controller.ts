@@ -1,19 +1,66 @@
-import { Controller, Post, Body } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Get,
+  Body,
+  UseGuards,
+  Req,
+  Headers,
+  Ip,
+} from '@nestjs/common';
 import { AdminAuthService } from './admin-auth.service';
 import { SignupDto } from '../dto/sign-up.dto';
 import { LoginDto } from '../dto/login.dto';
+import { JwtAuthGuard } from './guards/jwt-auth.guard';
 
 @Controller('admin-auth')
 export class AdminAuthController {
   constructor(private readonly adminAuthService: AdminAuthService) {}
 
   @Post('signup')
-  async signup(@Body() dto: SignupDto) {
+  async signup(@Body() dto: SignupDto & { fullName: string }) {
     return this.adminAuthService.signup(dto);
   }
 
   @Post('login')
-  async login(@Body() dto: LoginDto) {
-    return this.adminAuthService.login(dto);
+  async login(
+    @Body() dto: LoginDto,
+    @Headers('user-agent') userAgent: string,
+    @Ip() ipAddress: string,
+  ) {
+    return this.adminAuthService.login(dto, userAgent, ipAddress);
+  }
+
+  @Post('refresh')
+  async refresh(@Body('refresh_token') refreshToken: string) {
+    if (!refreshToken) {
+      throw new Error('Refresh token is required');
+    }
+    return this.adminAuthService.refreshAccessToken(refreshToken);
+  }
+
+  @Post('logout')
+  @UseGuards(JwtAuthGuard)
+  async logout(@Body('refresh_token') refreshToken: string) {
+    if (!refreshToken) {
+      throw new Error('Refresh token is required');
+    }
+    await this.adminAuthService.logout(refreshToken);
+    return { message: 'Logged out successfully' };
+  }
+
+  @Post('logout-all')
+  @UseGuards(JwtAuthGuard)
+  async logoutAll(@Req() req: any) {
+    await this.adminAuthService.logoutAll(req.user.sub);
+    return { message: 'Logged out from all devices successfully' };
+  }
+
+  @Get('me')
+  @UseGuards(JwtAuthGuard)
+  async getMe(@Req() req: any) {
+    return {
+      user: req.user,
+    };
   }
 }

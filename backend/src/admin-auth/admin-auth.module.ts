@@ -5,21 +5,31 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { AdminAuthController } from './admin-auth.controller';
 import { AdminAuthService } from './admin-auth.service';
 import { Users } from '../schema/user.schema';
-import { JwtStrategy } from './strategies/jwt.strategy';
+import { UserCredentials } from '../schema/UserCredentials';
+import { RefreshToken } from '../schema/RefreshToken';
+import { Role } from '../schema/Role';
+import { AdminJwtStrategy } from './strategies/jwt.strategy';
 import { AdminGuard } from './guards/admin.guard';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
+import { PermissionGuard } from './guards/permission.guard';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Users]),
+    TypeOrmModule.forFeature([Users, UserCredentials, RefreshToken, Role]),
     PassportModule,
     JwtModule.register({
       secret: process.env.JWT_SECRET || 'secretKey123',
-      signOptions: { expiresIn: '7d' },
+      signOptions: { expiresIn: '15m' },
     }),
   ],
   controllers: [AdminAuthController],
-  providers: [AdminAuthService, JwtStrategy, AdminGuard, JwtAuthGuard],
-  exports: [AdminGuard, JwtAuthGuard],
+  providers: [
+    AdminAuthService,
+    AdminJwtStrategy,
+    AdminGuard,
+    JwtAuthGuard,
+    PermissionGuard,
+  ],
+  exports: [AdminGuard, JwtAuthGuard, PermissionGuard],
 })
 export class AdminAuthModule {}

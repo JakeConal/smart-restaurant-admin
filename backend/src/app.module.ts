@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, OnModuleInit } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { TableModule } from './table/table.module';
@@ -31,6 +31,15 @@ import { EmailVerificationToken } from './schema/email-verification-token.schema
 import { PasswordResetToken } from './schema/password-reset-token.schema';
 import { AdminAuthModule } from './admin-auth/admin-auth.module';
 
+// New RBAC entities
+import { Role } from './schema/Role';
+import { Permission } from './schema/Permission';
+import { RolePermission } from './schema/RolePermission';
+import { UserCredentials } from './schema/UserCredentials';
+import { RefreshToken } from './schema/RefreshToken';
+import { SeedModule } from './seed/seed.module';
+import { SeedService } from './seed/seed.service';
+
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
@@ -58,6 +67,12 @@ import { AdminAuthModule } from './admin-auth/admin-auth.module';
           Order,
           EmailVerificationToken,
           PasswordResetToken,
+          // New RBAC entities
+          Role,
+          Permission,
+          RolePermission,
+          UserCredentials,
+          RefreshToken,
         ],
         synchronize: true,
         // Add connection pool and retry settings
@@ -84,8 +99,20 @@ import { AdminAuthModule } from './admin-auth/admin-auth.module';
     ProfileModule,
     ReviewModule,
     OrderModule,
+    SeedModule,
   ],
   controllers: [AppController],
   providers: [AppService],
 })
-export class AppModule {}
+export class AppModule implements OnModuleInit {
+  constructor(private readonly seedService: SeedService) {}
+
+  async onModuleInit() {
+    // Run database seeder on startup
+    try {
+      await this.seedService.seedAll();
+    } catch (error) {
+      console.error('❌ Database seed failed:', error.message);
+    }
+  }
+}
