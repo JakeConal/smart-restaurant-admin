@@ -25,6 +25,8 @@ import { MenuItemModifierGroup } from './schema/menu-item-modifier.schema';
 import { ProfileModule } from './profile/profile.module';
 import { ReviewModule } from './review/review.module';
 import { Review } from './schema/review.schema';
+import { Order } from './schema/order.schema';
+import { OrderModule } from './order/order.module';
 
 @Module({
   imports: [
@@ -50,6 +52,7 @@ import { Review } from './schema/review.schema';
           ModifierOption,
           MenuItemModifierGroup,
           Review,
+          Order,
         ],
         synchronize: true,
         // Add connection pool and retry settings
@@ -74,6 +77,7 @@ import { Review } from './schema/review.schema';
     MenuItemModifierModule,
     ProfileModule,
     ReviewModule,
+    OrderModule,
   ],
   controllers: [AppController],
   providers: [AppService],

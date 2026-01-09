@@ -11,6 +11,12 @@ async function apiRequest<T>(
     "Content-Type": "application/json",
   };
 
+  // Log the request for debugging
+  console.log(`🌐 API Request: ${options.method || "GET"} ${url}`);
+  if (options.body) {
+    console.log(`📦 Request body:`, JSON.parse(options.body as string));
+  }
+
   const response = await fetch(url, {
     ...options,
     headers: {
@@ -20,10 +26,21 @@ async function apiRequest<T>(
   });
 
   if (!response.ok) {
-    const error = await response
-      .json()
-      .catch(() => ({ message: "Request failed" }));
-    throw new Error(error.message || `HTTP error! status: ${response.status}`);
+    let errorDetails;
+    const responseText = await response.text();
+    try {
+      errorDetails = JSON.parse(responseText);
+    } catch {
+      errorDetails = { message: responseText || "Request failed" };
+    }
+
+    console.error(`❌ API Error [${response.status}] ${url}:`, errorDetails);
+    console.error(`📄 Response text:`, responseText);
+    throw new Error(
+      errorDetails.error ||
+        errorDetails.message ||
+        `HTTP error! status: ${response.status}`,
+    );
   }
 
   return response.json();
@@ -154,46 +171,6 @@ export const profileApi = {
     `${API_BASE_URL}/api/customer/${customerId}/photo`,
 };
 
-// Orders API (placeholder - would need backend implementation)
-export const orderApi = {
-  createOrder: (
-    authToken: string | null,
-    data: {
-      tableId: string;
-      items: Array<{
-        menuItemId: string;
-        quantity: number;
-        modifiers: Array<{ optionId: string }>;
-        specialInstructions?: string;
-      }>;
-      specialRequests?: string;
-    },
-  ) =>
-    apiRequest("/api/orders", {
-      method: "POST",
-      headers: authToken ? { Authorization: `Bearer ${authToken}` } : {},
-      body: JSON.stringify(data),
-    }),
-
-  getOrders: (authToken: string) =>
-    apiRequest("/api/orders", {
-      headers: {
-        Authorization: `Bearer ${authToken}`,
-      },
-    }),
-
-  getOrder: (orderId: string, authToken?: string) =>
-    apiRequest(`/api/orders/${orderId}`, {
-      headers: authToken ? { Authorization: `Bearer ${authToken}` } : {},
-    }),
-
-  requestBill: (orderId: string, authToken?: string) =>
-    apiRequest(`/api/orders/${orderId}/bill`, {
-      method: "POST",
-      headers: authToken ? { Authorization: `Bearer ${authToken}` } : {},
-    }),
-};
-
 // Reviews API
 export const reviewApi = {
   getItemReviews: (
@@ -262,5 +239,55 @@ export const reviewApi = {
         Authorization: `Bearer ${authToken}`,
       },
       body: JSON.stringify(data),
+    }),
+};
+// Order API
+export const orderApi = {
+  createOrder: (data: any) =>
+    apiRequest("/api/orders", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+
+  getOrderByOrderId: (orderId: string) =>
+    apiRequest(`/api/orders/by-orderId/${orderId}`, {
+      method: "GET",
+    }),
+
+  getOrderById: (id: number) =>
+    apiRequest(`/api/orders/${id}`, {
+      method: "GET",
+    }),
+
+  updateOrder: (id: number, data: any) =>
+    apiRequest(`/api/orders/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    }),
+
+  updateOrderByOrderId: (orderId: string, data: any) =>
+    apiRequest(`/api/orders/by-orderId/${orderId}`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    }),
+
+  markAsPaid: (orderId: string) =>
+    apiRequest(`/api/orders/by-orderId/${orderId}/mark-paid`, {
+      method: "PUT",
+    }),
+
+  requestBill: (orderId: string) =>
+    apiRequest(`/api/orders/by-orderId/${orderId}/request-bill`, {
+      method: "PUT",
+    }),
+
+  getOrderHistory: (customerId: number) =>
+    apiRequest(`/api/orders/history/${customerId}`, {
+      method: "GET",
+    }),
+
+  getOrdersByTable: (tableId: number) =>
+    apiRequest(`/api/orders/table/${tableId}`, {
+      method: "GET",
     }),
 };

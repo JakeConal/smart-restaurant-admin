@@ -63,6 +63,22 @@ export default function BottomNav({ token }: BottomNavProps) {
       ),
     },
     {
+      name: "Orders",
+      path: "/order-tracking",
+      icon: (active: boolean) => (
+        <svg
+          className={`w-6 h-6 transition-all duration-300 ${active ? "scale-110" : ""}`}
+          fill="none"
+          viewBox="0 0 24 24"
+        >
+          <path
+            fill={active ? "#fa4a0c" : "currentColor"}
+            d="M9 2C7.34315 2 6 3.34315 6 5V19C6 20.6569 7.34315 22 9 22H15C16.6569 22 18 20.6569 18 19V5C18 3.34315 16.6569 2 15 2H9Z M9 4H15C15.5523 4 16 4.44772 16 5V19C16 19.5523 15.5523 20 15 20H9C8.44772 20 8 19.5523 8 19V5C8 4.44772 8.44772 4 9 4Z M10 7H14V9H10V7Z M10 11H14V13H10V11Z M10 15H14V17H10V15Z"
+          />
+        </svg>
+      ),
+    },
+    {
       name: "Profile",
       path: "/profile",
       icon: (active: boolean) => (

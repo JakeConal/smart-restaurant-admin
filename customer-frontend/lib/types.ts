@@ -145,12 +145,16 @@ export interface Order {
   customerId?: string;
   tableId: string;
   tableNumber: string;
+  guestName?: string;
   status: OrderStatus;
   items: OrderItem[];
   subtotal: number;
   tax: number;
   total: number;
   specialRequests?: string;
+  isPaid?: boolean;
+  billRequestedAt?: string;
+  paidAt?: string;
   createdAt: string;
   updatedAt: string;
 }

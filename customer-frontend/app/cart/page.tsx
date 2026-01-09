@@ -6,25 +6,64 @@ import Image from "next/image";
 import Link from "next/link";
 import { useApp } from "@/lib/context";
 import { useCart } from "@/lib/cart-context";
-import { menuApi } from "@/lib/api";
-import { Order, OrderStatus } from "@/lib/types";
+import { orderApi } from "@/lib/api";
+import { Order } from "@/lib/types";
 import BottomNav from "@/components/BottomNav";
+import OrderInfoModal from "./OrderInfoModal";
 
 function CartContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { token, isAuthenticated, tableId, tableNumber, authToken } = useApp();
+  const { token, isAuthenticated, tableId, tableNumber, authToken, customer } =
+    useApp();
   const { items, updateItemQuantity, removeItem, clearCart, getTotalPrice } =
     useCart();
 
   const [activeOrder, setActiveOrder] = useState<Order | null>(null);
   const [placingOrder, setPlacingOrder] = useState(false);
   const [error, setError] = useState("");
-  const [specialRequests, setSpecialRequests] = useState("");
-  const [showOrderConfirmation, setShowOrderConfirmation] = useState(false);
-  const [requestingBill, setRequestingBill] = useState(false);
+  const [showOrderModal, setShowOrderModal] = useState(false);
 
   const currentToken = searchParams.get("token") || token;
+  const orderId = searchParams.get("orderId");
+
+  // Load active order from sessionStorage on mount
+  useEffect(() => {
+    // Try to load order from orderId in URL first
+    if (orderId) {
+      try {
+        const savedOrderJson = sessionStorage.getItem(`order-${orderId}`);
+        if (savedOrderJson) {
+          const order = JSON.parse(savedOrderJson) as Order;
+          if (!order.isPaid) {
+            setActiveOrder(order);
+          }
+        }
+      } catch (err) {
+        console.error("Failed to load order:", err);
+      }
+      return;
+    }
+
+    // No orderId in URL - search for any unpaid order
+    try {
+      for (let i = 0; i < sessionStorage.length; i++) {
+        const key = sessionStorage.key(i);
+        if (key && key.startsWith("order-")) {
+          const orderJson = sessionStorage.getItem(key);
+          if (orderJson) {
+            const order = JSON.parse(orderJson) as Order;
+            if (!order.isPaid) {
+              setActiveOrder(order);
+              return;
+            }
+          }
+        }
+      }
+    } catch (err) {
+      console.error("Failed to search for active orders:", err);
+    }
+  }, [orderId]);
 
   // Redirect if not authenticated
   useEffect(() => {
@@ -64,53 +103,196 @@ function CartContent() {
     return () => clearInterval(pollInterval);
   }, [activeOrder, authToken]);
 
-  const handlePlaceOrder = async () => {
+  const handleOpenOrderModal = () => {
+    if (!tableId || items.length === 0) {
+      setError("Please add items before placing an order");
+      return;
+    }
+    setShowOrderModal(true);
+  };
+
+  const handleConfirmOrder = async (
+    guestName: string,
+    specialInstructions: string,
+  ) => {
     if (!tableId || items.length === 0) return;
 
     setPlacingOrder(true);
     setError("");
 
     try {
-      // TODO: Use actual API when backend is ready
-      // const orderPayload = {
-      //   tableId,
-      //   items: items.map(item => ({
-      //     menuItemId: item.menuItem.id,
-      //     quantity: item.quantity,
-      //     modifiers: item.modifiers.map(m => ({ optionId: m.optionId })),
-      //     specialInstructions: item.specialInstructions,
-      //   })),
-      //   specialRequests: specialRequests || undefined,
-      // };
-      // const order = await orderApi.createOrder(authToken, orderPayload);
+      // Check if there's an active unpaid order
+      const existingOrderId = orderId || activeOrder?.id;
 
-      // Simulate order creation for demo
+      // Check if adding to existing order
+      if (existingOrderId) {
+        const existingOrderJson = sessionStorage.getItem(
+          `order-${existingOrderId}`,
+        );
+        if (existingOrderJson) {
+          const existingOrder = JSON.parse(existingOrderJson) as Order;
+
+          // Only add if order is not paid
+          if (!existingOrder.isPaid) {
+            // Add new items to existing order
+            const newOrderItems = items.map((item) => ({
+              id: item.id,
+              menuItemId: item.menuItem.id,
+              menuItemName: item.menuItem.name,
+              quantity: item.quantity,
+              unitPrice: item.menuItem.price,
+              totalPrice: item.totalPrice,
+              modifiers: item.modifiers,
+              specialInstructions: item.specialInstructions,
+            }));
+
+            // Calculate total price of new items from cart
+            const cartTotal = getTotalPrice();
+
+            // Recalculate totals
+            const newSubtotal = existingOrder.subtotal + cartTotal;
+            const newTax = newSubtotal * 0.1;
+            const newTotal = newSubtotal + newTax;
+
+            const updatedOrder: Order = {
+              ...existingOrder,
+              items: [...existingOrder.items, ...newOrderItems],
+              subtotal: newSubtotal,
+              tax: newTax,
+              total: newTotal,
+              updatedAt: new Date().toISOString(),
+            };
+
+            sessionStorage.setItem(
+              `order-${existingOrderId}`,
+              JSON.stringify(updatedOrder),
+            );
+
+            console.log(`Updating order ${existingOrderId}:`, {
+              items: updatedOrder.items.length,
+              subtotal: newSubtotal,
+              total: newTotal,
+            });
+
+            // Try to update in database
+            try {
+              await orderApi.updateOrderByOrderId(existingOrderId, {
+                items: updatedOrder.items,
+                subtotal: newSubtotal,
+                tax: newTax,
+                total: newTotal,
+                updatedAt: new Date().toISOString(),
+              });
+              console.log(
+                `Order ${existingOrderId} updated successfully in database`,
+              );
+            } catch (dbErr) {
+              console.warn("Failed to update order in database:", dbErr);
+            }
+
+            clearCart();
+            setShowOrderModal(false);
+            setActiveOrder(updatedOrder);
+
+            router.push(
+              `/order-tracking?token=${currentToken}&orderId=${existingOrderId}`,
+            );
+            return;
+          }
+        }
+      }
+
+      // Create new order
       const simulatedOrder: Order = {
         id: `order-${Date.now()}`,
         tableId,
         tableNumber: tableNumber || "Unknown",
         status: "received",
-        items: items.map((item) => ({
-          id: item.id,
-          menuItemId: item.menuItem.id,
-          menuItemName: item.menuItem.name,
-          quantity: item.quantity,
-          unitPrice: item.menuItem.price,
-          totalPrice: item.totalPrice,
-          modifiers: item.modifiers,
-          specialInstructions: item.specialInstructions,
-        })),
+        items: items.map((item) => {
+          // Ensure price values are valid (not 0 or undefined)
+          const price = item.menuItem.price || 0;
+          const adjustedTotalPrice =
+            price > 0 ? item.totalPrice : item.totalPrice;
+
+          return {
+            id: item.id,
+            menuItemId: item.menuItem.id,
+            menuItemName: item.menuItem.name,
+            quantity: item.quantity,
+            unitPrice: price,
+            totalPrice: adjustedTotalPrice,
+            modifiers: item.modifiers,
+            specialInstructions: item.specialInstructions,
+          };
+        }),
         subtotal: getTotalPrice(),
         tax: getTotalPrice() * 0.1,
         total: getTotalPrice() * 1.1,
-        specialRequests,
+        guestName,
+        specialRequests: specialInstructions,
+        isPaid: false,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       };
 
+      // Save order to session storage
+      sessionStorage.setItem(
+        `order-${simulatedOrder.id}`,
+        JSON.stringify(simulatedOrder),
+      );
+
+      console.log(`Creating new order ${simulatedOrder.id}:`, {
+        items: simulatedOrder.items.length,
+        total: simulatedOrder.total,
+      });
+
+      // Try to save to database
+      try {
+        // Build payload - only include table_id and customer_id if they're valid UUIDs
+        const payload: any = {
+          orderId: simulatedOrder.id,
+          tableNumber: simulatedOrder.tableNumber,
+          guestName: simulatedOrder.guestName,
+          items: simulatedOrder.items,
+          specialRequests: simulatedOrder.specialRequests,
+          subtotal: simulatedOrder.subtotal,
+          tax: simulatedOrder.tax,
+          total: simulatedOrder.total,
+          status: simulatedOrder.status,
+          isPaid: false,
+        };
+
+        // Only add table_id if it exists (it's already a UUID string from context)
+        if (tableId) {
+          payload.table_id = tableId;
+        }
+
+        // Add customer_id if user is authenticated and has a customer ID (UUID string)
+        if (customer && customer.id) {
+          payload.customer_id = customer.id;
+        }
+
+        console.log("📤 Sending order payload:", payload);
+
+        await orderApi.createOrder(payload);
+        console.log(`Order ${simulatedOrder.id} saved to database`);
+      } catch (dbErr) {
+        console.error("Failed to save order to database - DETAILED ERROR:", {
+          error: dbErr,
+          errorMessage: dbErr instanceof Error ? dbErr.message : String(dbErr),
+          orderId: simulatedOrder.id,
+          table_id: tableId,
+        });
+      }
+
       setActiveOrder(simulatedOrder);
       clearCart();
-      setShowOrderConfirmation(true);
+      setShowOrderModal(false);
+
+      // Redirect to order tracking page
+      router.push(
+        `/order-tracking?token=${currentToken}&orderId=${simulatedOrder.id}`,
+      );
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to place order");
     } finally {
@@ -118,215 +300,7 @@ function CartContent() {
     }
   };
 
-  const handleRequestBill = async () => {
-    if (!activeOrder) return;
-
-    setRequestingBill(true);
-    try {
-      // await orderApi.requestBill(activeOrder.id, authToken || undefined);
-      alert("Bill requested! A staff member will bring your bill shortly.");
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to request bill");
-    } finally {
-      setRequestingBill(false);
-    }
-  };
-
-  const getOrderStatusInfo = (status: OrderStatus) => {
-    switch (status) {
-      case "received":
-        return {
-          label: "Order Received",
-          color: "order-received",
-          icon: "📝",
-          progress: 33,
-        };
-      case "preparing":
-        return {
-          label: "Preparing",
-          color: "order-preparing",
-          icon: "👨‍🍳",
-          progress: 66,
-        };
-      case "ready":
-        return {
-          label: "Ready",
-          color: "order-ready",
-          icon: "✅",
-          progress: 100,
-        };
-      case "completed":
-        return {
-          label: "Completed",
-          color: "bg-green-500",
-          icon: "🎉",
-          progress: 100,
-        };
-      case "cancelled":
-        return {
-          label: "Cancelled",
-          color: "bg-red-500",
-          icon: "❌",
-          progress: 0,
-        };
-      default:
-        return {
-          label: "Unknown",
-          color: "bg-gray-500",
-          icon: "❓",
-          progress: 0,
-        };
-    }
-  };
-
   if (!isAuthenticated) return null;
-
-  // Order confirmation view
-  if (showOrderConfirmation && activeOrder) {
-    return (
-      <div className="min-h-screen pb-24 safe-bottom">
-        <div className="pt-8 px-6 text-center">
-          <div className="text-6xl mb-4 fade-in">🎉</div>
-          <h1 className="text-2xl font-bold mb-2">Order Placed!</h1>
-          <p className="text-gray-600 mb-6">
-            Your order has been received and is being prepared.
-          </p>
-
-          <button
-            onClick={() => setShowOrderConfirmation(false)}
-            className="px-6 py-3 bg-[#fa4a0c] text-white rounded-full font-semibold"
-          >
-            Track Order
-          </button>
-        </div>
-        <BottomNav token={currentToken || ""} />
-      </div>
-    );
-  }
-
-  // Active order tracking view
-  if (activeOrder) {
-    const statusInfo = getOrderStatusInfo(activeOrder.status);
-
-    return (
-      <div className="min-h-screen pb-24 safe-bottom">
-        {/* Header */}
-        <div className="pt-8 px-6">
-          <h1 className="text-2xl font-bold text-center mb-2">Order Status</h1>
-          <p className="text-gray-500 text-center mb-6">
-            Table {activeOrder.tableNumber}
-          </p>
-        </div>
-
-        {/* Status progress */}
-        <div className="px-6 mb-8">
-          <div className="bg-white rounded-2xl p-6 shadow-sm">
-            <div className="flex items-center justify-between mb-4">
-              <span className="text-4xl">{statusInfo.icon}</span>
-              <span
-                className={`px-4 py-2 rounded-full text-white ${statusInfo.color}`}
-              >
-                {statusInfo.label}
-              </span>
-            </div>
-
-            {/* Progress bar */}
-            <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
-              <div
-                className={`h-full ${statusInfo.color} transition-all duration-500`}
-                style={{ width: `${statusInfo.progress}%` }}
-              />
-            </div>
-
-            {/* Status steps */}
-            <div className="flex justify-between mt-4 text-sm">
-              <div
-                className={`text-center ${activeOrder.status === "received" || activeOrder.status === "preparing" || activeOrder.status === "ready" ? "text-[#fa4a0c]" : "text-gray-400"}`}
-              >
-                <div className="mb-1">📝</div>
-                <div>Received</div>
-              </div>
-              <div
-                className={`text-center ${activeOrder.status === "preparing" || activeOrder.status === "ready" ? "text-[#fa4a0c]" : "text-gray-400"}`}
-              >
-                <div className="mb-1">👨‍🍳</div>
-                <div>Preparing</div>
-              </div>
-              <div
-                className={`text-center ${activeOrder.status === "ready" ? "text-[#fa4a0c]" : "text-gray-400"}`}
-              >
-                <div className="mb-1">✅</div>
-                <div>Ready</div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Order details */}
-        <div className="px-6">
-          <h2 className="font-semibold mb-4">Order Details</h2>
-          <div className="bg-white rounded-2xl p-4 shadow-sm">
-            {activeOrder.items.map((item) => (
-              <div
-                key={item.id}
-                className="flex justify-between items-center py-3 border-b last:border-b-0"
-              >
-                <div>
-                  <p className="font-medium">{item.menuItemName}</p>
-                  <p className="text-gray-500 text-sm">x{item.quantity}</p>
-                  {item.modifiers.length > 0 && (
-                    <p className="text-gray-400 text-xs">
-                      {item.modifiers.map((m) => m.optionName).join(", ")}
-                    </p>
-                  )}
-                </div>
-                <p className="font-medium">${item.totalPrice.toFixed(2)}</p>
-              </div>
-            ))}
-
-            <div className="pt-4 mt-4 border-t border-dashed">
-              <div className="flex justify-between text-gray-500 mb-2">
-                <span>Subtotal</span>
-                <span>${activeOrder.subtotal.toFixed(2)}</span>
-              </div>
-              <div className="flex justify-between text-gray-500 mb-2">
-                <span>Tax (10%)</span>
-                <span>${activeOrder.tax.toFixed(2)}</span>
-              </div>
-              <div className="flex justify-between font-bold text-lg">
-                <span>Total</span>
-                <span className="text-[#fa4a0c]">
-                  ${activeOrder.total.toFixed(2)}
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Actions */}
-        <div className="px-6 mt-6 space-y-3">
-          <Link
-            href={`/menu?token=${currentToken}`}
-            className="block w-full py-4 text-center bg-white border border-gray-200 rounded-full font-semibold hover:bg-gray-50 transition-colors"
-          >
-            Add More Items
-          </Link>
-
-          {activeOrder.status === "ready" && (
-            <button
-              onClick={handleRequestBill}
-              disabled={requestingBill}
-              className="w-full py-4 bg-[#fa4a0c] text-white rounded-full font-semibold hover:bg-[#e04009] transition-colors disabled:opacity-50"
-            >
-              {requestingBill ? "Requesting..." : "Request Bill"}
-            </button>
-          )}
-        </div>
-
-        <BottomNav token={currentToken || ""} />
-      </div>
-    );
-  }
 
   // Empty cart view
   if (items.length === 0) {
@@ -418,7 +392,7 @@ function CartContent() {
 
       {/* Cart Items */}
       <div className="px-6 mt-6 space-y-3 mb-6">
-        {items.map((item, index) => (
+        {items.map((item) => (
           <div
             key={item.id}
             className="bg-white/70 backdrop-blur-sm border border-white/50 rounded-2xl p-4 shadow-sm hover:shadow-md transition-all group"
@@ -583,7 +557,7 @@ function CartContent() {
           </div>
 
           <button
-            onClick={handlePlaceOrder}
+            onClick={handleOpenOrderModal}
             disabled={placingOrder || !tableId || items.length === 0}
             className="w-full h-14 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-2xl font-bold text-lg shadow-lg hover:shadow-xl hover:scale-105 transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center justify-center gap-2"
           >
@@ -602,6 +576,16 @@ function CartContent() {
       </div>
 
       <BottomNav token={currentToken || ""} />
+
+      {/* Order Information Modal */}
+      <OrderInfoModal
+        isOpen={showOrderModal}
+        items={items}
+        tableNumber={tableNumber || undefined}
+        onClose={() => setShowOrderModal(false)}
+        onConfirm={handleConfirmOrder}
+        isLoading={placingOrder}
+      />
     </div>
   );
 }
