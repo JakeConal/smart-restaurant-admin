@@ -44,9 +44,34 @@ export class ProfileController {
 
   @Get('picture')
   async getProfilePicture(@Req() req: any, @Res() res: Response) {
-    const picture = await this.profileService.getProfilePicture(req.user.sub);
-    res.setHeader('Content-Type', 'image/jpeg');
-    res.send(picture);
+    try {
+      const customerId = req.user?.sub;
+
+      if (!customerId) {
+        console.log('❌ No customerId in req.user:', req.user);
+        return res.status(401).json({ error: 'Unauthorized' });
+      }
+
+      console.log('✅ Loading avatar for customer:', customerId);
+      const picture = await this.profileService.getProfilePicture(customerId);
+
+      // Set proper cache control headers to prevent caching
+      res.setHeader(
+        'Cache-Control',
+        'no-cache, no-store, must-revalidate, max-age=0',
+      );
+      res.setHeader('Pragma', 'no-cache');
+      res.setHeader('Expires', '0');
+      res.setHeader('ETag', `"${Date.now()}"`); // Add timestamp as ETag to bust cache
+      res.setHeader('Content-Type', 'image/jpeg');
+      res.setHeader('Content-Length', Buffer.byteLength(picture));
+
+      res.send(picture);
+    } catch (error) {
+      // Return 404 for any error (picture not found, customer not found, etc)
+      console.log('❌ Error in getProfilePicture:', error);
+      res.status(404).end();
+    }
   }
 
   @Put('password')

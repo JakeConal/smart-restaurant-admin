@@ -96,15 +96,30 @@ export class ProfileService {
   }
 
   async getProfilePicture(customerId: string) {
+    if (!customerId) {
+      throw new NotFoundException('Customer ID is required');
+    }
+
     const customer = await this.customerRepo.findOne({
       where: { id: customerId },
+      select: ['id', 'profilePicture'], // Only select necessary columns
     });
 
     if (!customer) {
       throw new NotFoundException('Customer not found');
     }
 
+    // Explicitly check if profilePicture exists and is not empty
     if (!customer.profilePicture) {
+      throw new NotFoundException('Profile picture not found');
+    }
+
+    // Additional safety check for buffer
+    if (Buffer.isBuffer(customer.profilePicture)) {
+      if (customer.profilePicture.length === 0) {
+        throw new NotFoundException('Profile picture not found');
+      }
+    } else if (!customer.profilePicture) {
       throw new NotFoundException('Profile picture not found');
     }
 

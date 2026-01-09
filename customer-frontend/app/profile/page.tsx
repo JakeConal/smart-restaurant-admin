@@ -167,22 +167,32 @@ function ProfileContent() {
       setPhoneNumber(customer.phoneNumber || "");
       setDateOfBirth(customer.dateOfBirth || "");
 
+      // Reset avatar and reload for new customer
+      setLoadedAvatar(null);
+      setPhotoPreview(null);
+
       // Load avatar from backend
       if (authToken && customer.id) {
         loadAvatarFromBackend();
       }
     }
-  }, [customer]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [customer, authToken]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const loadAvatarFromBackend = async () => {
-    if (!authToken) return;
+    if (!authToken || !customer?.id) {
+      setLoadedAvatar(null);
+      return;
+    }
 
     try {
+      // Add timestamp to cache bust the request
+      const timestamp = new Date().getTime();
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001"}/profile/picture`,
+        `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001"}/profile/picture?t=${timestamp}`,
         {
           headers: {
             Authorization: `Bearer ${authToken}`,
+            "Cache-Control": "no-cache",
           },
         },
       );
@@ -194,9 +204,14 @@ function ProfileContent() {
           setLoadedAvatar(reader.result as string);
         };
         reader.readAsDataURL(blob);
+      } else {
+        // If response is not ok (404, etc), explicitly clear avatar
+        console.log(`Avatar load failed with status ${response.status}`);
+        setLoadedAvatar(null);
       }
-    } catch {
-      console.log("No avatar found or error loading avatar");
+    } catch (error) {
+      console.log("Error loading avatar:", error);
+      setLoadedAvatar(null);
     }
   };
 
