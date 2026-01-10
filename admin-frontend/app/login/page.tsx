@@ -88,7 +88,7 @@ function LoginForm() {
               Check Your Email
             </h2>
             <p className="text-gray-600 dark:text-gray-400 mb-6">
-              We've sent a verification link to <strong>{email}</strong>
+              We&apos;ve sent a verification link to <strong>{email}</strong>
             </p>
             <div className="bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 mb-8 text-left shadow-sm">
               <div className="flex items-center gap-2 mb-4">
@@ -132,7 +132,7 @@ function LoginForm() {
                 href={`/resend-verification?email=${encodeURIComponent(email)}`}
                 className="block text-sm text-slate-600 hover:text-slate-700 dark:text-slate-400"
               >
-                Didn't receive the email? Resend verification
+                Didn&apos;t receive the email? Resend verification
               </Link>
             </div>
           </div>
