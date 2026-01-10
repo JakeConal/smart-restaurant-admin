@@ -35,11 +35,11 @@ import { AdminAuditLog } from './schema/admin-audit-log.schema';
 import { AdminAuthModule } from './admin-auth/admin-auth.module';
 
 // New RBAC entities
-import { Role } from './schema/Role';
-import { Permission } from './schema/Permission';
-import { RolePermission } from './schema/RolePermission';
-import { UserCredentials } from './schema/UserCredentials';
-import { RefreshToken } from './schema/RefreshToken';
+import { Role } from './schema/role.schema';
+import { Permission } from './schema/permission.schema';
+import { RolePermission } from './schema/role-permission.schema';
+import { UserCredentials } from './schema/user-credentials.schema';
+import { RefreshToken } from './schema/refresh-token.schema';
 import { SeedModule } from './seed/seed.module';
 import { SeedService } from './seed/seed.service';
 

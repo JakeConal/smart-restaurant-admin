@@ -1,6 +1,6 @@
 import { Entity, PrimaryColumn, CreateDateColumn, ManyToOne, JoinColumn } from 'typeorm';
-import { Role } from './Role';
-import { Permission } from './Permission';
+import { Role } from './role.schema';
+import { Permission } from './permission.schema';
 
 @Entity('role_permissions')
 export class RolePermission {

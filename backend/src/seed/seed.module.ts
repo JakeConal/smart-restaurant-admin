@@ -1,9 +1,9 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { SeedService } from './seed.service';
-import { Role } from '../schema/Role';
-import { Permission } from '../schema/Permission';
-import { RolePermission } from '../schema/RolePermission';
+import { Role } from '../schema/role.schema';
+import { Permission } from '../schema/permission.schema';
+import { RolePermission } from '../schema/role-permission.schema';
 
 @Module({
   imports: [

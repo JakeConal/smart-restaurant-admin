@@ -9,9 +9,9 @@ import {
   UpdateDateColumn,
   JoinColumn,
 } from 'typeorm';
-import { Role } from './Role';
-import { UserCredentials } from './UserCredentials';
-import { RefreshToken } from './RefreshToken';
+import { Role } from './role.schema';
+import { UserCredentials } from './user-credentials.schema';
+import { RefreshToken } from './refresh-token.schema';
 
 export enum UserStatus {
   ACTIVE = 'ACTIVE',

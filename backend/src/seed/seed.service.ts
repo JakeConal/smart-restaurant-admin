@@ -1,9 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Role } from '../schema/Role';
-import { Permission } from '../schema/Permission';
-import { RolePermission } from '../schema/RolePermission';
+import { Role } from '../schema/role.schema';
+import { Permission } from '../schema/permission.schema';
+import { RolePermission } from '../schema/role-permission.schema';
 
 @Injectable()
 export class SeedService {

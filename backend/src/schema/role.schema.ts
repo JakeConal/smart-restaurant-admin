@@ -1,5 +1,5 @@
 import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, OneToMany } from 'typeorm';
-import { RolePermission } from './RolePermission';
+import { RolePermission } from './role-permission.schema';
 import { Users } from './user.schema';
 
 @Entity('roles')
