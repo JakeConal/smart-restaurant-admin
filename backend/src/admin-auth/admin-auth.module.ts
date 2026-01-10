@@ -9,14 +9,26 @@ import { Users } from '../schema/user.schema';
 import { UserCredentials } from '../schema/UserCredentials';
 import { RefreshToken } from '../schema/RefreshToken';
 import { Role } from '../schema/Role';
+import { AdminEmailVerificationToken } from '../schema/admin-email-verification-token.schema';
+import { AdminPasswordResetToken } from '../schema/admin-password-reset-token.schema';
+import { AdminAuditLog } from '../schema/admin-audit-log.schema';
 import { AdminJwtStrategy } from './strategies/jwt.strategy';
 import { AdminGuard } from './guards/admin.guard';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { PermissionGuard } from './guards/permission.guard';
+import { EmailModule } from '../email/email.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Users, UserCredentials, RefreshToken, Role]),
+    TypeOrmModule.forFeature([
+      Users,
+      UserCredentials,
+      RefreshToken,
+      Role,
+      AdminEmailVerificationToken,
+      AdminPasswordResetToken,
+      AdminAuditLog,
+    ]),
     PassportModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],
@@ -26,6 +38,7 @@ import { PermissionGuard } from './guards/permission.guard';
       }),
       inject: [ConfigService],
     }),
+    EmailModule,
   ],
   controllers: [AdminAuthController],
   providers: [

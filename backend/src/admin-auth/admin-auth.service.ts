@@ -2,7 +2,9 @@ import {
   Injectable,
   BadRequestException,
   UnauthorizedException,
+  NotFoundException,
 } from '@nestjs/common';
+import type { Request } from 'express';
 import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource } from 'typeorm';
@@ -11,8 +13,12 @@ import { Users, UserStatus } from '../schema/user.schema';
 import { UserCredentials } from '../schema/UserCredentials';
 import { RefreshToken } from '../schema/RefreshToken';
 import { Role } from '../schema/Role';
+import { AdminEmailVerificationToken } from '../schema/admin-email-verification-token.schema';
+import { AdminPasswordResetToken } from '../schema/admin-password-reset-token.schema';
+import { AdminAuditLog, AdminAuditAction, AdminAuditStatus } from '../schema/admin-audit-log.schema';
 import { SignupDto } from '../dto/sign-up.dto';
 import { LoginDto } from '../dto/login.dto';
+import { EmailService } from '../email/email.service';
 
 @Injectable()
 export class AdminAuthService {
@@ -25,8 +31,15 @@ export class AdminAuthService {
     private refreshTokenRepo: Repository<RefreshToken>,
     @InjectRepository(Role)
     private roleRepo: Repository<Role>,
+    @InjectRepository(AdminEmailVerificationToken)
+    private verificationTokenRepo: Repository<AdminEmailVerificationToken>,
+    @InjectRepository(AdminPasswordResetToken)
+    private resetTokenRepo: Repository<AdminPasswordResetToken>,
+    @InjectRepository(AdminAuditLog)
+    private auditLogRepo: Repository<AdminAuditLog>,
     private jwt: JwtService,
     private dataSource: DataSource,
+    private emailService: EmailService,
   ) {}
 
   async signup(dto: SignupDto & { fullName: string; roleCode?: string }) {
@@ -52,6 +65,7 @@ export class AdminAuthService {
         full_name: dto.fullName,
         role_id: role.id,
         status: UserStatus.ACTIVE,
+        isEmailVerified: false, // Email not verified yet
       });
       await queryRunner.manager.save(user);
 
@@ -64,7 +78,25 @@ export class AdminAuthService {
       });
       await queryRunner.manager.save(credentials);
 
+      // Generate email verification token
+      const verificationToken = crypto.randomBytes(32).toString('hex');
+      const expiresAt = new Date();
+      expiresAt.setHours(expiresAt.getHours() + 1); // 1 hour expiry
+
+      const emailVerificationToken = this.verificationTokenRepo.create({
+        userId: user.id,
+        email: user.email,
+        token: verificationToken,
+        expiresAt,
+      });
+      await queryRunner.manager.save(emailVerificationToken);
+
       await queryRunner.commitTransaction();
+
+      // Send verification email (async, don't block)
+      this.emailService
+        .sendAdminVerificationEmail(user.email, user.full_name, verificationToken)
+        .catch((err) => console.error('Failed to send verification email:', err));
 
       // Generate tokens
       const tokens = await this.generateTokens(user, role);
@@ -76,6 +108,7 @@ export class AdminAuthService {
           email: user.email,
           fullName: user.full_name,
           role: role.code,
+          isEmailVerified: false,
         },
       };
     } catch (error) {
@@ -303,5 +336,296 @@ export class AdminAuthService {
       access_token: accessToken,
       refresh_token: refreshTokenValue,
     };
+  }
+
+  // ============= EMAIL VERIFICATION =============
+
+  async verifyEmail(token: string, req?: Request): Promise<{ message: string }> {
+    const verificationToken = await this.verificationTokenRepo.findOne({
+      where: { token },
+    });
+
+    if (!verificationToken) {
+      await this.createAuditLog({
+        userId: null,
+        action: AdminAuditAction.VERIFICATION_FAILED,
+        status: AdminAuditStatus.FAILED,
+        metadata: JSON.stringify({ reason: 'Invalid token', token: token.substring(0, 10) }),
+        ipAddress: req?.ip,
+        userAgent: req?.headers['user-agent'],
+      });
+      throw new BadRequestException('Invalid verification token');
+    }
+
+    if (verificationToken.isUsed) {
+      await this.createAuditLog({
+        userId: verificationToken.userId,
+        action: AdminAuditAction.VERIFICATION_FAILED,
+        status: AdminAuditStatus.FAILED,
+        metadata: JSON.stringify({ reason: 'Token already used' }),
+        ipAddress: req?.ip,
+        userAgent: req?.headers['user-agent'],
+      });
+      throw new BadRequestException('Verification token already used');
+    }
+
+    if (new Date() > verificationToken.expiresAt) {
+      await this.createAuditLog({
+        userId: verificationToken.userId,
+        action: AdminAuditAction.VERIFICATION_FAILED,
+        status: AdminAuditStatus.FAILED,
+        metadata: JSON.stringify({ reason: 'Token expired' }),
+        ipAddress: req?.ip,
+        userAgent: req?.headers['user-agent'],
+      });
+      throw new BadRequestException('Verification token expired');
+    }
+
+    // Find user and update
+    const user = await this.userRepo.findOne({
+      where: { id: verificationToken.userId },
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    // Update user verification status
+    user.isEmailVerified = true;
+    user.emailVerifiedAt = new Date();
+    await this.userRepo.save(user);
+
+    // Mark token as used
+    verificationToken.isUsed = true;
+    await this.verificationTokenRepo.save(verificationToken);
+
+    // Create audit log
+    await this.createAuditLog({
+      userId: user.id,
+      action: AdminAuditAction.EMAIL_VERIFIED,
+      status: AdminAuditStatus.SUCCESS,
+      metadata: JSON.stringify({ email: user.email }),
+      ipAddress: req?.ip,
+      userAgent: req?.headers['user-agent'],
+    });
+
+    return { message: 'Email verified successfully' };
+  }
+
+  async resendVerification(email: string, req?: Request): Promise<{ message: string }> {
+    const user = await this.userRepo.findOne({ where: { email } });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    if (user.isEmailVerified) {
+      throw new BadRequestException('Email already verified');
+    }
+
+    // Invalidate old tokens
+    await this.verificationTokenRepo
+      .createQueryBuilder()
+      .update(AdminEmailVerificationToken)
+      .set({ isUsed: true })
+      .where('userId = :userId', { userId: user.id })
+      .andWhere('isUsed = :isUsed', { isUsed: false })
+      .execute();
+
+    // Generate new token
+    const verificationToken = crypto.randomBytes(32).toString('hex');
+    const expiresAt = new Date();
+    expiresAt.setHours(expiresAt.getHours() + 1); // 1 hour expiry
+
+    const emailVerificationToken = this.verificationTokenRepo.create({
+      userId: user.id,
+      email: user.email,
+      token: verificationToken,
+      expiresAt,
+    });
+    await this.verificationTokenRepo.save(emailVerificationToken);
+
+    // Send verification email
+    await this.emailService.sendAdminVerificationEmail(
+      user.email,
+      user.full_name,
+      verificationToken,
+    );
+
+    // Create audit log
+    await this.createAuditLog({
+      userId: user.id,
+      action: AdminAuditAction.VERIFICATION_SENT,
+      status: AdminAuditStatus.SUCCESS,
+      metadata: JSON.stringify({ email: user.email }),
+      ipAddress: req?.ip,
+      userAgent: req?.headers['user-agent'],
+    });
+
+    return { message: 'Verification email sent' };
+  }
+
+  // ============= PASSWORD RESET =============
+
+  async forgotPassword(email: string, req?: Request): Promise<{ message: string }> {
+    const user = await this.userRepo.findOne({ where: { email } });
+
+    if (!user) {
+      // Don't reveal if user exists
+      return { message: 'If the email exists, a password reset link has been sent' };
+    }
+
+    // Check account status
+    if (user.status !== UserStatus.ACTIVE) {
+      throw new BadRequestException('Account is not active');
+    }
+
+    // Invalidate old reset tokens
+    await this.resetTokenRepo
+      .createQueryBuilder()
+      .update(AdminPasswordResetToken)
+      .set({ isUsed: true })
+      .where('userId = :userId', { userId: user.id })
+      .andWhere('isUsed = :isUsed', { isUsed: false })
+      .execute();
+
+    // Generate reset token
+    const resetToken = crypto.randomBytes(32).toString('hex');
+    const expiresAt = new Date();
+    expiresAt.setMinutes(expiresAt.getMinutes() + 30); // 30 minutes expiry
+
+    const passwordResetToken = this.resetTokenRepo.create({
+      userId: user.id,
+      email: user.email,
+      token: resetToken,
+      expiresAt,
+    });
+    await this.resetTokenRepo.save(passwordResetToken);
+
+    // Send reset email
+    await this.emailService.sendAdminPasswordResetEmail(
+      user.email,
+      user.full_name,
+      resetToken,
+    );
+
+    // Create audit log
+    await this.createAuditLog({
+      userId: user.id,
+      action: AdminAuditAction.RESET_TOKEN_SENT,
+      status: AdminAuditStatus.SUCCESS,
+      metadata: JSON.stringify({ email: user.email }),
+      ipAddress: req?.ip,
+      userAgent: req?.headers['user-agent'],
+    });
+
+    return { message: 'If the email exists, a password reset link has been sent' };
+  }
+
+  async resetPassword(
+    token: string,
+    newPassword: string,
+    req?: Request,
+  ): Promise<{ message: string }> {
+    const resetToken = await this.resetTokenRepo.findOne({
+      where: { token },
+    });
+
+    if (!resetToken) {
+      await this.createAuditLog({
+        userId: null,
+        action: AdminAuditAction.RESET_FAILED,
+        status: AdminAuditStatus.FAILED,
+        metadata: JSON.stringify({ reason: 'Invalid token', token: token.substring(0, 10) }),
+        ipAddress: req?.ip,
+        userAgent: req?.headers['user-agent'],
+      });
+      throw new BadRequestException('Invalid reset token');
+    }
+
+    if (resetToken.isUsed) {
+      await this.createAuditLog({
+        userId: resetToken.userId,
+        action: AdminAuditAction.RESET_FAILED,
+        status: AdminAuditStatus.FAILED,
+        metadata: JSON.stringify({ reason: 'Token already used' }),
+        ipAddress: req?.ip,
+        userAgent: req?.headers['user-agent'],
+      });
+      throw new BadRequestException('Reset token already used');
+    }
+
+    if (new Date() > resetToken.expiresAt) {
+      await this.createAuditLog({
+        userId: resetToken.userId,
+        action: AdminAuditAction.RESET_FAILED,
+        status: AdminAuditStatus.FAILED,
+        metadata: JSON.stringify({ reason: 'Token expired' }),
+        ipAddress: req?.ip,
+        userAgent: req?.headers['user-agent'],
+      });
+      throw new BadRequestException('Reset token expired');
+    }
+
+    // Find user and credentials
+    const user = await this.userRepo.findOne({
+      where: { id: resetToken.userId },
+      relations: ['credentials'],
+    });
+
+    if (!user || !user.credentials) {
+      throw new NotFoundException('User not found');
+    }
+
+    // Update password
+    const passwordHash = await UserCredentials.hashPassword(newPassword);
+    user.credentials.password_hash = passwordHash;
+    user.credentials.password_updated_at = new Date();
+    user.credentials.resetFailedAttempts(); // Reset failed attempts
+    await this.credentialsRepo.save(user.credentials);
+
+    // Mark token as used
+    resetToken.isUsed = true;
+    await this.resetTokenRepo.save(resetToken);
+
+    // Invalidate all refresh tokens (logout all sessions)
+    await this.logoutAll(user.id);
+
+    // Create audit log
+    await this.createAuditLog({
+      userId: user.id,
+      action: AdminAuditAction.PASSWORD_RESET,
+      status: AdminAuditStatus.SUCCESS,
+      metadata: JSON.stringify({ email: user.email }),
+      ipAddress: req?.ip,
+      userAgent: req?.headers['user-agent'],
+    });
+
+    return { message: 'Password reset successfully. Please login with your new password.' };
+  }
+
+  // ============= AUDIT LOG =============
+
+  private async createAuditLog(data: {
+    userId: string | null;
+    action: AdminAuditAction;
+    status: AdminAuditStatus;
+    metadata?: string;
+    ipAddress?: string;
+    userAgent?: string;
+  }): Promise<void> {
+    try {
+      const auditLog = this.auditLogRepo.create({
+        userId: data.userId,
+        action: data.action,
+        status: data.status,
+        metadata: data.metadata,
+        ipAddress: data.ipAddress,
+        userAgent: data.userAgent,
+      });
+      await this.auditLogRepo.save(auditLog);
+    } catch (error) {
+      console.error('Failed to create audit log:', error);
+    }
   }
 }

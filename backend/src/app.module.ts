@@ -29,6 +29,9 @@ import { Order } from './schema/order.schema';
 import { OrderModule } from './order/order.module';
 import { EmailVerificationToken } from './schema/email-verification-token.schema';
 import { PasswordResetToken } from './schema/password-reset-token.schema';
+import { AdminEmailVerificationToken } from './schema/admin-email-verification-token.schema';
+import { AdminPasswordResetToken } from './schema/admin-password-reset-token.schema';
+import { AdminAuditLog } from './schema/admin-audit-log.schema';
 import { AdminAuthModule } from './admin-auth/admin-auth.module';
 
 // New RBAC entities
@@ -67,6 +70,10 @@ import { SeedService } from './seed/seed.service';
           Order,
           EmailVerificationToken,
           PasswordResetToken,
+          // Admin auth entities
+          AdminEmailVerificationToken,
+          AdminPasswordResetToken,
+          AdminAuditLog,
           // New RBAC entities
           Role,
           Permission,

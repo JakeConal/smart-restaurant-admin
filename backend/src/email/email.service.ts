@@ -252,4 +252,176 @@ export class EmailService {
       return false;
     }
   }
+
+  /**
+   * Send email verification link to admin
+   */
+  async sendAdminVerificationEmail(
+    email: string,
+    fullName: string,
+    verificationToken: string,
+  ): Promise<boolean> {
+    try {
+      const verificationUrl = `${process.env.ADMIN_FRONTEND_URL || 'http://localhost:3001'}/verify-email?token=${verificationToken}`;
+      const gmailUser = this.configService.get<string>('GMAIL_USER');
+
+      const htmlContent = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="UTF-8">
+          <style>
+            body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f0f2f5; margin: 0; padding: 0; }
+            .container { max-width: 600px; margin: 40px auto; background-color: white; border-radius: 10px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); overflow: hidden; }
+            .header { background: linear-gradient(135deg, #1e293b 0%, #334155 100%); color: white; padding: 30px 20px; text-align: center; }
+            .header h1 { margin: 0; font-size: 24px; font-weight: 600; }
+            .content { padding: 40px 30px; color: #1e293b; }
+            .content h2 { color: #1e293b; font-size: 20px; margin-bottom: 20px; }
+            .button { display: inline-block; background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); color: white; padding: 14px 40px; text-decoration: none; border-radius: 8px; margin: 25px 0; font-weight: 600; box-shadow: 0 4px 6px rgba(59, 130, 246, 0.3); }
+            .button:hover { background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); }
+            .info-box { background-color: #f1f5f9; border-left: 4px solid #3b82f6; padding: 15px; border-radius: 4px; margin: 20px 0; }
+            .footer { background-color: #f8fafc; color: #64748b; font-size: 12px; text-align: center; padding: 20px; border-top: 1px solid #e2e8f0; }
+            .security-notice { color: #64748b; font-size: 13px; margin-top: 20px; padding: 15px; background-color: #fef3c7; border-radius: 6px; border: 1px solid #fbbf24; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <h1>🔐 Smart Restaurant Admin Portal</h1>
+            </div>
+            <div class="content">
+              <h2>Email Verification Required</h2>
+              <p>Hello <strong>${fullName}</strong>,</p>
+              <p>Your admin account has been created. To complete the setup and secure your account, please verify your email address by clicking the button below:</p>
+              <center>
+                <a href="${verificationUrl}" class="button">Verify Email Address</a>
+              </center>
+              <div class="info-box">
+                <p style="margin: 0;"><strong>Alternative:</strong> If the button doesn't work, copy and paste this link in your browser:</p>
+                <p style="word-break: break-all; color: #3b82f6; margin: 10px 0 0 0;"><a href="${verificationUrl}">${verificationUrl}</a></p>
+              </div>
+              <div class="security-notice">
+                <strong>⏱️ Security Notice:</strong> This verification link will expire in <strong>1 hour</strong> for security purposes. If you did not create an admin account, please contact your system administrator immediately.
+              </div>
+            </div>
+            <div class="footer">
+              <p><strong>Smart Restaurant Admin Portal</strong></p>
+              <p>&copy; 2026 Smart Restaurant. All rights reserved.</p>
+              <p style="margin-top: 10px; color: #94a3b8;">This is an automated message from the admin system.</p>
+            </div>
+          </div>
+        </body>
+        </html>
+      `;
+
+      const info = await this.transporter.sendMail({
+        from: `Smart Restaurant Admin <${gmailUser}>`,
+        to: email,
+        subject: '[Admin] Verify Your Email Address - Smart Restaurant',
+        html: htmlContent,
+        text: `Verify your admin email: ${verificationUrl}`,
+      });
+
+      console.log(`📧 Admin verification email sent to ${email}. Message ID: ${info.messageId}`);
+      return true;
+    } catch (error) {
+      console.error('❌ Error sending admin verification email:', error);
+      console.log(
+        `📧 [FALLBACK] Admin Email Verification Link (${email}):`,
+        `${process.env.ADMIN_FRONTEND_URL || 'http://localhost:3001'}/verify-email?token=${verificationToken}`,
+      );
+      return false;
+    }
+  }
+
+  /**
+   * Send password reset email to admin
+   */
+  async sendAdminPasswordResetEmail(
+    email: string,
+    fullName: string,
+    resetToken: string,
+  ): Promise<boolean> {
+    try {
+      const resetUrl = `${process.env.ADMIN_FRONTEND_URL || 'http://localhost:3001'}/reset-password?token=${resetToken}`;
+      const gmailUser = this.configService.get<string>('GMAIL_USER');
+
+      const htmlContent = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="UTF-8">
+          <style>
+            body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f0f2f5; margin: 0; padding: 0; }
+            .container { max-width: 600px; margin: 40px auto; background-color: white; border-radius: 10px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); overflow: hidden; }
+            .header { background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%); color: white; padding: 30px 20px; text-align: center; }
+            .header h1 { margin: 0; font-size: 24px; font-weight: 600; }
+            .content { padding: 40px 30px; color: #1e293b; }
+            .content h2 { color: #1e293b; font-size: 20px; margin-bottom: 20px; }
+            .button { display: inline-block; background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%); color: white; padding: 14px 40px; text-decoration: none; border-radius: 8px; margin: 25px 0; font-weight: 600; box-shadow: 0 4px 6px rgba(220, 38, 38, 0.3); }
+            .button:hover { background: linear-gradient(135deg, #b91c1c 0%, #991b1b 100%); }
+            .info-box { background-color: #f1f5f9; border-left: 4px solid #dc2626; padding: 15px; border-radius: 4px; margin: 20px 0; }
+            .footer { background-color: #f8fafc; color: #64748b; font-size: 12px; text-align: center; padding: 20px; border-top: 1px solid #e2e8f0; }
+            .warning { background-color: #fef2f2; border: 2px solid #fca5a5; padding: 20px; border-radius: 8px; margin: 25px 0; }
+            .warning-title { color: #dc2626; font-weight: 600; font-size: 16px; margin-bottom: 10px; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <h1>🔐 Admin Password Reset</h1>
+            </div>
+            <div class="content">
+              <h2>Password Reset Request</h2>
+              <p>Hello <strong>${fullName}</strong>,</p>
+              <p>We received a request to reset your admin account password. Click the button below to create a new password:</p>
+              <center>
+                <a href="${resetUrl}" class="button">Reset Password</a>
+              </center>
+              <div class="info-box">
+                <p style="margin: 0;"><strong>Alternative:</strong> If the button doesn't work, copy and paste this link in your browser:</p>
+                <p style="word-break: break-all; color: #dc2626; margin: 10px 0 0 0;"><a href="${resetUrl}">${resetUrl}</a></p>
+              </div>
+              <div class="warning">
+                <div class="warning-title">⚠️ Important Security Information</div>
+                <ul style="margin: 10px 0; padding-left: 20px;">
+                  <li>This password reset link will expire in <strong>30 minutes</strong></li>
+                  <li>All active sessions will be terminated after password reset</li>
+                  <li>If you did not request this reset, please contact your system administrator immediately</li>
+                  <li>Never share this link with anyone</li>
+                </ul>
+              </div>
+              <p style="color: #64748b; font-size: 14px; margin-top: 20px;">This is an automated security message. Your account security is our priority.</p>
+            </div>
+            <div class="footer">
+              <p><strong>Smart Restaurant Admin Portal</strong></p>
+              <p>&copy; 2026 Smart Restaurant. All rights reserved.</p>
+              <p style="margin-top: 10px; color: #94a3b8;">This is an automated security message from the admin system.</p>
+            </div>
+          </div>
+        </body>
+        </html>
+      `;
+
+      const info = await this.transporter.sendMail({
+        from: `Smart Restaurant Admin <${gmailUser}>`,
+        to: email,
+        subject: '[Admin] Password Reset Request - Smart Restaurant',
+        html: htmlContent,
+        text: `Reset your admin password: ${resetUrl}`,
+      });
+
+      console.log(
+        `🔐 Admin password reset email sent to ${email}. Message ID: ${info.messageId}`,
+      );
+      return true;
+    } catch (error) {
+      console.error('❌ Error sending admin password reset email:', error);
+      console.log(
+        `🔐 [FALLBACK] Admin password reset link (${email}):`,
+        `${process.env.ADMIN_FRONTEND_URL || 'http://localhost:3001'}/reset-password?token=${resetToken}`,
+      );
+      return false;
+    }
+  }
 }

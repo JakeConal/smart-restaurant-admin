@@ -8,9 +8,14 @@ import {
   Headers,
   Ip,
 } from '@nestjs/common';
+import type { Request } from 'express';
 import { AdminAuthService } from './admin-auth.service';
 import { SignupDto } from '../dto/sign-up.dto';
 import { LoginDto } from '../dto/login.dto';
+import { AdminVerifyEmailDto } from '../dto/admin-verify-email.dto';
+import { AdminResendVerificationDto } from '../dto/admin-resend-verification.dto';
+import { AdminForgotPasswordDto } from '../dto/admin-forgot-password.dto';
+import { AdminResetPasswordDto } from '../dto/admin-reset-password.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 
 @Controller('admin-auth')
@@ -62,5 +67,29 @@ export class AdminAuthController {
     return {
       user: req.user,
     };
+  }
+
+  // ============= EMAIL VERIFICATION =============
+
+  @Post('verify-email')
+  async verifyEmail(@Body() dto: AdminVerifyEmailDto, @Req() req: Request) {
+    return this.adminAuthService.verifyEmail(dto.token, req);
+  }
+
+  @Post('resend-verification')
+  async resendVerification(@Body() dto: AdminResendVerificationDto, @Req() req: Request) {
+    return this.adminAuthService.resendVerification(dto.email, req);
+  }
+
+  // ============= PASSWORD RESET =============
+
+  @Post('forgot-password')
+  async forgotPassword(@Body() dto: AdminForgotPasswordDto, @Req() req: Request) {
+    return this.adminAuthService.forgotPassword(dto.email, req);
+  }
+
+  @Post('reset-password')
+  async resetPassword(@Body() dto: AdminResetPasswordDto, @Req() req: Request) {
+    return this.adminAuthService.resetPassword(dto.token, dto.newPassword, req);
   }
 }

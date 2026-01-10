@@ -1,4 +1,14 @@
-import { Column, Entity, PrimaryGeneratedColumn, ManyToOne, OneToOne, OneToMany, CreateDateColumn, UpdateDateColumn, JoinColumn } from 'typeorm';
+import {
+  Column,
+  Entity,
+  PrimaryGeneratedColumn,
+  ManyToOne,
+  OneToOne,
+  OneToMany,
+  CreateDateColumn,
+  UpdateDateColumn,
+  JoinColumn,
+} from 'typeorm';
 import { Role } from './Role';
 import { UserCredentials } from './UserCredentials';
 import { RefreshToken } from './RefreshToken';
@@ -36,6 +46,12 @@ export class Users {
   @Column({ type: 'timestamp', nullable: true })
   last_login_at: Date;
 
+  @Column({ type: 'boolean', default: false })
+  isEmailVerified: boolean;
+
+  @Column({ type: 'timestamp', nullable: true })
+  emailVerifiedAt: Date;
+
   @CreateDateColumn()
   created_at: Date;
 
@@ -43,13 +59,13 @@ export class Users {
   updated_at: Date;
 
   // Relations
-  @ManyToOne(() => Role, role => role.users)
+  @ManyToOne(() => Role, (role) => role.users)
   @JoinColumn({ name: 'role_id' })
   role: Role;
 
-  @OneToOne(() => UserCredentials, credentials => credentials.user)
+  @OneToOne(() => UserCredentials, (credentials) => credentials.user)
   credentials: UserCredentials;
 
-  @OneToMany(() => RefreshToken, refreshToken => refreshToken.user)
+  @OneToMany(() => RefreshToken, (refreshToken) => refreshToken.user)
   refreshTokens: RefreshToken[];
 }
