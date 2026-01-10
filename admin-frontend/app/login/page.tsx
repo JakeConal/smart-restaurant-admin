@@ -2,9 +2,11 @@
 
 import React, { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Button, Input, Card } from "@/shared/components/ui";
+import Link from "next/link";
+import { Button, Input, Card, useToast } from "@/shared/components/ui";
 import { useAuth } from "@/shared/components/auth/AuthContext";
-import { Eye, EyeOff, ChefHat } from "lucide-react";
+import { Eye, EyeOff, ChefHat, Mail } from "lucide-react";
+import toast from "react-hot-toast";
 
 function LoginForm() {
   const [email, setEmail] = useState("");
@@ -12,7 +14,9 @@ function LoginForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [isLogin, setIsLogin] = useState(true);
   const [restaurantName, setRestaurantName] = useState("");
+  const [showEmailSentMessage, setShowEmailSentMessage] = useState(false);
   const { login, signup, googleLogin, loadUser, isLoading } = useAuth();
+  const { success, error: showError } = useToast();
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -40,31 +44,116 @@ function LoginForm() {
         router.push("/");
       } else {
         await signup({ email, password, restaurantName });
-        router.push("/");
+        // Show email verification message instead of redirecting
+        setShowEmailSentMessage(true);
+        success("Account created! Please check your email to verify your account.");
       }
-    } catch {
-      // Error is handled in AuthContext
+    } catch (error: any) {
+      // Check if error is about unverified email
+      const errorMessage = error?.response?.data?.message || '';
+      if (errorMessage.includes("verify your email")) {
+        // Dismiss the generic error toast from AuthContext
+        toast.remove();
+        
+        showError(
+          <div className="space-y-1">
+            <p className="font-bold">Email Not Verified</p>
+            <p>Please check your inbox or <Link 
+                href={`/resend-verification?email=${encodeURIComponent(email)}`}
+                className="underline font-bold"
+              >
+                resend verification link
+              </Link>
+            </p>
+          </div>,
+          10000
+        );
+      }
+      // Other errors are handled in AuthContext
     }
   };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 px-4">
       <Card className="w-full max-w-md p-8">
-        <div className="text-center mb-8">
-          <div className="flex justify-center mb-4">
-            <ChefHat className="h-12 w-12 text-blue-600" />
+        {showEmailSentMessage ? (
+          // Email verification message
+          <div className="text-center">
+            <div className="flex justify-center mb-4">
+              <div className="rounded-full bg-green-100 p-3">
+                <Mail className="h-8 w-8 text-green-600" />
+              </div>
+            </div>
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+              Check Your Email
+            </h2>
+            <p className="text-gray-600 dark:text-gray-400 mb-6">
+              We've sent a verification link to <strong>{email}</strong>
+            </p>
+            <div className="bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 mb-8 text-left shadow-sm">
+              <div className="flex items-center gap-2 mb-4">
+                <div className="w-1 h-4 bg-blue-600 rounded-full"></div>
+                <p className="text-xs font-extrabold uppercase tracking-wider text-blue-600 dark:text-blue-400">
+                  Next steps
+                </p>
+              </div>
+              <ol className="space-y-4">
+                <li className="flex items-start gap-4">
+                  <span className="flex items-center justify-center w-6 h-6 rounded-full bg-blue-100 dark:bg-blue-900/30 text-[10px] font-bold text-blue-600 dark:text-blue-400 shrink-0 mt-0.5">1</span>
+                  <p className="text-sm font-medium text-slate-600 dark:text-slate-200 leading-relaxed">
+                    Check your <strong className="text-blue-600 dark:text-blue-400">inbox and spam</strong> folder for our email.
+                  </p>
+                </li>
+                <li className="flex items-start gap-4">
+                  <span className="flex items-center justify-center w-6 h-6 rounded-full bg-blue-100 dark:bg-blue-900/30 text-[10px] font-bold text-blue-600 dark:text-blue-400 shrink-0 mt-0.5">2</span>
+                  <p className="text-sm font-medium text-slate-600 dark:text-slate-200 leading-relaxed">
+                    Click the <strong className="text-blue-600 dark:text-blue-400">verification link</strong> inside the email.
+                  </p>
+                </li>
+                <li className="flex items-start gap-4">
+                  <span className="flex items-center justify-center w-6 h-6 rounded-full bg-blue-100 dark:bg-blue-900/30 text-[10px] font-bold text-blue-600 dark:text-blue-400 shrink-0 mt-0.5">3</span>
+                  <p className="text-sm font-medium text-slate-600 dark:text-slate-200 leading-relaxed">
+                    Return here to <strong className="text-blue-600 dark:text-blue-400">sign in</strong> to your dashboard.
+                  </p>
+                </li>
+              </ol>
+            </div>
+            <div className="space-y-3">
+              <Button
+                onClick={() => {
+                  setShowEmailSentMessage(false);
+                  setIsLogin(true);
+                }}
+                className="w-full"
+              >
+                Back to Sign In
+              </Button>
+              <Link
+                href={`/resend-verification?email=${encodeURIComponent(email)}`}
+                className="block text-sm text-slate-600 hover:text-slate-700 dark:text-slate-400"
+              >
+                Didn't receive the email? Resend verification
+              </Link>
+            </div>
           </div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-            Smart Restaurant
-          </h1>
-          <p className="text-gray-600 dark:text-gray-400 mt-2">
-            {isLogin
-              ? "Sign in to your account"
-              : "Create your restaurant account"}
-          </p>
-        </div>
+        ) : (
+          // Login/Signup form
+          <>
+            <div className="text-center mb-8">
+              <div className="flex justify-center mb-4">
+                <ChefHat className="h-12 w-12 text-blue-600" />
+              </div>
+              <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+                Smart Restaurant
+              </h1>
+              <p className="text-gray-600 dark:text-gray-400 mt-2">
+                {isLogin
+                  ? "Sign in to your account"
+                  : "Create your restaurant account"}
+              </p>
+            </div>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
+            <form onSubmit={handleSubmit} className="space-y-6">
           <div>
             <label
               htmlFor="email"
@@ -112,6 +201,16 @@ function LoginForm() {
                 )}
               </button>
             </div>
+            {isLogin && (
+              <div className="text-right mt-2">
+                <Link
+                  href="/forgot-password"
+                  className="text-sm text-slate-600 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-300"
+                >
+                  Forgot Password?
+                </Link>
+              </div>
+            )}
           </div>
 
           {!isLogin && (
@@ -188,6 +287,8 @@ function LoginForm() {
               : "Already have an account? Sign in"}
           </button>
         </div>
+          </>
+        )}
       </Card>
     </div>
   );

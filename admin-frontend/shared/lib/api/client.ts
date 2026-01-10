@@ -37,12 +37,18 @@ apiClient.interceptors.response.use(
     return response;
   },
   (error) => {
+    // Only redirect to login if we're not already there and if it's not a login attempt
     if (error.response?.status === 401) {
-      // Token expired or invalid - clear auth and redirect
-      if (typeof window !== "undefined") {
-        localStorage.removeItem("authToken");
-        localStorage.removeItem("authUser");
-        window.location.href = "/login";
+      const isLoginRequest = error.config?.url?.includes('/login') || error.config?.url?.includes('/signup');
+      const isLoginPage = typeof window !== "undefined" && window.location.pathname === "/login";
+
+      if (!isLoginRequest && !isLoginPage) {
+        // Token expired or invalid - clear auth and redirect
+        if (typeof window !== "undefined") {
+          localStorage.removeItem("authToken");
+          localStorage.removeItem("authUser");
+          window.location.href = "/login";
+        }
       }
     } else if (error.response?.status === 403) {
       // Forbidden - user doesn't have permission

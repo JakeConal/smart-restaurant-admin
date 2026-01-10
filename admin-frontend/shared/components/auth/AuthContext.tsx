@@ -75,11 +75,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       setIsLoading(true);
       const response: AuthResponse = await authApi.signup(data);
-      setToken(response.access_token);
-      setUser(response.user);
-      localStorage.setItem("authToken", response.access_token);
-      localStorage.setItem("authUser", JSON.stringify(response.user));
-      success("Account created! Welcome to Smart Restaurant!");
+      // Don't auto-login after signup - user needs to verify email first
+      // Just return success, login page will show email verification message
+      success("Account created! Please check your email to verify.");
     } catch (authError) {
       showError("Signup failed. Please try again.");
       throw authError;

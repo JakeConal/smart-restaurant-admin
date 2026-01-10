@@ -6,22 +6,22 @@ import { X, CheckCircle, AlertCircle, AlertTriangle, Info } from "lucide-react";
 
 export const useToast = () => {
   return {
-    success: (message: string, duration?: number) =>
+    success: (message: React.ReactNode, duration?: number) =>
       toast.custom(
         (t) => <ToastContent type="success" message={message} toast={t} />,
         { duration: duration || 5000 },
       ),
-    error: (message: string, duration?: number) =>
+    error: (message: React.ReactNode, duration?: number) =>
       toast.custom(
         (t) => <ToastContent type="error" message={message} toast={t} />,
         { duration: duration || 5000 },
       ),
-    warning: (message: string, duration?: number) =>
+    warning: (message: React.ReactNode, duration?: number) =>
       toast.custom(
         (t) => <ToastContent type="warning" message={message} toast={t} />,
         { duration: duration || 5000 },
       ),
-    info: (message: string, duration?: number) =>
+    info: (message: React.ReactNode, duration?: number) =>
       toast.custom(
         (t) => <ToastContent type="info" message={message} toast={t} />,
         { duration: duration || 5000 },
@@ -54,7 +54,7 @@ export type ToastType = "success" | "error" | "warning" | "info";
 
 export interface ToastContentProps {
   type: ToastType;
-  message: string;
+  message: React.ReactNode;
   toast: HotToast;
 }
 
@@ -113,9 +113,9 @@ const ToastContent: React.FC<ToastContentProps> = ({
     >
       <div className="flex items-start gap-3">
         <Icon className={`w-5 h-5 ${variant.iconColor} shrink-0 mt-0.5`} />
-        <p className={`flex-1 text-sm font-medium ${variant.textColor}`}>
+        <div className={`flex-1 text-sm font-medium ${variant.textColor}`}>
           {message}
-        </p>
+        </div>
         <button
           onClick={() => toast.dismiss(t.id)}
           className={`${variant.iconColor} hover:opacity-70 transition-opacity shrink-0 cursor-pointer`}

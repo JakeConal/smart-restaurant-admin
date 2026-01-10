@@ -155,6 +155,13 @@ export class AdminAuthService {
       throw new UnauthorizedException('Account is not active');
     }
 
+    // Check if email is verified
+    if (!user.isEmailVerified) {
+      throw new UnauthorizedException(
+        'Please verify your email before logging in. Check your inbox or request a new verification link.',
+      );
+    }
+
     // Validate password
     const isValidPassword = await user.credentials.validatePassword(
       dto.password,

@@ -37,6 +37,29 @@ export class AuthApi {
   async googleLogin(): Promise<void> {
     window.location.href = `${apiClient.defaults.baseURL}/admin-auth/google`;
   }
+
+  async verifyEmail(token: string): Promise<{ message: string }> {
+    const response = await apiClient.post("/admin-auth/verify-email", { token });
+    return response.data;
+  }
+
+  async resendVerificationEmail(email: string): Promise<{ message: string }> {
+    const response = await apiClient.post("/admin-auth/resend-verification", { email });
+    return response.data;
+  }
+
+  async forgotPassword(email: string): Promise<{ message: string }> {
+    const response = await apiClient.post("/admin-auth/forgot-password", { email });
+    return response.data;
+  }
+
+  async resetPassword(token: string, newPassword: string): Promise<{ message: string }> {
+    const response = await apiClient.post("/admin-auth/reset-password", { 
+      token, 
+      newPassword 
+    });
+    return response.data;
+  }
 }
 
 export const authApi = new AuthApi();
