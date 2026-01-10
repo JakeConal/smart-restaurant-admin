@@ -76,7 +76,7 @@ export class EmailService {
               <p>Thank you for signing up! Please verify your email address by clicking the button below:</p>
               <a href="${verificationUrl}" class="button">Verify Email</a>
               <p>Or copy and paste this link in your browser:</p>
-              <p style="word-break: break-all; color: #0066cc;"><a href="${verificationUrl}">${verificationUrl}</a></p>
+              <p style="word-break: break-all;"><a href="${verificationUrl}">${verificationUrl}</a></p>
               <p style="color: #666; font-size: 14px;">This verification link will expire in 24 hours.</p>
               <p style="color: #999; font-size: 12px;">If you did not sign up for this account, please ignore this email.</p>
             </div>

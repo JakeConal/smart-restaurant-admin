@@ -74,7 +74,7 @@ function ResendVerificationContent() {
               Email Sent!
             </h2>
             <p className="text-gray-600 dark:text-gray-400 mb-6">
-              We've sent a new verification link to <strong>{email}</strong>
+              We&apos;ve sent a new verification link to <strong>{email}</strong>
             </p>
             <div className="bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 mb-8 text-left shadow-sm">
               <div className="flex items-center gap-2 mb-4">
@@ -87,7 +87,7 @@ function ResendVerificationContent() {
                 <li className="flex items-start gap-4">
                   <span className="flex items-center justify-center w-6 h-6 rounded-full bg-blue-100 dark:bg-blue-900/30 text-[10px] font-bold text-blue-600 dark:text-blue-400 shrink-0 mt-0.5">1</span>
                   <p className="text-sm font-medium text-slate-600 dark:text-slate-200 leading-relaxed">
-                    Check your <strong className="text-blue-600 dark:text-blue-400">inbox and spam</strong> folder for our email.
+                    Check <strong className="text-blue-600 dark:text-blue-400">inbox and spam</strong> folder for our email.
                   </p>
                 </li>
                 <li className="flex items-start gap-4">
