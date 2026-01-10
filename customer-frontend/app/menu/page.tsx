@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useRef, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
+import Fuse from "fuse.js";
 import { useApp } from "@/lib/context";
 import { useCart } from "@/lib/cart-context";
 import { menuApi } from "@/lib/api";
@@ -36,6 +37,9 @@ function MenuContent() {
   const [hasMore, setHasMore] = useState(true);
   const [totalItems, setTotalItems] = useState(0);
   const [urlInitialized, setUrlInitialized] = useState(false);
+  const [fuzzyResults, setFuzzyResults] = useState<MenuItem[]>([]);
+  const [fuseInstance, setFuseInstance] = useState<Fuse<MenuItem> | null>(null);
+  const [useFuzzySearch, setUseFuzzySearch] = useState(false);
 
   const observerRef = useRef<HTMLDivElement>(null);
   const currentToken = searchParams.get("token") || token;
@@ -251,6 +255,32 @@ function MenuContent() {
     observer.observe(observerRef.current);
     return () => observer.disconnect();
   }, [hasMore, loadingMore, page, fetchMenu]);
+
+  // Initialize Fuse.js for fuzzy search
+  useEffect(() => {
+    if (items.length > 0) {
+      const fuse = new Fuse(items, {
+        keys: ["name", "description"],
+        threshold: 0.3,
+        minMatchCharLength: 1,
+        includeScore: true,
+        findAllMatches: true,
+      });
+      setFuseInstance(fuse);
+    }
+  }, [items]);
+
+  // Perform fuzzy search when search query changes
+  useEffect(() => {
+    if (searchQuery.trim() === "") {
+      setFuzzyResults([]);
+      setUseFuzzySearch(false);
+    } else if (fuseInstance) {
+      const results = fuseInstance.search(searchQuery);
+      setFuzzyResults(results.map((result) => result.item));
+      setUseFuzzySearch(true);
+    }
+  }, [searchQuery, fuseInstance]);
 
   // Get chef recommended items
   const chefRecommendedItems = items.filter((item) => item.isChefRecommended);
@@ -768,19 +798,22 @@ function MenuContent() {
           <div>
             <div className="mb-6">
               <h2 className="text-2xl font-bold text-gray-900 mb-2">
-                {showChefRecommended
-                  ? "Chef's Recommendations"
-                  : selectedCategory
-                    ? categories.find((c) => c.id === selectedCategory)?.name
-                    : "All Items"}
+                {useFuzzySearch
+                  ? "Search Results"
+                  : showChefRecommended
+                    ? "Chef's Recommendations"
+                    : selectedCategory
+                      ? categories.find((c) => c.id === selectedCategory)?.name
+                      : "All Items"}
               </h2>
               <p className="text-sm text-gray-600 font-medium">
-                {totalItems} items available
+                {useFuzzySearch ? fuzzyResults.length : totalItems} items
+                available
               </p>
             </div>
 
             <div className="grid grid-cols-2 gap-5">
-              {items.map((item) => (
+              {(useFuzzySearch ? fuzzyResults : items).map((item) => (
                 <Link
                   key={item.id}
                   href={`/menu/${item.id}?token=${currentToken}`}
@@ -865,6 +898,31 @@ function MenuContent() {
             )}
           </div>
         )}
+
+        {/* Fuzzy Search Empty State */}
+        {!loading &&
+          useFuzzySearch &&
+          fuzzyResults.length === 0 &&
+          items.length > 0 && (
+            <div className="flex flex-col items-center justify-center py-20 text-center">
+              <div className="text-6xl mb-6 animate-bounce">🔍</div>
+              <h3 className="text-2xl font-bold text-gray-900 mb-3">
+                No matching dishes found
+              </h3>
+              <p className="text-gray-600 mb-8 text-lg max-w-sm">
+                Try adjusting your search terms for better results
+              </p>
+              <button
+                onClick={() => {
+                  setSearchQuery("");
+                  setUseFuzzySearch(false);
+                }}
+                className="px-8 py-3 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-xl hover:shadow-lg transition-all font-semibold shadow-md hover:scale-105"
+              >
+                Clear Search
+              </button>
+            </div>
+          )}
 
         {/* Loading more */}
         {loadingMore && (
