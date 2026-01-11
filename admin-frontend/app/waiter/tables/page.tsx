@@ -45,17 +45,17 @@ export default function WaiterTablesPage() {
   return (
     <DashboardLayout>
       {/* Header */}
-      <div className="bg-white rounded-[1.75rem] border border-slate-200/10 shadow-md p-6">
-        <div className="flex items-center justify-between">
+      <div className="bg-white rounded-[1.75rem] border border-slate-200/10 shadow-md p-4 sm:p-6">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <div className="bg-slate-100 p-3 rounded-xl">
-              <LayoutGrid className="w-8 h-8 text-slate-700" />
+            <div className="bg-slate-100 p-2 sm:p-3 rounded-xl">
+              <LayoutGrid className="w-6 h-6 sm:w-8 sm:h-8 text-slate-700" />
             </div>
             <div>
-              <h1 className="text-3xl font-extrabold text-gray-900">
+              <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900">
                 My Tables
               </h1>
-              <p className="text-gray-500 text-sm font-medium">
+              <p className="text-gray-500 text-xs sm:text-sm font-medium">
                 {totalTables} table{totalTables !== 1 ? 's' : ''} assigned to you
               </p>
             </div>
@@ -66,10 +66,10 @@ export default function WaiterTablesPage() {
             onClick={handleRefresh}
             variant="secondary"
             disabled={isLoading}
-            className="flex items-center gap-2"
+            className="flex items-center gap-2 w-full sm:w-auto justify-center"
           >
             <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
-            Refresh
+            <span className="hidden sm:inline">Refresh</span>
           </Button>
         </div>
       </div>

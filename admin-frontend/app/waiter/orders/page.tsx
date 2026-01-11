@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { ClipboardList, RefreshCw, WifiOff, Wifi } from 'lucide-react';
+import { DashboardLayout } from '../../../shared/components/layout';
 import { OrderCard } from '../../../shared/components/waiter/OrderCard';
 import { OrderDetailModal } from '../../../shared/components/waiter/OrderDetailModal';
 import { RejectOrderModal } from '../../../shared/components/waiter/RejectOrderModal';
@@ -115,85 +116,83 @@ export default function WaiterOrdersPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <DashboardLayout>
       {/* Header */}
-      <div className="bg-white border-b border-gray-200 sticky top-0 z-10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="bg-blue-100 p-3 rounded-xl">
-                <ClipboardList className="w-8 h-8 text-blue-600" />
-              </div>
-              <div>
-                <h1 className="text-3xl font-bold text-gray-900">
-                  Pending Orders
-                </h1>
-                <p className="text-gray-500">
-                  {count} order{count !== 1 ? 's' : ''} waiting for review
-                </p>
-              </div>
+      <div className="bg-white rounded-[1.75rem] border border-slate-200/10 shadow-md p-4 sm:p-6">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="bg-slate-100 p-2 sm:p-3 rounded-xl">
+              <ClipboardList className="w-6 h-6 sm:w-8 sm:h-8 text-slate-700" />
+            </div>
+            <div>
+              <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900">
+                Pending Orders
+              </h1>
+              <p className="text-gray-500 text-xs sm:text-sm font-medium">
+                {count} order{count !== 1 ? 's' : ''} waiting for review
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto">
+            {/* Online status indicator */}
+            <div
+              className={`flex items-center gap-2 px-2 sm:px-3 py-1 rounded-full text-xs font-extrabold uppercase tracking-wide ${
+                isOnline
+                  ? 'bg-green-100 text-green-700'
+                  : 'bg-red-100 text-red-700'
+              }`}
+            >
+              {isOnline ? (
+                <>
+                  <Wifi className="w-4 h-4" />
+                  <span className="hidden sm:inline">Online</span>
+                </>
+              ) : (
+                <>
+                  <WifiOff className="w-4 h-4" />
+                  <span className="hidden sm:inline">Offline</span>
+                </>
+              )}
             </div>
 
-            <div className="flex items-center gap-3">
-              {/* Online status indicator */}
-              <div
-                className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium ${
-                  isOnline
-                    ? 'bg-green-50 text-green-700'
-                    : 'bg-red-50 text-red-700'
-                }`}
-              >
-                {isOnline ? (
-                  <>
-                    <Wifi className="w-4 h-4" />
-                    Online
-                  </>
-                ) : (
-                  <>
-                    <WifiOff className="w-4 h-4" />
-                    Offline
-                  </>
-                )}
-              </div>
-
-              {/* Refresh button */}
-              <Button
-                onClick={handleRefresh}
-                variant="secondary"
-                disabled={isLoading}
-                className="flex items-center gap-2"
-              >
-                <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
-                Refresh
-              </Button>
-            </div>
+            {/* Refresh button */}
+            <Button
+              onClick={handleRefresh}
+              variant="secondary"
+              disabled={isLoading}
+              className="flex items-center gap-2 flex-1 sm:flex-initial justify-center"
+            >
+              <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
+              <span className="hidden sm:inline">Refresh</span>
+            </Button>
           </div>
         </div>
       </div>
 
       {/* Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="flex-1 overflow-y-auto">
         {isLoading ? (
           <div className="flex items-center justify-center py-12">
             <div className="text-center">
-              <RefreshCw className="w-8 h-8 text-blue-600 animate-spin mx-auto mb-4" />
-              <p className="text-gray-600">Loading orders...</p>
+              <RefreshCw className="w-8 h-8 text-slate-700 animate-spin mx-auto mb-4" />
+              <p className="text-gray-600 text-sm font-medium">Loading orders...</p>
             </div>
           </div>
         ) : orders.length === 0 ? (
           <div className="text-center py-12">
-            <div className="bg-gray-100 w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-4">
+            <div className="bg-slate-100 w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-4">
               <ClipboardList className="w-12 h-12 text-gray-400" />
             </div>
-            <h2 className="text-xl font-semibold text-gray-900 mb-2">
+            <h2 className="text-xl font-bold text-gray-900 mb-2">
               No pending orders
             </h2>
-            <p className="text-gray-600">
+            <p className="text-gray-500 text-sm font-medium">
               New orders will appear here automatically
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
             {orders.map((order) => (
               <OrderCard
                 key={order.orderId}
@@ -230,6 +229,6 @@ export default function WaiterOrdersPage() {
           isOnline={isOnline}
         />
       )}
-    </div>
+    </DashboardLayout>
   );
 }

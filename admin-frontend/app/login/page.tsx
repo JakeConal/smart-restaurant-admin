@@ -29,19 +29,29 @@ function LoginForm() {
         localStorage.setItem("authToken", token);
         localStorage.setItem("authUser", JSON.stringify(userData));
         loadUser();
-        router.push("/");
+        // Redirect based on user role
+        if (userData.role?.toUpperCase() === 'WAITER') {
+          router.push("/waiter/orders");
+        } else {
+          router.push("/");
+        }
       } catch (error) {
         console.error("Error parsing user data:", error);
       }
     }
-  }, [searchParams, router]);
+  }, [searchParams, router, loadUser]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
       if (isLogin) {
-        await login({ email, password });
-        router.push("/");
+        const result = await login({ email, password });
+        // Redirect based on user role
+        if (result?.user?.role?.toUpperCase() === 'WAITER') {
+          router.push("/waiter/orders");
+        } else {
+          router.push("/");
+        }
       } else {
         await signup({ email, password, restaurantName });
         // Show email verification message instead of redirecting

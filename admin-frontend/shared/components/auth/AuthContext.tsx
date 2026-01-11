@@ -27,7 +27,7 @@ interface User {
 interface AuthContextType {
   user: User | null;
   token: string | null;
-  login: (data: LoginRequest) => Promise<void>;
+  login: (data: LoginRequest) => Promise<AuthResponse>;
   signup: (data: SignupRequest) => Promise<void>;
   googleLogin: () => Promise<void>;
   logout: () => void;
@@ -63,6 +63,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       localStorage.setItem("authToken", response.access_token);
       localStorage.setItem("authUser", JSON.stringify(response.user));
       success("Login successful! Welcome back!");
+      return response; // Return response so login page can access user data
     } catch (authError) {
       showError("Login failed. Please check your credentials and try again.");
       throw authError;
