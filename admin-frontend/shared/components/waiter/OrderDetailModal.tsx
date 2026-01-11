@@ -1,0 +1,264 @@
+'use client';
+
+import React, { useState } from 'react';
+import {
+  X,
+  Check,
+  XCircle,
+  Send,
+  Clock,
+  ShoppingBag,
+  AlertCircle,
+  WifiOff,
+} from 'lucide-react';
+import type { Order } from '../../types/order';
+import { Button } from '../ui/Button';
+import { useToast } from '../ui/Toast';
+import { acceptOrder, sendToKitchen } from '../../lib/api/waiter';
+
+interface OrderDetailModalProps {
+  order: Order;
+  isOpen: boolean;
+  onClose: () => void;
+  onAccept: (order: Order) => void;
+  onReject: (orderId: string) => void;
+  onSendToKitchen: (order: Order) => void;
+  isOnline: boolean;
+}
+
+export function OrderDetailModal({
+  order,
+  isOpen,
+  onClose,
+  onAccept,
+  onReject,
+  onSendToKitchen,
+  isOnline,
+}: OrderDetailModalProps) {
+  const toast = useToast();
+  const [isAccepting, setIsAccepting] = useState(false);
+  const [isSending, setIsSending] = useState(false);
+
+  if (!isOpen) return null;
+
+  const getElapsedMinutes = () => {
+    const now = new Date().getTime();
+    const created = new Date(order.createdAt).getTime();
+    return Math.floor((now - created) / 60000);
+  };
+
+  const handleAccept = async () => {
+    if (!isOnline) {
+      toast.error('Cannot accept orders while offline. Please check your connection.');
+      return;
+    }
+
+    setIsAccepting(true);
+    try {
+      const updatedOrder = await acceptOrder(order.orderId, {
+        version: order.version,
+      });
+      toast.success('Order accepted successfully!');
+      onAccept(updatedOrder);
+      onClose();
+    } catch (error) {
+      if (error instanceof Error && error.message?.includes('modified by another user')) {
+        toast.error(
+          'Order was modified by another user. Please refresh and try again.',
+          7000
+        );
+      } else {
+        const message = error instanceof Error ? error.message : 'Failed to accept order';
+        toast.error(message);
+      }
+    } finally {
+      setIsAccepting(false);
+    }
+  };
+
+  const handleReject = () => {
+    onReject(order.orderId);
+  };
+
+  const handleSendToKitchen = async () => {
+    setIsSending(true);
+    try {
+      const updatedOrder = await sendToKitchen(order.orderId);
+      toast.success('Order sent to kitchen!');
+      onSendToKitchen(updatedOrder);
+      onClose();
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to send order to kitchen';
+      toast.error(message);
+    } finally {
+      setIsSending(false);
+    }
+  };
+
+  const canAccept = order.status === 'PENDING_ACCEPTANCE';
+  const canSendToKitchen = order.status === 'ACCEPTED';
+
+  return (
+    <>
+      {/* Backdrop */}
+      <div
+        className="fixed inset-0 bg-black/50 z-40"
+        onClick={onClose}
+      />
+
+      {/* Modal */}
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+          {/* Header */}
+          <div className="sticky top-0 bg-white border-b border-gray-200 p-6 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="bg-blue-100 p-2 rounded-lg">
+                <ShoppingBag className="w-6 h-6 text-blue-600" />
+              </div>
+              <div>
+                <h2 className="text-2xl font-bold text-gray-900">
+                  Table {order.tableNumber}
+                </h2>
+                <p className="text-sm text-gray-500">Order #{order.orderId}</p>
+              </div>
+            </div>
+            <button
+              onClick={onClose}
+              className="text-gray-400 hover:text-gray-600 transition-colors"
+            >
+              <X className="w-6 h-6" />
+            </button>
+          </div>
+
+          {/* Content */}
+          <div className="p-6 space-y-6">
+            {/* Status badges */}
+            <div className="flex items-center gap-2 flex-wrap">
+              {order.isEscalated && (
+                <div className="flex items-center gap-1 bg-red-100 text-red-700 px-3 py-1 rounded-lg text-sm font-medium">
+                  <AlertCircle className="w-4 h-4" />
+                  ESCALATED
+                </div>
+              )}
+              <div className="flex items-center gap-2 bg-blue-50 text-blue-700 px-3 py-1 rounded-lg text-sm">
+                <Clock className="w-4 h-4" />
+                {getElapsedMinutes()} min ago
+              </div>
+              {!isOnline && (
+                <div className="flex items-center gap-1 bg-gray-100 text-gray-700 px-3 py-1 rounded-lg text-sm">
+                  <WifiOff className="w-4 h-4" />
+                  Offline
+                </div>
+              )}
+            </div>
+
+            {/* Order items */}
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-3">
+                Order Items
+              </h3>
+              <div className="space-y-3">
+                {order.items.map((item, index) => (
+                  <div
+                    key={index}
+                    className="flex justify-between items-start p-3 bg-gray-50 rounded-lg"
+                  >
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium text-gray-900">
+                          {item.quantity}x
+                        </span>
+                        <span className="text-gray-900">{item.menuItemName}</span>
+                      </div>
+                      {item.modifiers && item.modifiers.length > 0 && (
+                        <div className="mt-1 ml-8 space-y-1">
+                          {item.modifiers.map((mod, modIndex) => (
+                            <p key={modIndex} className="text-sm text-gray-600">
+                              + {mod.modifierOptionName}
+                              {mod.price > 0 && ` (+$${Number(mod.price).toFixed(2)})`}
+                            </p>
+                          ))}
+                        </div>
+                      )}
+                      {item.specialInstructions && (
+                        <p className="mt-1 ml-8 text-sm text-orange-600 italic">
+                          Note: {item.specialInstructions}
+                        </p>
+                      )}
+                    </div>
+                    <span className="font-semibold text-gray-900">
+                      ${Number(item.subtotal).toFixed(2)}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Special instructions */}
+            {order.specialInstructions && (
+              <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
+                <h3 className="text-sm font-semibold text-orange-900 mb-1">
+                  Special Instructions
+                </h3>
+                <p className="text-sm text-orange-700">{order.specialInstructions}</p>
+              </div>
+            )}
+
+            {/* Total */}
+            <div className="border-t border-gray-200 pt-4 space-y-2">
+              <div className="flex justify-between text-gray-600">
+                <span>Subtotal</span>
+                <span>${Number(order.subtotal).toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between text-gray-600">
+                <span>Tax</span>
+                <span>${Number(order.tax).toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between text-xl font-bold text-gray-900">
+                <span>Total</span>
+                <span>${Number(order.total).toFixed(2)}</span>
+              </div>
+            </div>
+
+            {/* Action buttons */}
+            <div className="flex gap-3 pt-4">
+              {canAccept && (
+                <>
+                  <Button
+                    onClick={handleAccept}
+                    disabled={isAccepting || !isOnline}
+                    variant="primary"
+                    className="flex-1 flex items-center justify-center gap-2"
+                  >
+                    <Check className="w-5 h-5" />
+                    {isAccepting ? 'Accepting...' : 'Accept Order'}
+                  </Button>
+                  <Button
+                    onClick={handleReject}
+                    variant="danger"
+                    className="flex-1 flex items-center justify-center gap-2"
+                  >
+                    <XCircle className="w-5 h-5" />
+                    Reject Order
+                  </Button>
+                </>
+              )}
+
+              {canSendToKitchen && (
+                <Button
+                  onClick={handleSendToKitchen}
+                  disabled={isSending}
+                  variant="primary"
+                  className="flex-1 flex items-center justify-center gap-2"
+                >
+                  <Send className="w-5 h-5" />
+                  {isSending ? 'Sending...' : 'Send to Kitchen'}
+                </Button>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    </>
+  );
+}
