@@ -12,6 +12,7 @@ import {
   ChefHat,
   ClipboardList,
   AlertCircle,
+  Table2,
 } from "lucide-react";
 import { useAuth } from "@/shared/components/auth/AuthContext";
 import { useEscalationPolling } from "../../lib/hooks/useEscalationPolling";
@@ -96,6 +97,29 @@ export const Sidebar: React.FC = () => {
               className={`font-${pathname === '/waiter/orders' ? "bold" : "semibold"} hidden lg:block`}
             >
               Waiter Orders
+            </span>
+          </Link>
+        )}
+
+        {/* Waiter Tables - visible to WAITER and ADMIN roles */}
+        {(user?.role?.toUpperCase() === 'WAITER' || user?.role?.toUpperCase() === 'ADMIN') && (
+          <Link
+            href="/waiter/tables"
+            className={`flex items-center gap-4 px-4 py-3.5 rounded-2xl transition-all group ${
+              pathname === '/waiter/tables'
+                ? "bg-slate-800 text-white shadow-lg shadow-slate-200"
+                : "text-gray-500 hover:text-slate-800 hover:bg-slate-50"
+            }`}
+          >
+            <Table2
+              className={`w-6 h-6 ${
+                pathname === '/waiter/tables' ? "" : "group-hover:scale-110 transition-transform"
+              }`}
+            />
+            <span
+              className={`font-${pathname === '/waiter/tables' ? "bold" : "semibold"} hidden lg:block`}
+            >
+              My Tables
             </span>
           </Link>
         )}

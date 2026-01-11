@@ -9,5 +9,6 @@ import { AuthModule } from '../auth/auth.module';
   imports: [TypeOrmModule.forFeature([Table]), AuthModule],
   controllers: [TableController],
   providers: [TableService, QrService],
+  exports: [TableService],
 })
 export class TableModule {}

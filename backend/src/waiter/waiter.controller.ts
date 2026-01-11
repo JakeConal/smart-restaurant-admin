@@ -9,6 +9,7 @@ import {
   HttpStatus,
 } from '@nestjs/common';
 import { OrderService } from '../order/order.service';
+import { TableService } from '../table/table.service';
 import { AdminGuard } from '../admin-auth/guards/admin.guard';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import type { AuthUser } from '../auth/interfaces/auth-user.interface';
@@ -19,7 +20,10 @@ import { SendToKitchenDto } from '../dto/send-to-kitchen.dto';
 @Controller('api/waiter')
 @UseGuards(AdminGuard)
 export class WaiterController {
-  constructor(private readonly orderService: OrderService) {}
+  constructor(
+    private readonly orderService: OrderService,
+    private readonly tableService: TableService,
+  ) {}
 
   /**
    * Get my pending orders (non-escalated)
@@ -82,5 +86,16 @@ export class WaiterController {
     @CurrentUser() user: AuthUser,
   ) {
     return await this.orderService.sendToKitchen(orderId, user.userId);
+  }
+
+  /**
+   * Get my assigned tables
+   */
+  @Get('tables/assigned')
+  async getMyAssignedTables(@CurrentUser() user: AuthUser) {
+    return await this.tableService.findByWaiterId(
+      user.userId,
+      user.restaurantId,
+    );
   }
 }

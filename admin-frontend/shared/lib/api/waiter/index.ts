@@ -1,4 +1,5 @@
 import type { Order, AcceptOrderDto, RejectOrderDto } from '../../types/order';
+import type { Table } from '../../types/table';
 import { apiClient } from '../client';
 
 export async function getMyPendingOrders(): Promise<Order[]> {
@@ -24,5 +25,10 @@ export async function rejectOrder(
 
 export async function sendToKitchen(orderId: string): Promise<Order> {
   const response = await apiClient.put(`/api/waiter/orders/${orderId}/send-to-kitchen`, {});
+  return response.data;
+}
+
+export async function getMyAssignedTables(): Promise<Table[]> {
+  const response = await apiClient.get('/api/waiter/tables/assigned');
   return response.data;
 }

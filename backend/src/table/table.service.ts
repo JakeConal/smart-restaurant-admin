@@ -78,6 +78,22 @@ export class TableService {
     });
   }
 
+  async findByWaiterId(
+    waiterId: string,
+    restaurantId: string,
+  ): Promise<Table[]> {
+    return this.tableRepo.find({
+      where: {
+        restaurantId,
+        waiter_id: waiterId,
+      },
+      relations: ['waiter'],
+      order: {
+        tableNumber: 'ASC',
+      },
+    });
+  }
+
   async findOne(id: string): Promise<Table> {
     const table = await this.tableRepo.findOne({ where: { id } });
 
