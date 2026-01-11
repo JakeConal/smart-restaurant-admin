@@ -6,14 +6,20 @@ import {
   UpdateDateColumn,
   ManyToOne,
   JoinColumn,
+  VersionColumn,
 } from 'typeorm';
 import { Table } from './table.schema';
 import { Customer } from './customer.schema';
+import { Users } from './user.schema';
 
 export enum OrderStatus {
+  PENDING_ACCEPTANCE = 'pending_acceptance',
+  ACCEPTED = 'accepted',
+  REJECTED = 'rejected',
   RECEIVED = 'received',
   PREPARING = 'preparing',
   READY = 'ready',
+  SERVED = 'served',
   COMPLETED = 'completed',
   CANCELLED = 'cancelled',
 }
@@ -71,7 +77,7 @@ export class Order {
   @Column({
     type: 'enum',
     enum: OrderStatus,
-    default: OrderStatus.RECEIVED,
+    default: OrderStatus.PENDING_ACCEPTANCE,
   })
   status: OrderStatus;
 
@@ -83,6 +89,40 @@ export class Order {
 
   @Column({ type: 'datetime', nullable: true })
   paidAt: string | null;
+
+  // Waiter assignment and tracking
+  @Column({ type: 'uuid', nullable: true })
+  waiter_id: string | null;
+
+  @ManyToOne(() => Users, { eager: false, nullable: true })
+  @JoinColumn({ name: 'waiter_id' })
+  waiter: Users;
+
+  @Column({ type: 'datetime', nullable: true })
+  acceptedAt: Date | null;
+
+  @Column({ type: 'datetime', nullable: true })
+  sentToKitchenAt: Date | null;
+
+  @Column({ type: 'datetime', nullable: true })
+  rejectedAt: Date | null;
+
+  @Column({ type: 'text', nullable: true })
+  rejectionReason: string | null;
+
+  @Column({ type: 'datetime', nullable: true })
+  servedAt: Date | null;
+
+  // Escalation fields
+  @Column({ type: 'boolean', default: false })
+  isEscalated: boolean;
+
+  @Column({ type: 'datetime', nullable: true })
+  escalatedAt: Date | null;
+
+  // Optimistic locking
+  @VersionColumn()
+  version: number;
 
   @CreateDateColumn({ type: 'datetime' })
   createdAt: Date;

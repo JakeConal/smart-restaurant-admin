@@ -1,3 +1,10 @@
+export interface Waiter {
+  id: string;
+  email: string;
+  full_name: string;
+  avatar_url?: string;
+}
+
 export interface Table {
   id: string;
   tableNumber: string;
@@ -7,6 +14,9 @@ export interface Table {
   status: 'active' | 'inactive';
   qrToken?: string;
   qrTokenCreatedAt?: string;
+  waiter_id?: string;
+  waiter?: Waiter;
+  occupancyStatus?: 'available' | 'occupied' | 'reserved';
   createdAt: string;
   updatedAt: string;
 }
@@ -17,6 +27,7 @@ export interface CreateTableDto {
   location?: string;
   description?: string;
   status?: 'active' | 'inactive';
+  waiter_id?: string;
 }
 
 export interface UpdateTableDto {
@@ -25,6 +36,7 @@ export interface UpdateTableDto {
   location?: string;
   description?: string;
   status?: 'active' | 'inactive';
+  waiter_id?: string;
 }
 
 export interface TableFilters {
