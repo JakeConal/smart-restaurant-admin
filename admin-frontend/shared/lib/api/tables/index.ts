@@ -166,6 +166,23 @@ export class TablesApi {
     );
     downloadFile(blob.data, "all-qr-codes.pdf");
   }
+
+  // ============================================
+  // Waiter Management Methods
+  // ============================================
+
+  /**
+   * Get all active waiters for assignment
+   */
+  async getWaiters(): Promise<Array<{
+    id: string;
+    email: string;
+    full_name: string;
+    avatar_url?: string;
+  }>> {
+    const response = await apiClient.get("/api/admin/users/waiters");
+    return response.data;
+  }
 }
 
 // Export singleton instance

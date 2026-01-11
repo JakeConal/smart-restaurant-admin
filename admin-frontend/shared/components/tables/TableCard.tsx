@@ -2,7 +2,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { Card, Badge } from '@/shared/components/ui';
-import { MoreHorizontal, Crown, Edit2, Trash2 } from 'lucide-react';
+import { MoreHorizontal, Crown, Edit2, Trash2, User } from 'lucide-react';
 import type { Table } from '@/shared/types/table';
 
 export interface TableCardProps {
@@ -83,6 +83,14 @@ export const TableCard: React.FC<TableCardProps> = ({
           </span>
         </div>
       </div>
+
+      {/* Waiter Assignment */}
+      {table.waiter && (
+        <div className="flex items-center gap-2 text-sm bg-blue-50 px-3 py-2 rounded-lg">
+          <User className="w-4 h-4 text-blue-600" />
+          <span className="text-blue-900 font-medium">{table.waiter.full_name}</span>
+        </div>
+      )}
 
       {/* Description */}
       {table.description && (

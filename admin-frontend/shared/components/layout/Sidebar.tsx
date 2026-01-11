@@ -10,7 +10,11 @@ import {
   Users2,
   Settings2,
   ChefHat,
+  ClipboardList,
+  AlertCircle,
 } from "lucide-react";
+import { useAuth } from "@/shared/components/auth/AuthContext";
+import { useEscalationPolling } from "../../lib/hooks/useEscalationPolling";
 
 const menuItems = [
   { icon: LayoutGrid, label: "Overview", href: "/" },
@@ -21,6 +25,12 @@ const menuItems = [
 
 export const Sidebar: React.FC = () => {
   const pathname = usePathname();
+  const { user } = useAuth();
+  
+  // Poll for escalated orders count (only for managers)
+  const { count: escalatedCount } = useEscalationPolling({
+    enabled: user?.role?.toUpperCase() === 'ADMIN',
+  });
 
   return (
     <aside className="w-24 lg:w-64 bg-white rounded-[1.75rem] border border-slate-200/10 shadow-md flex flex-col h-full py-6 px-4">
@@ -66,6 +76,63 @@ export const Sidebar: React.FC = () => {
             </Link>
           );
         })}
+
+        {/* Waiter Orders - visible to WAITER and ADMIN roles */}
+        {(user?.role?.toUpperCase() === 'WAITER' || user?.role?.toUpperCase() === 'ADMIN') && (
+          <Link
+            href="/waiter/orders"
+            className={`flex items-center gap-4 px-4 py-3.5 rounded-2xl transition-all group ${
+              pathname === '/waiter/orders'
+                ? "bg-slate-800 text-white shadow-lg shadow-slate-200"
+                : "text-gray-500 hover:text-slate-800 hover:bg-slate-50"
+            }`}
+          >
+            <ClipboardList
+              className={`w-6 h-6 ${
+                pathname === '/waiter/orders' ? "" : "group-hover:scale-110 transition-transform"
+              }`}
+            />
+            <span
+              className={`font-${pathname === '/waiter/orders' ? "bold" : "semibold"} hidden lg:block`}
+            >
+              Waiter Orders
+            </span>
+          </Link>
+        )}
+
+        {/* Manager Escalated Orders - visible only to ADMIN role */}
+        {user?.role?.toUpperCase() === 'ADMIN' && (
+          <Link
+            href="/manager/escalated-orders"
+            className={`flex items-center justify-between px-4 py-3.5 rounded-2xl transition-all group ${
+              pathname === '/manager/escalated-orders'
+                ? "bg-slate-800 text-white shadow-lg shadow-slate-200"
+                : "text-gray-500 hover:text-slate-800 hover:bg-slate-50"
+            }`}
+          >
+            <div className="flex items-center gap-4">
+              <AlertCircle
+                className={`w-6 h-6 ${
+                  pathname === '/manager/escalated-orders' ? "" : "group-hover:scale-110 transition-transform"
+                }`}
+              />
+              <span
+                className={`font-${pathname === '/manager/escalated-orders' ? "bold" : "semibold"} hidden lg:block`}
+              >
+                Escalated
+              </span>
+            </div>
+            {escalatedCount > 0 && (
+              <span className={`hidden lg:flex items-center justify-center min-w-[24px] h-6 px-2 rounded-full text-xs font-bold ${
+                pathname === '/manager/escalated-orders'
+                  ? "bg-red-500 text-white"
+                  : "bg-red-100 text-red-700"
+              }`}>
+                {escalatedCount}
+              </span>
+            )}
+          </Link>
+        )}
 
         <div className="mt-auto"></div>
 

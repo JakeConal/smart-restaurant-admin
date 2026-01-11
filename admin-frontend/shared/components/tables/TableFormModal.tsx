@@ -1,8 +1,9 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Modal, Button, Input, Select } from '@/shared/components/ui';
-import type { Table, CreateTableDto, UpdateTableDto } from '@/shared/types/table';
+import type { Table, CreateTableDto, UpdateTableDto, Waiter } from '@/shared/types/table';
+import { tablesApi } from '@/shared/lib/api/tables';
 
 export interface TableFormModalProps {
   isOpen: boolean;
@@ -35,6 +36,8 @@ export const TableFormModal: React.FC<TableFormModalProps> = ({
 }) => {
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [waiters, setWaiters] = useState<Waiter[]>([]);
+  const [loadingWaiters, setLoadingWaiters] = useState(false);
   
   const [formData, setFormData] = useState<CreateTableDto>({
     tableNumber: table?.tableNumber || '',
@@ -42,7 +45,35 @@ export const TableFormModal: React.FC<TableFormModalProps> = ({
     location: table?.location || '',
     description: table?.description || '',
     status: table?.status || 'active',
+    waiter_id: table?.waiter_id || '',
   });
+
+  // Load waiters when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      loadWaiters();
+    }
+  }, [isOpen]);
+
+  const loadWaiters = async () => {
+    try {
+      setLoadingWaiters(true);
+      const data = await tablesApi.getWaiters();
+      setWaiters(data);
+    } catch (error) {
+      console.error('Failed to load waiters:', error);
+    } finally {
+      setLoadingWaiters(false);
+    }
+  };
+
+  const waiterOptions = [
+    { value: '', label: 'No waiter assigned' },
+    ...waiters.map((waiter) => ({
+      value: waiter.id,
+      label: waiter.full_name,
+    })),
+  ];
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
@@ -89,6 +120,7 @@ export const TableFormModal: React.FC<TableFormModalProps> = ({
         location: '',
         description: '',
         status: 'active',
+        waiter_id: '',
       });
       setErrors({});
     } catch (error: any) {
@@ -136,6 +168,15 @@ export const TableFormModal: React.FC<TableFormModalProps> = ({
           value={formData.location}
           onChange={handleChange}
           options={locationOptions}
+        />
+
+        <Select
+          label="Assigned Waiter"
+          name="waiter_id"
+          value={formData.waiter_id || ''}
+          onChange={handleChange}
+          options={waiterOptions}
+          disabled={loadingWaiters}
         />
 
         <Select
