@@ -4,6 +4,9 @@ import { Repository } from 'typeorm';
 import { Role } from '../schema/role.schema';
 import { Permission } from '../schema/permission.schema';
 import { RolePermission } from '../schema/role-permission.schema';
+import { Users } from '../schema/user.schema';
+import { Table } from '../schema/table.schema';
+import { Order, OrderStatus } from '../schema/order.schema';
 
 @Injectable()
 export class SeedService {
@@ -14,6 +17,12 @@ export class SeedService {
     private permissionRepository: Repository<Permission>,
     @InjectRepository(RolePermission)
     private rolePermissionRepository: Repository<RolePermission>,
+    @InjectRepository(Users)
+    private userRepository: Repository<Users>,
+    @InjectRepository(Table)
+    private tableRepository: Repository<Table>,
+    @InjectRepository(Order)
+    private orderRepository: Repository<Order>,
   ) {}
 
   async seedAll() {
@@ -22,6 +31,7 @@ export class SeedService {
     await this.seedRoles();
     await this.seedPermissions();
     await this.seedRolePermissions();
+    await this.seedTablesAndOrders();
     
     console.log('✅ Database seed completed!');
   }
@@ -149,5 +159,186 @@ export class SeedService {
     ]);
     
     console.log(`✓ Seeded role permissions (ADMIN: ${adminMappings.length}, WAITER: ${waiterMappings.length}, KITCHEN: ${kitchenMappings.length})`);
+  }
+
+  private async seedTablesAndOrders() {
+    // Find user with email huynhthaitoan254@gmail.com
+    const user = await this.userRepository.findOne({
+      where: { email: 'huynhthaitoan254@gmail.com' },
+      relations: ['role'],
+    });
+
+    if (!user) {
+      console.log('⏭️  User huynhthaitoan254@gmail.com not found, skipping tables and orders seed');
+      return;
+    }
+
+    // Check if tables already exist for this user
+    const existingTables = await this.tableRepository.count({
+      where: { restaurantId: user.id },
+    });
+
+    if (existingTables > 0) {
+      console.log('⏭️  Tables already exist for this user, skipping...');
+      return;
+    }
+
+    // Create tables
+    const tables = [];
+    for (let i = 1; i <= 10; i++) {
+      const table = this.tableRepository.create({
+        restaurantId: user.id,
+        tableNumber: `T${i}`,
+        capacity: i <= 4 ? 2 : i <= 8 ? 4 : 6,
+        status: 'active',
+        occupancyStatus: 'available',
+        qrToken: `QR-TABLE-${i}-${Date.now()}`,
+        qrTokenCreatedAt: new Date(),
+      });
+      tables.push(table);
+    }
+
+    await this.tableRepository.save(tables);
+    console.log(`✓ Seeded 10 tables for user ${user.email}`);
+
+    // Create sample orders
+    const orders = [];
+    const now = new Date();
+
+    // Order 1: Recent pending order (2 minutes ago)
+    const order1 = this.orderRepository.create({
+      orderId: `order-${Date.now()}-1`,
+      table_id: tables[0].id,
+      tableNumber: tables[0].tableNumber,
+      guestName: 'Nguyễn Văn A',
+      items: [
+        {
+          id: '1',
+          menuItemId: 'menu-item-1',
+          menuItemName: 'Phở Bò',
+          quantity: 2,
+          unitPrice: 50000,
+          totalPrice: 100000,
+        },
+        {
+          id: '2',
+          menuItemId: 'menu-item-2',
+          menuItemName: 'Cà Phê Sữa',
+          quantity: 1,
+          unitPrice: 25000,
+          totalPrice: 25000,
+        },
+      ],
+      subtotal: 125000,
+      tax: 12500,
+      total: 137500,
+      status: OrderStatus.PENDING_ACCEPTANCE,
+      createdAt: new Date(now.getTime() - 2 * 60 * 1000), // 2 minutes ago
+    });
+    orders.push(order1);
+
+    // Order 2: Pending order close to escalation (4 minutes ago)
+    const order2 = this.orderRepository.create({
+      orderId: `order-${Date.now()}-2`,
+      table_id: tables[1].id,
+      tableNumber: tables[1].tableNumber,
+      guestName: 'Trần Thị B',
+      items: [
+        {
+          id: '1',
+          menuItemId: 'menu-item-3',
+          menuItemName: 'Bún Chả',
+          quantity: 1,
+          unitPrice: 60000,
+          totalPrice: 60000,
+        },
+      ],
+      subtotal: 60000,
+      tax: 6000,
+      total: 66000,
+      status: OrderStatus.PENDING_ACCEPTANCE,
+      createdAt: new Date(now.getTime() - 4 * 60 * 1000), // 4 minutes ago
+    });
+    orders.push(order2);
+
+    // Order 3: Escalated order (7 minutes ago)
+    const order3 = this.orderRepository.create({
+      orderId: `order-${Date.now()}-3`,
+      table_id: tables[2].id,
+      tableNumber: tables[2].tableNumber,
+      guestName: 'Lê Văn C',
+      items: [
+        {
+          id: '1',
+          menuItemId: 'menu-item-4',
+          menuItemName: 'Cơm Tấm',
+          quantity: 3,
+          unitPrice: 45000,
+          totalPrice: 135000,
+        },
+      ],
+      subtotal: 135000,
+      tax: 13500,
+      total: 148500,
+      status: OrderStatus.PENDING_ACCEPTANCE,
+      isEscalated: true,
+      escalatedAt: new Date(now.getTime() - 2 * 60 * 1000), // Escalated 2 minutes ago
+      createdAt: new Date(now.getTime() - 7 * 60 * 1000), // Created 7 minutes ago
+    });
+    orders.push(order3);
+
+    // Order 4: Accepted order
+    const order4 = this.orderRepository.create({
+      orderId: `order-${Date.now()}-4`,
+      table_id: tables[3].id,
+      tableNumber: tables[3].tableNumber,
+      guestName: 'Phạm Thị D',
+      items: [
+        {
+          id: '1',
+          menuItemId: 'menu-item-5',
+          menuItemName: 'Bánh Mì',
+          quantity: 2,
+          unitPrice: 20000,
+          totalPrice: 40000,
+        },
+      ],
+      subtotal: 40000,
+      tax: 4000,
+      total: 44000,
+      status: OrderStatus.ACCEPTED,
+      acceptedAt: new Date(now.getTime() - 1 * 60 * 1000),
+      createdAt: new Date(now.getTime() - 15 * 60 * 1000), // 15 minutes ago
+    });
+    orders.push(order4);
+
+    // Order 5: Completed order
+    const order5 = this.orderRepository.create({
+      orderId: `order-${Date.now()}-5`,
+      table_id: tables[4].id,
+      tableNumber: tables[4].tableNumber,
+      guestName: 'Hoàng Văn E',
+      items: [
+        {
+          id: '1',
+          menuItemId: 'menu-item-6',
+          menuItemName: 'Gỏi Cuốn',
+          quantity: 4,
+          unitPrice: 30000,
+          totalPrice: 120000,
+        },
+      ],
+      subtotal: 120000,
+      tax: 12000,
+      total: 132000,
+      status: OrderStatus.COMPLETED,
+      acceptedAt: new Date(now.getTime() - 59 * 60 * 1000),
+      createdAt: new Date(now.getTime() - 60 * 60 * 1000), // 1 hour ago
+      updatedAt: new Date(now.getTime() - 30 * 60 * 1000),
+    });
+    orders.push(order5);
+
+    await this.orderRepository.save(orders);
+    console.log(`✓ Seeded 5 sample orders for user ${user.email}`);
   }
 }

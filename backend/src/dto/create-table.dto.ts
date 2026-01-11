@@ -1,4 +1,4 @@
-import { IsString, IsInt, Min, Max, IsOptional, IsIn } from 'class-validator';
+import { IsString, IsInt, Min, Max, IsOptional, IsIn, IsUUID } from 'class-validator';
 
 export class CreateTableDto {
   @IsString()
@@ -20,4 +20,8 @@ export class CreateTableDto {
   @IsOptional()
   @IsIn(['active', 'inactive'])
   status?: string;
+
+  @IsOptional()
+  @IsUUID()
+  waiter_id?: string;
 }

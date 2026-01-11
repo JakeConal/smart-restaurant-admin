@@ -71,6 +71,7 @@ export class TableService {
         ...(status && { status }),
         ...(location && { location }),
       },
+      relations: ['waiter'],
       order: {
         [sortBy || 'createdAt']: 'ASC',
       },

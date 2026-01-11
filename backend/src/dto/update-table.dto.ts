@@ -1,4 +1,4 @@
-import { IsString, IsInt, Min, Max, IsOptional, IsIn } from 'class-validator';
+import { IsString, IsInt, Min, Max, IsOptional, IsIn, IsUUID } from 'class-validator';
 
 export class UpdateTableDto {
   @IsOptional() @IsString() tableNumber?: string;
@@ -7,4 +7,5 @@ export class UpdateTableDto {
   @IsOptional() @IsString() description?: string;
   @IsOptional() @IsIn(['active', 'inactive']) status?: string;
   @IsOptional() @IsString() qrToken?: string;
+  @IsOptional() @IsUUID() waiter_id?: string;
 }

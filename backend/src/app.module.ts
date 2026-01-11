@@ -5,6 +5,7 @@ import { TableModule } from './table/table.module';
 import { MenuModule } from './menu/menu.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { ScheduleModule } from '@nestjs/schedule';
 import { Table } from './schema/table.schema';
 import { MenuCategory } from './schema/menu-category.schema';
 import { Users } from './schema/user.schema';
@@ -42,10 +43,13 @@ import { UserCredentials } from './schema/user-credentials.schema';
 import { RefreshToken } from './schema/refresh-token.schema';
 import { SeedModule } from './seed/seed.module';
 import { SeedService } from './seed/seed.service';
+import { WaiterModule } from './waiter/waiter.module';
+import { ManagerModule } from './manager/manager.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
+    ScheduleModule.forRoot(),
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
@@ -106,6 +110,8 @@ import { SeedService } from './seed/seed.service';
     ProfileModule,
     ReviewModule,
     OrderModule,
+    WaiterModule,
+    ManagerModule,
     SeedModule,
   ],
   controllers: [AppController],
