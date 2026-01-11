@@ -62,6 +62,30 @@ export default function OrderTrackingPage({
 
   const getStatusInfo = (status: OrderStatus) => {
     switch (status) {
+      case "pending_acceptance":
+        return {
+          label: "Waiting for Waiter",
+          description: "Your order is being reviewed by our waiter",
+          icon: "⏳",
+          color: "from-blue-400 to-blue-500",
+          progress: 10,
+        };
+      case "accepted":
+        return {
+          label: "Order Accepted",
+          description: "Your waiter has accepted your order",
+          icon: "✓",
+          color: "from-green-400 to-green-500",
+          progress: 25,
+        };
+      case "rejected":
+        return {
+          label: "Order Rejected",
+          description: "Unfortunately, this order cannot be fulfilled. Please contact staff for assistance.",
+          icon: "✕",
+          color: "from-red-400 to-red-500",
+          progress: 0,
+        };
       case "received":
         return {
           label: "Order Received",
