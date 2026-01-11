@@ -44,13 +44,16 @@ export const Sidebar: React.FC = () => {
           <span className="font-extrabold text-xl tracking-tight block leading-tight">
             Smart
           </span>
-          <span className="text-gray-400 font-medium text-sm">Admin</span>
+          <span className="text-gray-400 font-medium text-sm capitalize">
+            {user?.role?.toLowerCase() || 'Admin'}
+          </span>
         </div>
       </div>
 
       {/* Navigation */}
       <nav className="flex-1 space-y-2 flex flex-col items-center lg:items-stretch">
-        {menuItems.map((item) => {
+        {/* Admin menu items - only show for ADMIN role */}
+        {user?.role?.toUpperCase() === 'ADMIN' && menuItems.map((item) => {
           const Icon = item.icon;
           const isActive = pathname === item.href;
 
