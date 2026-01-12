@@ -5,6 +5,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 import { JwtStrategy } from './strategies/jwt.strategy';
+import { CustomerJwtStrategy } from './strategies/customer-jwt.strategy';
 import { CustomerGoogleStrategy } from './strategies/customer-google.strategy';
 import { JwtAuthGuard } from './guards/jwt.guards';
 import { CustomerJwtAuthGuard } from './guards/customer-jwt-auth.guard';
@@ -30,6 +31,7 @@ import { EmailModule } from '../email/email.module';
   providers: [
     AuthService,
     JwtStrategy,
+    CustomerJwtStrategy,
     CustomerGoogleStrategy,
     JwtAuthGuard,
     CustomerJwtAuthGuard,
