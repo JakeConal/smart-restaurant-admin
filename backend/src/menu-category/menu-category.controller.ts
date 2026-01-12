@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Param,
   Patch,
@@ -43,5 +44,10 @@ export class MenuCategoryController {
   @Patch(':id/status')
   deactivate(@CurrentUser() user: AuthUser, @Param('id') id: string) {
     return this.service.deactivate(id, user.restaurantId);
+  }
+
+  @Delete(':id')
+  remove(@CurrentUser() user: AuthUser, @Param('id') id: string) {
+    return this.service.remove(id, user.restaurantId);
   }
 }

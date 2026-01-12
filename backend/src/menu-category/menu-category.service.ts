@@ -52,7 +52,7 @@ export class MenuCategoryService {
 
   async findAll(restaurantId: string) {
     const categories = await this.CategoryRepo.find({
-      where: { restaurantId },
+      where: { restaurantId, isDeleted: false },
       order: { displayOrder: 'ASC', name: 'ASC' },
     });
 
@@ -139,5 +139,34 @@ export class MenuCategoryService {
       ...savedCategory,
       itemCount,
     };
+  }
+
+  async remove(id: string, restaurantId: string) {
+    const category = await this.CategoryRepo.findOne({
+      where: { id, restaurantId },
+    });
+
+    if (!category) {
+      throw new NotFoundException('Category not found');
+    }
+
+    // Check if category has active (not deleted) items
+    const itemCount = await this.itemRepo.count({
+      where: {
+        categoryId: id,
+        restaurantId,
+        isDeleted: false,
+      },
+    });
+
+    if (itemCount > 0) {
+      throw new BadRequestException(
+        `Cannot delete category with ${itemCount} items. Please move or delete the items first.`,
+      );
+    }
+
+    // Soft delete - mark as deleted instead of removing from database
+    category.isDeleted = true;
+    await this.CategoryRepo.save(category);
   }
 }

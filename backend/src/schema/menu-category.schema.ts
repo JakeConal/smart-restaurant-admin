@@ -35,6 +35,9 @@ export class MenuCategory {
   })
   status: CategoryStatus;
 
+  @Column({ type: 'boolean', default: false })
+  isDeleted: boolean;
+
   @CreateDateColumn()
   createdAt: Date;
 
