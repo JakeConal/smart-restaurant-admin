@@ -91,7 +91,7 @@ function LoginContent() {
           password,
           firstName,
           lastName,
-          tableToken: urlToken, // Pass the original table token
+          tableToken: urlToken || undefined, // Pass the original table token
         })) as AuthResponse;
 
         // Check if email verification is required

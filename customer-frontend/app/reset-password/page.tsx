@@ -214,13 +214,15 @@ function ResetPasswordContent() {
             <div className="mt-3 space-y-2">
               <div className="h-1.5 bg-gray-200 rounded-full overflow-hidden">
                 <div
-                  className={`h-full rounded-full transition-all ${getPasswordStrengthBarColor(password)}`}
+                  className={`h-full rounded-full transition-all ${getPasswordStrengthBarColor(passwordStrength.score)}`}
                   style={{ width: `${(password.length / 20) * 100}%` }}
                 />
               </div>
               <div className="flex justify-between text-xs">
-                <span className={getPasswordStrengthColor(password)}>
-                  {getPasswordStrengthLabel(password)}
+                <span
+                  className={getPasswordStrengthColor(passwordStrength.score)}
+                >
+                  {getPasswordStrengthLabel(passwordStrength.score)}
                 </span>
                 <span className="text-gray-500">
                   {password.length} characters

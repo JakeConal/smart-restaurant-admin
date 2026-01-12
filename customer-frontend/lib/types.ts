@@ -124,9 +124,13 @@ export interface CartItem {
 
 // Order types
 export type OrderStatus =
+  | "pending_acceptance"
+  | "accepted"
+  | "rejected"
   | "received"
   | "preparing"
   | "ready"
+  | "served"
   | "completed"
   | "cancelled";
 

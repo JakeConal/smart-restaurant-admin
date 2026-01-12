@@ -305,12 +305,15 @@ function CartContent() {
   // Empty cart view
   if (items.length === 0) {
     return (
-      <div className="min-h-screen pb-24 safe-bottom flex flex-col">
+      <div className="min-h-screen pb-24 safe-bottom flex flex-col bg-white">
         {/* Header */}
-        <div className="pt-8 px-6">
-          <button onClick={() => router.back()} className="mb-4">
+        <div className="pt-6 sm:pt-8 px-4 sm:px-6 border-b border-gray-200">
+          <button
+            onClick={() => router.back()}
+            className="mb-4 p-2 -ml-2 hover:bg-gray-100 rounded-lg transition-colors"
+          >
             <svg
-              className="w-6 h-6"
+              className="w-6 h-6 text-gray-600"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -323,19 +326,16 @@ function CartContent() {
               />
             </svg>
           </button>
-          <h1 className="text-2xl font-bold text-center">Cart</h1>
+          <h1 className="text-h1 text-center mb-4">Your Cart</h1>
         </div>
 
-        <div className="flex-1 flex flex-col items-center justify-center px-6">
-          <div className="text-6xl mb-4">🛒</div>
-          <h2 className="text-xl font-semibold mb-2">Your cart is empty</h2>
-          <p className="text-gray-500 text-center mb-6">
-            Add some delicious items from the menu
+        <div className="flex-1 flex flex-col items-center justify-center px-4 sm:px-6">
+          <div className="text-5xl sm:text-6xl mb-4">🛒</div>
+          <h2 className="text-h2 mb-2">Your cart is empty</h2>
+          <p className="text-gray-500 text-center mb-8 text-base max-w-sm">
+            Add some delicious items from the menu to get started
           </p>
-          <Link
-            href={`/menu?token=${currentToken}`}
-            className="px-8 py-3 bg-[#fa4a0c] text-white rounded-full font-semibold hover:bg-[#e04009] transition-colors"
-          >
+          <Link href={`/menu?token=${currentToken}`} className="btn-primary">
             Browse Menu
           </Link>
         </div>
@@ -347,17 +347,17 @@ function CartContent() {
 
   // Cart with items view
   return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-25 via-white to-orange-50 pb-24 safe-bottom">
+    <div className="min-h-screen bg-white pb-24 safe-bottom">
       {/* Sticky Header */}
-      <div className="sticky top-0 z-30 backdrop-blur-xl bg-white/90 border-b border-orange-100/50 shadow-sm">
-        <div className="px-6 py-5">
-          <div className="flex items-center gap-4 mb-4">
+      <div className="sticky top-0 z-30 bg-white border-b border-gray-200 shadow-sm">
+        <div className="container-safe py-4 sm:py-5">
+          <div className="flex items-center gap-3 sm:gap-4 mb-2">
             <button
               onClick={() => router.back()}
-              className="w-10 h-10 rounded-2xl bg-white/70 backdrop-blur-sm border border-white/50 flex items-center justify-center hover:bg-white transition-all"
+              className="w-10 h-10 rounded-lg bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-colors flex-shrink-0"
             >
               <svg
-                className="w-5 h-5"
+                className="w-5 h-5 text-gray-600"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -370,36 +370,30 @@ function CartContent() {
                 />
               </svg>
             </button>
-            <h1 className="text-2xl font-bold flex-1 text-center pr-10">
-              Your Order
-            </h1>
+            <h1 className="text-h1 flex-1 text-center">Your Order</h1>
+            <div className="w-10"></div>
           </div>
 
           {tableNumber && (
-            <p className="text-center text-gray-600 font-medium text-sm">
-              🍽️ Table {tableNumber}
-            </p>
+            <p className="text-center text-caption">🍽️ Table {tableNumber}</p>
           )}
         </div>
       </div>
 
       {/* Error message */}
       {error && (
-        <div className="mx-6 mt-4 p-4 bg-red-50 border border-red-200 rounded-2xl text-red-700 text-sm font-medium">
+        <div className="container-safe mt-4 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm font-medium">
           ⚠️ {error}
         </div>
       )}
 
       {/* Cart Items */}
-      <div className="px-6 mt-6 space-y-3 mb-6">
+      <div className="container-safe section-spacing space-y-3">
         {items.map((item) => (
-          <div
-            key={item.id}
-            className="bg-white/70 backdrop-blur-sm border border-white/50 rounded-2xl p-4 shadow-sm hover:shadow-md transition-all group"
-          >
-            <div className="flex gap-4">
+          <div key={item.id} className="card group">
+            <div className="flex gap-3 sm:gap-4 p-3 sm:p-4">
               {/* Item Image */}
-              <div className="w-24 h-24 rounded-xl overflow-hidden bg-gradient-to-br from-gray-100 to-gray-200 flex-shrink-0 relative">
+              <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-lg overflow-hidden bg-gradient-to-br from-gray-100 to-gray-200 flex-shrink-0 relative">
                 {item.menuItem.primaryPhotoUrl ? (
                   <Image
                     src={item.menuItem.primaryPhotoUrl}
@@ -409,7 +403,7 @@ function CartContent() {
                     className="object-cover w-full h-full group-hover:scale-110 transition-transform duration-300"
                   />
                 ) : (
-                  <div className="w-full h-full flex items-center justify-center text-4xl">
+                  <div className="w-full h-full flex items-center justify-center text-3xl sm:text-4xl">
                     🍽️
                   </div>
                 )}
@@ -418,7 +412,7 @@ function CartContent() {
               {/* Item Details */}
               <div className="flex-1 min-w-0 flex flex-col justify-between">
                 <div>
-                  <h3 className="font-bold text-gray-900 text-sm line-clamp-2">
+                  <h3 className="font-bold text-gray-900 text-sm sm:text-base line-clamp-2">
                     {item.menuItem.name}
                   </h3>
 
@@ -430,11 +424,11 @@ function CartContent() {
                           key={`${item.id}-${modifier.optionId}`}
                           className="flex items-center gap-2 text-xs text-gray-600"
                         >
-                          <span className="w-1.5 h-1.5 bg-orange-400 rounded-full"></span>
+                          <span className="w-1 h-1 bg-red-500 rounded-full"></span>
                           <span className="line-clamp-1">
                             {modifier.optionName}
                             {modifier.priceAdjustment > 0 && (
-                              <span className="text-orange-600 font-medium ml-1">
+                              <span className="text-red-600 font-medium ml-1">
                                 +${modifier.priceAdjustment.toFixed(2)}
                               </span>
                             )}
@@ -446,11 +440,11 @@ function CartContent() {
 
                   {/* Special Instructions */}
                   {item.specialInstructions && (
-                    <div className="mt-3 p-2.5 bg-blue-50/80 rounded-lg border border-blue-200/50">
+                    <div className="mt-2 p-2 bg-blue-50 rounded border border-blue-200">
                       <p className="text-xs font-medium text-blue-700 mb-1">
-                        📌 Special Note:
+                        📌 Note:
                       </p>
-                      <p className="text-xs text-blue-600 line-clamp-2">
+                      <p className="text-xs text-blue-600 line-clamp-1">
                         {item.specialInstructions}
                       </p>
                     </div>
@@ -458,18 +452,18 @@ function CartContent() {
                 </div>
 
                 {/* Price and Quantity Controls */}
-                <div className="flex items-center justify-between mt-3">
+                <div className="flex items-center justify-between mt-2 sm:mt-3">
                   <div className="text-right">
                     <p className="text-xs text-gray-500">
                       ${item.menuItem.price.toFixed(2)} × {item.quantity}
                     </p>
-                    <p className="text-lg font-bold text-orange-600">
+                    <p className="text-base sm:text-lg font-bold text-red-600">
                       ${item.totalPrice.toFixed(2)}
                     </p>
                   </div>
 
                   {/* Quantity Controls */}
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 ml-4">
                     <button
                       onClick={() =>
                         updateItemQuantity(
@@ -477,24 +471,24 @@ function CartContent() {
                           Math.max(1, item.quantity - 1),
                         )
                       }
-                      className="w-8 h-8 rounded-lg bg-white/70 backdrop-blur-sm border border-white/50 flex items-center justify-center hover:bg-white hover:scale-110 transition-all text-orange-600 font-bold"
+                      className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-gray-100 hover:bg-gray-200 flex items-center justify-center hover:scale-110 transition-all text-gray-700 font-bold text-sm"
                     >
                       −
                     </button>
-                    <span className="w-8 text-center font-bold text-gray-900">
+                    <span className="w-6 text-center font-bold text-gray-900 text-sm">
                       {item.quantity}
                     </span>
                     <button
                       onClick={() =>
                         updateItemQuantity(item.id, item.quantity + 1)
                       }
-                      className="w-8 h-8 rounded-lg bg-gradient-to-r from-orange-400 to-orange-500 text-white flex items-center justify-center hover:shadow-lg hover:scale-110 transition-all font-bold"
+                      className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-red-600 hover:bg-red-700 text-white flex items-center justify-center hover:scale-110 transition-all font-bold text-sm"
                     >
                       +
                     </button>
                     <button
                       onClick={() => removeItem(item.id)}
-                      className="w-8 h-8 rounded-lg bg-red-50 hover:bg-red-100 flex items-center justify-center text-red-600 hover:scale-110 transition-all ml-2"
+                      className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-red-50 hover:bg-red-100 flex items-center justify-center text-red-600 hover:scale-110 transition-all ml-1"
                       title="Remove item"
                     >
                       <svg

@@ -22,19 +22,20 @@ export default function BottomNav({ token }: BottomNavProps) {
 
   const navItems = [
     {
-      name: "Home",
+      name: "Menu",
       path: "/menu",
       icon: (active: boolean) => (
         <svg
-          className={`w-6 h-6 transition-all duration-300 ${active ? "scale-110" : ""}`}
+          className="w-6 h-6"
           fill="none"
           viewBox="0 0 24 24"
+          stroke="currentColor"
         >
           <path
-            fill={active ? "#fa4a0c" : "currentColor"}
-            fillRule="evenodd"
-            clipRule="evenodd"
-            d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
           />
         </svg>
       ),
@@ -43,23 +44,19 @@ export default function BottomNav({ token }: BottomNavProps) {
       name: "Cart",
       path: "/cart",
       icon: (active: boolean) => (
-        <div className="relative">
-          <svg
-            className={`w-6 h-6 transition-all duration-300 ${active ? "scale-110" : ""}`}
-            fill="none"
-            viewBox="0 0 24 24"
-          >
-            <path
-              fill={active ? "#fa4a0c" : "currentColor"}
-              d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"
-            />
-          </svg>
-          {totalItems > 0 && (
-            <div className="absolute -top-2 -right-2 bg-orange-500 text-white text-xs font-bold rounded-full min-w-[20px] h-5 flex items-center justify-center px-1 animate-pulse shadow-lg">
-              {totalItems > 99 ? "99+" : totalItems}
-            </div>
-          )}
-        </div>
+        <svg
+          className="w-6 h-6"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5m0 0H3m2.4 0a1 1 0 00-.8.4m0 0l-1.6 2.6a1 1 0 00.8 1.6h16l1.6-2.6a1 1 0 00-.8-1.6M9 19a2 2 0 11-4 0 2 2 0 014 0m9 0a2 2 0 11-4 0 2 2 0 014 0"
+          />
+        </svg>
       ),
     },
     {
@@ -67,13 +64,16 @@ export default function BottomNav({ token }: BottomNavProps) {
       path: "/order-tracking",
       icon: (active: boolean) => (
         <svg
-          className={`w-6 h-6 transition-all duration-300 ${active ? "scale-110" : ""}`}
+          className="w-6 h-6"
           fill="none"
           viewBox="0 0 24 24"
+          stroke="currentColor"
         >
           <path
-            fill={active ? "#fa4a0c" : "currentColor"}
-            d="M9 2C7.34315 2 6 3.34315 6 5V19C6 20.6569 7.34315 22 9 22H15C16.6569 22 18 20.6569 18 19V5C18 3.34315 16.6569 2 15 2H9Z M9 4H15C15.5523 4 16 4.44772 16 5V19C16 19.5523 15.5523 20 15 20H9C8.44772 20 8 19.5523 8 19V5C8 4.44772 8.44772 4 9 4Z M10 7H14V9H10V7Z M10 11H14V13H10V11Z M10 15H14V17H10V15Z"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"
           />
         </svg>
       ),
@@ -83,13 +83,16 @@ export default function BottomNav({ token }: BottomNavProps) {
       path: "/profile",
       icon: (active: boolean) => (
         <svg
-          className={`w-6 h-6 transition-all duration-300 ${active ? "scale-110" : ""}`}
+          className="w-6 h-6"
           fill="none"
           viewBox="0 0 24 24"
+          stroke="currentColor"
         >
           <path
-            fill={active ? "#fa4a0c" : "currentColor"}
-            d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
           />
         </svg>
       ),
@@ -97,53 +100,52 @@ export default function BottomNav({ token }: BottomNavProps) {
   ];
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-lg border-t border-orange-100 safe-bottom z-40 shadow-2xl">
-      <div className="max-w-md mx-auto px-6">
-        <div className="flex justify-around items-center h-16">
-          {navItems.map((item) => {
-            const active = isActive(item.path);
-            return (
-              <Link
-                key={item.path}
-                href={`${item.path}?token=${token}`}
-                className={`relative flex flex-col items-center gap-1 px-4 py-3 rounded-2xl transition-all duration-300 group focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 ${
-                  active
-                    ? "text-orange-600 bg-orange-50 shadow-lg transform scale-105"
-                    : "text-neutral-500 hover:text-orange-500 hover:bg-orange-50/50"
+    <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 safe-bottom z-40 shadow-xl">
+      <div className="flex justify-around h-16 md:h-20">
+        {navItems.map((item) => {
+          const active = isActive(item.path);
+          return (
+            <Link
+              key={item.path}
+              href={`${item.path}?token=${token}`}
+              className={`flex-1 flex flex-col items-center justify-center gap-1 px-2 py-2 transition-all duration-200 relative group cursor-pointer hover:bg-gray-50 ${
+                active ? "text-red-600" : "text-gray-600"
+              }`}
+            >
+              {/* Active indicator line */}
+              {active && (
+                <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-red-500 to-orange-500 rounded-b-lg animate-fade-in" />
+              )}
+
+              {/* Icon container */}
+              <div
+                className={`relative transition-transform duration-200 ${
+                  active ? "scale-110" : "group-hover:scale-105"
                 }`}
               >
-                {/* Active indicator */}
-                {active && (
-                  <div className="absolute -top-1 left-1/2 transform -translate-x-1/2 w-8 h-1 bg-orange-500 rounded-full animate-fade-in" />
-                )}
+                {item.icon(active)}
+              </div>
 
-                {/* Icon with hover effect */}
-                <div className="relative">
-                  {item.icon(active)}
-                  {!active && (
-                    <div className="absolute inset-0 bg-orange-500/10 rounded-full scale-0 group-hover:scale-100 transition-transform duration-300" />
-                  )}
+              {/* Label */}
+              <span
+                className={`text-xs font-semibold transition-colors duration-200 ${
+                  active
+                    ? "text-red-600"
+                    : "text-gray-500 group-hover:text-gray-700"
+                }`}
+              >
+                {item.name}
+              </span>
+
+              {/* Cart badge */}
+              {item.path === "/cart" && totalItems > 0 && (
+                <div className="absolute top-1 right-1 bg-red-600 text-white text-xs font-bold rounded-full min-w-[20px] h-5 flex items-center justify-center px-1 shadow-lg animate-pulse">
+                  {totalItems > 99 ? "99+" : totalItems}
                 </div>
-
-                {/* Label */}
-                <span
-                  className={`text-xs font-medium transition-all duration-300 ${
-                    active
-                      ? "text-orange-600"
-                      : "text-neutral-500 group-hover:text-orange-500"
-                  }`}
-                >
-                  {item.name}
-                </span>
-
-                {/* Subtle glow effect for active state */}
-                {active && (
-                  <div className="absolute inset-0 bg-orange-500/5 rounded-2xl animate-pulse" />
-                )}
-              </Link>
-            );
-          })}
-        </div>
+              )}
+            </Link>
+          );
+        })}
       </div>
     </nav>
   );

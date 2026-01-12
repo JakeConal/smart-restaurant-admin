@@ -324,29 +324,26 @@ function MenuContent() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-25 via-white to-orange-50 pb-24 safe-bottom">
-      {/* Header Section */}
-      <div className="sticky top-0 z-30 backdrop-blur-xl bg-white/90 border-b border-orange-100/50 shadow-sm overflow-visible">
-        <div className="px-6 py-3">
-          <div className="flex justify-between items-center mb-4">
-            <div className="flex items-center gap-4">
-              <div>
-                <h1 className="text-2xl font-bold text-gray-900">
-                  Discover Menu
-                </h1>
-                {tableNumber && (
-                  <p className="text-sm text-gray-500 font-medium">
-                    Table {tableNumber}
-                  </p>
-                )}
-              </div>
+    <div className="min-h-screen bg-gray-50 pb-24 safe-bottom">
+      {/* Sticky Header Section */}
+      <div className="sticky top-0 z-30 bg-white border-b border-gray-200 shadow-sm">
+        <div className="container-safe py-2 sm:py-3">
+          {/* Header Top */}
+          <div className="flex justify-between items-start gap-4 mb-3">
+            <div className="flex-1">
+              <h1 className="text-h1 text-gray-900">Menu</h1>
+              {tableNumber && (
+                <p className="text-caption text-gray-600 mt-1">
+                  Table {tableNumber}
+                </p>
+              )}
             </div>
             <Link
               href={`/cart?token=${currentToken}`}
-              className="group relative w-12 h-12 bg-white/70 hover:bg-white rounded-2xl flex items-center justify-center shadow-lg hover:shadow-xl transition-all duration-300 border border-orange-100/50 backdrop-blur-sm"
+              className="group relative w-12 h-12 bg-gray-100 hover:bg-gray-200 rounded-xl flex items-center justify-center transition-all duration-200 flex-shrink-0"
             >
               <svg
-                className="w-6 h-6 text-gray-700 group-hover:text-orange-600 transition-colors"
+                className="w-6 h-6 text-gray-700 group-hover:text-red-600 transition-colors"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -359,7 +356,7 @@ function MenuContent() {
                 />
               </svg>
               {getTotalItems() > 0 && (
-                <div className="absolute -top-1 -right-1 w-5 h-5 bg-gradient-to-r from-orange-500 to-red-500 text-white text-xs rounded-full flex items-center justify-center font-bold shadow-lg animate-pulse">
+                <div className="absolute -top-2 -right-2 w-5 h-5 bg-red-600 text-white text-xs font-bold rounded-full flex items-center justify-center shadow-lg animate-pulse">
                   {getTotalItems() > 99 ? "99+" : getTotalItems()}
                 </div>
               )}
@@ -369,7 +366,7 @@ function MenuContent() {
           {/* Search Bar */}
           <div className="relative mb-3 group">
             <svg
-              className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 group-focus-within:text-orange-500 transition-colors"
+              className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 group-focus-within:text-red-500 transition-colors"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -383,7 +380,7 @@ function MenuContent() {
             </svg>
             <input
               type="text"
-              placeholder="Search your favorite dishes..."
+              placeholder="Search dishes..."
               value={searchQuery}
               onChange={(e) => {
                 const newQuery = e.target.value;
@@ -395,17 +392,17 @@ function MenuContent() {
                   showChefRecommended,
                 );
               }}
-              className="w-full pl-12 pr-5 py-3.5 bg-white/70 backdrop-blur-sm border border-white/50 rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-500/50 focus:bg-white transition-all text-sm placeholder:text-gray-400 shadow-sm hover:shadow-md"
+              className="input-field pl-12"
             />
           </div>
 
-          {/* Sort & Filter Pills */}
-          <div className="flex gap-3 mb-1 overflow-visible pb-2 scrollbar-hidden">
+          {/* Sort Button & Chef's Pick */}
+          <div className="flex gap-2 mb-3 items-center">
             {/* Sort Dropdown */}
-            <div className="relative sort-dropdown z-[100]">
+            <div className="relative sort-dropdown z-50">
               <button
                 onClick={() => setShowSortDropdown(!showSortDropdown)}
-                className="px-5 py-2.5 bg-white/70 backdrop-blur-sm border border-white/50 rounded-2xl text-xs font-medium text-gray-700 hover:bg-white hover:shadow-md transition-all duration-300 whitespace-nowrap shadow-sm flex items-center gap-1.5"
+                className="px-4 py-2 bg-white border border-gray-200 rounded-lg text-xs sm:text-sm font-medium text-gray-700 hover:border-gray-300 hover:bg-gray-50 transition-all duration-200 whitespace-nowrap flex items-center gap-1.5 shadow-sm"
               >
                 <svg
                   className="w-4 h-4"
@@ -420,31 +417,20 @@ function MenuContent() {
                     d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"
                   />
                 </svg>
-                {sortBy === "asc"
-                  ? "Price ↑"
-                  : sortBy === "desc"
-                    ? "Price ↓"
-                    : sortBy === "popularity"
-                      ? "Popular"
-                      : "Name"}
-                <svg
-                  className={`w-3 h-3 transition-transform duration-200 ${showSortDropdown ? "rotate-180" : ""}`}
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M19 9l-7 7-7-7"
-                  />
-                </svg>
+                <span className="hidden sm:inline">
+                  {sortBy === "asc"
+                    ? "Price ↑"
+                    : sortBy === "desc"
+                      ? "Price ↓"
+                      : sortBy === "popularity"
+                        ? "Popular"
+                        : "Name"}
+                </span>
               </button>
 
               {/* Dropdown Menu */}
               {showSortDropdown && (
-                <div className="absolute top-full left-0 mt-2 w-40 bg-white/95 backdrop-blur-sm border border-white/50 rounded-2xl shadow-xl z-[100] overflow-hidden">
+                <div className="absolute top-full left-0 mt-2 w-40 bg-white border border-gray-200 rounded-lg shadow-lg z-[100] overflow-hidden">
                   <div className="py-1">
                     <button
                       onClick={() => {
@@ -457,9 +443,9 @@ function MenuContent() {
                           showChefRecommended,
                         );
                       }}
-                      className={`w-full text-left px-4 py-2 text-xs font-medium hover:bg-orange-50 transition-colors ${
+                      className={`w-full text-left px-4 py-2 text-sm font-medium hover:bg-gray-50 transition-colors ${
                         sortBy === "name"
-                          ? "text-orange-600 bg-orange-50"
+                          ? "text-red-600 bg-red-50"
                           : "text-gray-700"
                       }`}
                     >
@@ -476,9 +462,9 @@ function MenuContent() {
                           showChefRecommended,
                         );
                       }}
-                      className={`w-full text-left px-4 py-2 text-xs font-medium hover:bg-orange-50 transition-colors ${
+                      className={`w-full text-left px-4 py-2 text-sm font-medium hover:bg-gray-50 transition-colors ${
                         sortBy === "popularity"
-                          ? "text-orange-600 bg-orange-50"
+                          ? "text-red-600 bg-red-50"
                           : "text-gray-700"
                       }`}
                     >
@@ -495,13 +481,13 @@ function MenuContent() {
                           showChefRecommended,
                         );
                       }}
-                      className={`w-full text-left px-4 py-2 text-xs font-medium hover:bg-orange-50 transition-colors ${
+                      className={`w-full text-left px-4 py-2 text-sm font-medium hover:bg-gray-50 transition-colors ${
                         sortBy === "asc"
-                          ? "text-orange-600 bg-orange-50"
+                          ? "text-red-600 bg-red-50"
                           : "text-gray-700"
                       }`}
                     >
-                      Price ↑
+                      Price Low to High
                     </button>
                     <button
                       onClick={() => {
@@ -514,64 +500,53 @@ function MenuContent() {
                           showChefRecommended,
                         );
                       }}
-                      className={`w-full text-left px-4 py-2 text-xs font-medium hover:bg-orange-50 transition-colors ${
+                      className={`w-full text-left px-4 py-2 text-sm font-medium hover:bg-gray-50 transition-colors ${
                         sortBy === "desc"
-                          ? "text-orange-600 bg-orange-50"
+                          ? "text-red-600 bg-red-50"
                           : "text-gray-700"
                       }`}
                     >
-                      Price ↓
+                      Price High to Low
                     </button>
                   </div>
                 </div>
               )}
             </div>
 
+            {/* Chef's Pick Button */}
             <button
               onClick={() => {
                 const newChefState = !showChefRecommended;
                 setShowChefRecommended(newChefState);
                 updateUrl(searchQuery, selectedCategory, sortBy, newChefState);
               }}
-              className={`px-5 py-2.5 rounded-2xl text-xs font-medium whitespace-nowrap transition-all duration-300 shadow-sm ${
+              className={`px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-semibold whitespace-nowrap transition-all duration-200 flex-shrink-0 shadow-sm ${
                 showChefRecommended
-                  ? "bg-gradient-to-r from-orange-400 to-orange-500 text-white shadow-lg hover:shadow-xl hover:scale-105"
-                  : "bg-white/70 backdrop-blur-sm border border-white/50 text-gray-700 hover:bg-white hover:shadow-md"
+                  ? "bg-red-600 text-white hover:bg-red-700 hover:shadow-md"
+                  : "bg-white border border-gray-200 text-gray-700 hover:border-gray-300 hover:bg-gray-50"
               }`}
             >
-              <span className="flex items-center gap-1.5">
-                <svg
-                  className="w-4 h-4"
-                  fill="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm3.5-9c.83 0 1.5-.67 1.5-1.5S16.33 8 15.5 8 14 8.67 14 9.5s.67 1.5 1.5 1.5zm-7 0c.83 0 1.5-.67 1.5-1.5S9.33 8 8.5 8 7 8.67 7 9.5 7.67 11 8.5 11zm3.5 6.5c2.33 0 4.31-1.46 5.11-3.5H6.89c.8 2.04 2.78 3.5 5.11 3.5z" />
-                </svg>
-                Chef&apos;s Pick
-              </span>
+              Chef's Pick
             </button>
           </div>
         </div>
 
         {/* Category Tabs */}
-        <div className="px-6 border-t border-orange-100/50 bg-white/50 backdrop-blur-sm">
-          <div className="flex gap-2 overflow-x-auto pb-0 scrollbar-hidden">
+        <div className="border-t border-gray-200 bg-gray-50">
+          <div className="container-safe py-0 flex gap-2 overflow-x-auto scrollbar-hidden">
             <button
               onClick={() => {
                 setSelectedCategory(null);
                 setShowChefRecommended(false);
                 updateUrl(searchQuery, null, sortBy, false);
               }}
-              className={`px-4 py-3 text-sm font-semibold whitespace-nowrap transition-all duration-300 relative ${
+              className={`px-4 py-3 text-sm font-semibold whitespace-nowrap transition-all duration-200 border-b-2 ${
                 !selectedCategory && !showChefRecommended
-                  ? "text-orange-600"
-                  : "text-gray-600 hover:text-gray-900"
+                  ? "text-red-600 border-red-600"
+                  : "text-gray-600 border-transparent hover:text-gray-900"
               }`}
             >
               All
-              {!selectedCategory && !showChefRecommended && (
-                <div className="absolute bottom-0 left-4 right-4 h-1 bg-gradient-to-r from-orange-400 to-orange-500 rounded-full" />
-              )}
             </button>
             {categories.map((category) => (
               <button
@@ -581,16 +556,13 @@ function MenuContent() {
                   setShowChefRecommended(false);
                   updateUrl(searchQuery, category.id, sortBy, false);
                 }}
-                className={`px-4 py-3 text-sm font-semibold whitespace-nowrap transition-all duration-300 relative ${
+                className={`px-4 py-3 text-sm font-semibold whitespace-nowrap transition-all duration-200 border-b-2 ${
                   selectedCategory === category.id
-                    ? "text-orange-600"
-                    : "text-gray-600 hover:text-gray-900"
+                    ? "text-red-600 border-red-600"
+                    : "text-gray-600 border-transparent hover:text-gray-900"
                 }`}
               >
                 {category.name}
-                {selectedCategory === category.id && (
-                  <div className="absolute bottom-0 left-4 right-4 h-1 bg-gradient-to-r from-orange-400 to-orange-500 rounded-full" />
-                )}
               </button>
             ))}
           </div>
@@ -598,32 +570,29 @@ function MenuContent() {
       </div>
 
       {/* Main Content */}
-      <div className="px-6 py-6">
+      <div className="container-safe py-3 sm:py-4 lg:py-5">
         {/* Loading State */}
         {loading && (
-          <div className="flex flex-col items-center justify-center py-24">
-            <div className="relative w-16 h-16 mb-6">
-              <div className="absolute inset-0 bg-gradient-to-r from-orange-400 to-orange-500 rounded-full blur-xl opacity-50 animate-pulse"></div>
-              <div className="absolute inset-0 border-4 border-transparent border-t-orange-500 border-r-orange-500 rounded-full animate-spin"></div>
+          <div className="flex flex-col items-center justify-center py-16 sm:py-24">
+            <div className="relative w-12 h-12 sm:w-16 sm:h-16 mb-6">
+              <div className="absolute inset-0 bg-gradient-to-r from-red-400 to-red-500 rounded-full blur-xl opacity-50 animate-pulse"></div>
+              <div className="absolute inset-0 border-4 border-transparent border-t-red-500 border-r-red-500 rounded-full animate-spin"></div>
             </div>
-            <p className="text-gray-600 font-medium text-lg">
-              Loading delicious items...
+            <p className="text-gray-600 font-medium text-base sm:text-lg">
+              Loading menu...
             </p>
           </div>
         )}
 
         {/* Error State */}
         {error && !loading && (
-          <div className="bg-gradient-to-br from-red-50 to-red-100/50 backdrop-blur-sm border border-red-200/50 rounded-3xl p-8 text-center mb-6 shadow-lg">
-            <div className="text-5xl mb-4">⚠️</div>
-            <p className="text-red-700 font-bold text-lg mb-2">
+          <div className="bg-red-50 border border-red-200 rounded-2xl p-6 sm:p-8 text-center mb-6 shadow-sm">
+            <div className="text-4xl sm:text-5xl mb-4">⚠️</div>
+            <p className="text-red-700 font-bold text-base sm:text-lg mb-2">
               Something went wrong
             </p>
-            <p className="text-red-600 mb-6">{error}</p>
-            <button
-              onClick={() => fetchMenu(1)}
-              className="px-8 py-3 bg-gradient-to-r from-orange-500 to-red-500 text-white rounded-xl hover:shadow-lg transition-all font-semibold shadow-md hover:scale-105"
-            >
+            <p className="text-red-600 text-sm sm:text-base mb-6">{error}</p>
+            <button onClick={() => fetchMenu(1)} className="btn-primary">
               Try Again
             </button>
           </div>
@@ -634,11 +603,11 @@ function MenuContent() {
           chefRecommendedItems.length > 0 &&
           !selectedCategory &&
           !showChefRecommended && (
-            <div className="mb-10">
+            <div className="mb-6">
               <div className="flex justify-between items-center mb-5">
                 <div>
                   <h2 className="text-2xl font-bold text-gray-900 mb-2">
-                    👨‍🍳 Chef&apos;s Recommendations
+                    Chef&apos;s Recommendations
                   </h2>
                   <p className="text-sm text-gray-600 font-medium">
                     Hand-picked favorites from our kitchen
@@ -716,7 +685,7 @@ function MenuContent() {
           popularItems.length > 0 &&
           !selectedCategory &&
           !showChefRecommended && (
-            <div className="mb-10">
+            <div className="mb-6">
               <div className="flex justify-between items-center mb-5">
                 <div>
                   <h2 className="text-2xl font-bold text-gray-900 mb-2">
@@ -796,7 +765,7 @@ function MenuContent() {
         {/* Items Grid */}
         {!loading && items.length > 0 && (
           <div>
-            <div className="mb-6">
+            <div className="mb-4">
               <h2 className="text-2xl font-bold text-gray-900 mb-2">
                 {useFuzzySearch
                   ? "Search Results"
@@ -812,14 +781,15 @@ function MenuContent() {
               </p>
             </div>
 
-            <div className="grid grid-cols-2 gap-5">
+            <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-5">
               {(useFuzzySearch ? fuzzyResults : items).map((item) => (
                 <Link
                   key={item.id}
                   href={`/menu/${item.id}?token=${currentToken}`}
-                  className="bg-white/70 backdrop-blur-sm border border-white/50 rounded-2xl overflow-hidden hover:shadow-xl hover:scale-105 transition-all group shadow-sm"
+                  className="card-hover flex flex-col h-full"
                 >
-                  <div className="h-32 bg-gradient-to-br from-gray-100 to-gray-200 relative overflow-hidden">
+                  {/* Image Container */}
+                  <div className="h-32 sm:h-40 md:h-44 lg:h-48 bg-gradient-to-br from-gray-100 to-gray-200 relative overflow-hidden">
                     {item.primaryPhotoUrl ? (
                       <Image
                         src={item.primaryPhotoUrl}
@@ -829,38 +799,43 @@ function MenuContent() {
                         unoptimized
                       />
                     ) : (
-                      <div className="w-full h-full flex items-center justify-center text-4xl">
+                      <div className="w-full h-full flex items-center justify-center text-3xl sm:text-4xl">
                         🍽️
                       </div>
                     )}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent opacity-0 hover:opacity-100 transition-opacity"></div>
 
                     {/* Badges */}
-                    <div className="absolute top-2 left-2 flex gap-1.5">
+                    <div className="absolute top-2 left-2 flex gap-1.5 flex-wrap">
                       {item.isChefRecommended && (
-                        <span className="inline-block bg-gradient-to-r from-orange-400 to-orange-500 text-white text-xs font-bold px-2.5 py-1 rounded-full shadow-lg">
-                          👨‍🍳
+                        <span className="inline-block bg-gradient-to-r from-red-500 to-red-600 text-white text-xs font-bold px-2 py-1 rounded-lg shadow-lg">
+                          Chef Pick
                         </span>
                       )}
-                      <div>{getStatusBadge(item.status)}</div>
+                      {item.status !== "available" && (
+                        <div>{getStatusBadge(item.status)}</div>
+                      )}
                     </div>
                   </div>
 
-                  <div className="p-4">
-                    <h3 className="font-bold text-gray-900 text-sm line-clamp-2 mb-2">
+                  {/* Content */}
+                  <div className="flex-1 p-3 sm:p-4 flex flex-col">
+                    <h3 className="font-bold text-gray-900 text-xs sm:text-sm md:text-base line-clamp-2 mb-1 sm:mb-2">
                       {item.name}
                     </h3>
                     {item.description && (
-                      <p className="text-gray-600 text-xs line-clamp-2 mb-3 leading-relaxed">
+                      <p className="text-gray-600 text-xs line-clamp-2 mb-2 sm:mb-3 leading-relaxed">
                         {item.description}
                       </p>
                     )}
-                    <div className="flex justify-between items-center">
-                      <span className="text-orange-600 font-bold text-base">
+
+                    {/* Footer */}
+                    <div className="mt-auto flex justify-between items-center pt-2 border-t border-gray-200">
+                      <span className="text-red-600 font-bold text-sm sm:text-base md:text-lg">
                         ${item.price.toFixed(2)}
                       </span>
                       {item.prepTimeMinutes > 0 && (
-                        <span className="text-xs text-gray-500 bg-gray-100 px-2.5 py-1 rounded-lg font-medium">
+                        <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-lg font-medium">
                           {item.prepTimeMinutes}m
                         </span>
                       )}
@@ -874,12 +849,14 @@ function MenuContent() {
 
         {/* Empty State */}
         {!loading && items.length === 0 && (
-          <div className="flex flex-col items-center justify-center py-20 text-center">
-            <div className="text-6xl mb-6 animate-bounce">🍽️</div>
-            <h3 className="text-2xl font-bold text-gray-900 mb-3">
+          <div className="flex flex-col items-center justify-center py-16 sm:py-20 text-center">
+            <div className="text-5xl sm:text-6xl mb-4 sm:mb-6 animate-bounce">
+              🍽️
+            </div>
+            <h3 className="text-h2 text-gray-900 mb-2 sm:mb-3">
               No items found
             </h3>
-            <p className="text-gray-600 mb-8 text-lg max-w-sm">
+            <p className="text-gray-600 mb-6 sm:mb-8 text-sm sm:text-base max-w-sm">
               {searchQuery
                 ? "Try a different search term"
                 : "No items available in this category"}
@@ -891,7 +868,7 @@ function MenuContent() {
                   setSelectedCategory(null);
                   setShowChefRecommended(false);
                 }}
-                className="px-8 py-3 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-xl hover:shadow-lg transition-all font-semibold shadow-md hover:scale-105"
+                className="btn-primary"
               >
                 Clear Filters
               </button>
