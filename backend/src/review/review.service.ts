@@ -66,6 +66,9 @@ export class ReviewService {
 
     const savedReview = await this.reviewRepo.save(review);
 
+    // Update popularity score after creating review
+    await this.updatePopularityScore(dto.menuItemId, restaurantId);
+
     // Load the customer relation for the response
     const reviewWithCustomer = await this.reviewRepo.findOne({
       where: { id: savedReview.id },
@@ -177,6 +180,40 @@ export class ReviewService {
     };
   }
 
+  async updatePopularityScore(menuItemId: string, restaurantId: string) {
+    const { averageRating } = await this.getAverageRating(
+      menuItemId,
+      restaurantId,
+    );
+
+    // Update popularity score to be the average rating (multiplied by 10 for integer storage)
+    const popularityScore = Math.round(averageRating * 10);
+
+    await this.itemRepo.update(
+      { id: menuItemId, restaurantId },
+      { popularityScore },
+    );
+  }
+
+  async updateAllPopularityScores() {
+    // Get all menu items that have reviews
+    const menuItemsWithReviews = await this.reviewRepo
+      .createQueryBuilder('review')
+      .select('review.menuItemId', 'menuItemId')
+      .addSelect('review.restaurantId', 'restaurantId')
+      .where('review.isDeleted = :isDeleted', { isDeleted: false })
+      .groupBy('review.menuItemId')
+      .addGroupBy('review.restaurantId')
+      .distinct(true)
+      .getRawMany();
+
+    for (const item of menuItemsWithReviews) {
+      await this.updatePopularityScore(item.menuItemId, item.restaurantId);
+    }
+
+    return { updated: menuItemsWithReviews.length };
+  }
+
   async deleteReview(reviewId: string, customerId: string) {
     const review = await this.reviewRepo.findOne({
       where: { id: reviewId, customerId, isDeleted: false },
@@ -187,7 +224,15 @@ export class ReviewService {
     }
 
     review.isDeleted = true;
-    return this.reviewRepo.save(review);
+    const deletedReview = await this.reviewRepo.save(review);
+
+    // Update popularity score after deleting review
+    await this.updatePopularityScore(
+      deletedReview.menuItemId,
+      deletedReview.restaurantId,
+    );
+
+    return deletedReview;
   }
 
   async updateReview(
@@ -216,6 +261,12 @@ export class ReviewService {
     }
 
     const updatedReview = await this.reviewRepo.save(review);
+
+    // Update popularity score after updating review
+    await this.updatePopularityScore(
+      updatedReview.menuItemId,
+      updatedReview.restaurantId,
+    );
 
     const customerData = review.customer as
       | (Customer & { firstName?: string; lastName?: string })

@@ -62,7 +62,14 @@ export class MenuService {
     let order: any = { name: 'ASC' };
     if (sort === 'popularity') {
       // Sort by popularity score (higher scores first), then by name
+      // Popularity score = average rating * 10
       order = { popularityScore: 'DESC', name: 'ASC' };
+    } else if (sort === 'asc') {
+      // Sort by price low to high, then by name
+      order = { price: 'ASC', name: 'ASC' };
+    } else if (sort === 'desc') {
+      // Sort by price high to low, then by name
+      order = { price: 'DESC', name: 'ASC' };
     }
 
     // Get items with pagination

@@ -61,4 +61,9 @@ export class ReviewController {
   delete(@Param('id') id: string, @CurrentUser() user: AuthUser) {
     return this.service.deleteReview(id, user.userId);
   }
+
+  @Post('update-popularity-scores')
+  updateAllPopularityScores() {
+    return this.service.updateAllPopularityScores();
+  }
 }
