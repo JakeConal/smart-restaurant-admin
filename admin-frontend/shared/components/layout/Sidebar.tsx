@@ -21,8 +21,8 @@ import { useEscalationPolling } from "../../lib/hooks/useEscalationPolling";
 const menuItems = [
   { icon: LayoutGrid, label: "Overview", href: "/" },
   { icon: Layers, label: "Tables", href: "/tables" },
+  { icon: Users2, label: "Waiters", href: "/waiters" },
   { icon: Utensils, label: "Menu", href: "/menu" },
-  { icon: Users2, label: "Staff", href: "/staff" },
 ];
 
 export const Sidebar: React.FC = () => {

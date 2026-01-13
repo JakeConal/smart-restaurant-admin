@@ -45,10 +45,10 @@ export default function AdminHome() {
       color: "green",
     },
     {
-      title: "Staff Management",
-      description: "Manage restaurant staff and permissions",
+      title: "Waiter Management",
+      description: "Manage waiter accounts and assignments",
       icon: Users2,
-      href: "/staff",
+      href: "/waiters",
       color: "purple",
     },
   ];
