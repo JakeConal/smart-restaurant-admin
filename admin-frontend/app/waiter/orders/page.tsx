@@ -75,15 +75,7 @@ export default function WaiterOrdersPage() {
       const unsubscribe = client.subscribeToOrder(orderId, (data) => {
         console.log("[WaiterOrders] Received WebSocket update:", data);
 
-        if (data.type === "order:accepted") {
-          // Order was accepted by this waiter - remove from pending list
-          console.log("[WaiterOrders] Order accepted, removing from list");
-          setOrders((prev) => prev.filter((o) => o.orderId !== orderId));
-
-          if (selectedOrder?.orderId === orderId) {
-            setSelectedOrder(null);
-          }
-        } else if (data.type === "order:rejected") {
+        if (data.type === "order:rejected") {
           // Order was rejected - remove from list
           console.log("[WaiterOrders] Order rejected, removing from list");
           setOrders((prev) => prev.filter((o) => o.orderId !== orderId));
@@ -92,26 +84,29 @@ export default function WaiterOrdersPage() {
             setSelectedOrder(null);
           }
         } else if (data.type === "order:progress") {
-          // Order status progressed - update the order
-          console.log("[WaiterOrders] Order status progressed");
-          if (data.order) {
-            setOrders((prev) =>
-              prev.map((o) => (o.orderId === orderId ? data.order : o)),
+          // Order status progressed - check if moved away from pending_acceptance
+          console.log(
+            "[WaiterOrders] Order status progressed:",
+            data.newStatus,
+          );
+          if (data.newStatus === "received") {
+            // Order was accepted and sent to kitchen - remove from waiter orders list
+            console.log(
+              "[WaiterOrders] Order accepted and sent to kitchen, removing from list",
             );
+            setOrders((prev) => prev.filter((o) => o.orderId !== orderId));
             if (selectedOrder?.orderId === orderId) {
-              setSelectedOrder(data.order);
+              setSelectedOrder(null);
             }
           }
-        } else if (data.type === "order:updated") {
+        } else if (data.type === "order:updated" && data.order) {
           // General order update
           console.log("[WaiterOrders] Order updated");
-          if (data.order) {
-            setOrders((prev) =>
-              prev.map((o) => (o.orderId === orderId ? data.order : o)),
-            );
-            if (selectedOrder?.orderId === orderId) {
-              setSelectedOrder(data.order);
-            }
+          setOrders((prev) =>
+            prev.map((o) => (o.orderId === orderId ? data.order : o)),
+          );
+          if (selectedOrder?.orderId === orderId) {
+            setSelectedOrder(data.order);
           }
         }
       });
@@ -200,13 +195,11 @@ export default function WaiterOrdersPage() {
       const updatedOrder = await acceptOrder(order.orderId, {
         version: order.version,
       });
-      toast.success("Order accepted successfully!");
-      // Update order in list with new data (waiter_id, acceptedAt)
-      setOrders(
-        orders.map((o) => (o.orderId === order.orderId ? updatedOrder : o)),
-      );
+      toast.success("Order accepted and sent to kitchen!");
+      // Remove order from list immediately (optimistic update)
+      setOrders(orders.filter((o) => o.orderId !== order.orderId));
       if (selectedOrder?.orderId === order.orderId) {
-        setSelectedOrder(updatedOrder);
+        setSelectedOrder(null);
       }
     } catch (error) {
       const message =
@@ -229,11 +222,6 @@ export default function WaiterOrdersPage() {
     // Remove from list
     setOrders(orders.filter((o) => o.orderId !== rejectingOrderId));
     setRejectingOrderId(null);
-  };
-
-  const handleSendToKitchen = (updatedOrder: Order) => {
-    // Remove from list since it's no longer pending
-    setOrders(orders.filter((o) => o.orderId !== updatedOrder.orderId));
   };
 
   return (
@@ -340,7 +328,6 @@ export default function WaiterOrdersPage() {
           onClose={() => setSelectedOrder(null)}
           onAccept={handleAccept}
           onReject={handleReject}
-          onSendToKitchen={handleSendToKitchen}
           isOnline={isOnline}
         />
       )}

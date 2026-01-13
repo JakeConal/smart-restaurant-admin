@@ -96,6 +96,26 @@ class OrderWebSocketClient {
         type: "order:progress",
         ...data,
       });
+      // Also dispatch a global event for kitchen updates
+      window.dispatchEvent(
+        new CustomEvent("kitchen:orderupdate", {
+          detail: {
+            orderId: data.orderId,
+            order: data.order,
+            newStatus: data.newStatus,
+          },
+        }),
+      );
+    });
+
+    // Kitchen order received event
+    this.socket.on("kitchen:neworder", (data) => {
+      console.log("[AdminOrderWebSocket] New kitchen order:", data);
+      window.dispatchEvent(
+        new CustomEvent("kitchen:neworder", {
+          detail: { orderId: data.orderId, order: data.order },
+        }),
+      );
     });
 
     // Error event

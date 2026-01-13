@@ -147,6 +147,7 @@ export interface OrderItem {
 
 export interface Order {
   id: string;
+  orderId?: string; // Custom order ID (order-{timestamp}) - used for WebSocket subscription
   customerId?: string;
   tableId: string;
   tableNumber: string;
@@ -160,6 +161,10 @@ export interface Order {
   isPaid?: boolean;
   billRequestedAt?: string;
   paidAt?: string;
+  sentToKitchenAt?: string;
+  kitchenReceivedAt?: string;
+  kitchenPreparingAt?: string;
+  kitchenReadyAt?: string;
   createdAt: string;
   updatedAt: string;
 }

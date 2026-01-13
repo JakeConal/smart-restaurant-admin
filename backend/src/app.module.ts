@@ -45,6 +45,7 @@ import { SeedModule } from './seed/seed.module';
 import { SeedService } from './seed/seed.service';
 import { WaiterModule } from './waiter/waiter.module';
 import { ManagerModule } from './manager/manager.module';
+import { KitchenModule } from './kitchen/kitchen.module';
 
 @Module({
   imports: [
@@ -112,6 +113,7 @@ import { ManagerModule } from './manager/manager.module';
     OrderModule,
     WaiterModule,
     ManagerModule,
+    KitchenModule,
     SeedModule,
   ],
   controllers: [AppController],

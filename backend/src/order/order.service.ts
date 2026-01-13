@@ -281,7 +281,7 @@ export class OrderService {
   }
 
   /**
-   * Accept order (with optimistic locking) - just claim the order, don't change status
+   * Accept order and send to kitchen - directly move to RECEIVED status
    */
   async acceptOrder(
     orderId: string,
@@ -307,15 +307,25 @@ export class OrderService {
       );
     }
 
-    // Accept order: just assign to waiter, don't change status
+    const previousStatus = order.status;
+
+    // Accept order: assign to waiter AND send directly to kitchen
     order.waiter_id = waiterId;
     order.acceptedAt = new Date();
+    order.status = OrderStatus.RECEIVED; // Send directly to kitchen
+    order.sentToKitchenAt = new Date();
+    order.kitchenReceivedAt = new Date();
 
     try {
       const updatedOrder = await this.orderRepository.save(order);
 
-      // Emit WebSocket event
-      this.orderGateway.broadcastOrderAccepted(orderId, updatedOrder);
+      // Emit WebSocket event for status progression
+      this.orderGateway.broadcastStatusProgression(
+        orderId,
+        updatedOrder,
+        previousStatus,
+        updatedOrder.status,
+      );
 
       return updatedOrder;
     } catch {
@@ -380,9 +390,78 @@ export class OrderService {
     }
 
     const previousStatus = order.status;
-    // Transition: PENDING_ACCEPTANCE -> ACCEPTED (and mark as sent to kitchen)
-    order.status = OrderStatus.ACCEPTED;
+    // Transition: PENDING_ACCEPTANCE -> RECEIVED (sent directly to kitchen)
+    order.status = OrderStatus.RECEIVED;
     order.sentToKitchenAt = new Date();
+    order.kitchenReceivedAt = new Date();
+
+    const updatedOrder = await this.orderRepository.save(order);
+
+    // Emit WebSocket event for status progression
+    this.orderGateway.broadcastStatusProgression(
+      orderId,
+      updatedOrder,
+      previousStatus,
+      updatedOrder.status,
+    );
+
+    return updatedOrder;
+  }
+
+  // ============================================
+  // Kitchen-specific methods
+  // ============================================
+
+  /**
+   * Get all orders for kitchen display (RECEIVED, PREPARING, READY statuses)
+   */
+  async getKitchenOrders(): Promise<Order[]> {
+    return this.orderRepository.find({
+      where: {
+        status: In([
+          OrderStatus.RECEIVED,
+          OrderStatus.PREPARING,
+          OrderStatus.READY,
+        ]),
+        isDeleted: false,
+      },
+      order: { sentToKitchenAt: 'ASC' },
+    });
+  }
+
+  /**
+   * Update kitchen status (move between columns)
+   */
+  async updateKitchenStatus(
+    orderId: string,
+    newStatus: 'received' | 'preparing' | 'ready',
+  ): Promise<Order> {
+    const order = await this.orderRepository.findOne({
+      where: { orderId, isDeleted: false },
+    });
+
+    if (!order) {
+      throw new NotFoundException('Order not found');
+    }
+
+    const previousStatus = order.status;
+    const statusMap: Record<string, OrderStatus> = {
+      received: OrderStatus.RECEIVED,
+      preparing: OrderStatus.PREPARING,
+      ready: OrderStatus.READY,
+    };
+
+    order.status = statusMap[newStatus];
+    order.updatedAt = new Date();
+
+    // Track timestamps for each status
+    if (newStatus === 'received' && !order.kitchenReceivedAt) {
+      order.kitchenReceivedAt = new Date();
+    } else if (newStatus === 'preparing' && !order.kitchenPreparingAt) {
+      order.kitchenPreparingAt = new Date();
+    } else if (newStatus === 'ready' && !order.kitchenReadyAt) {
+      order.kitchenReadyAt = new Date();
+    }
 
     const updatedOrder = await this.orderRepository.save(order);
 

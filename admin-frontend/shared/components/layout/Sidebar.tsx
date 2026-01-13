@@ -13,6 +13,7 @@ import {
   ClipboardList,
   AlertCircle,
   Table2,
+  Soup,
 } from "lucide-react";
 import { useAuth } from "@/shared/components/auth/AuthContext";
 import { useEscalationPolling } from "../../lib/hooks/useEscalationPolling";
@@ -27,10 +28,10 @@ const menuItems = [
 export const Sidebar: React.FC = () => {
   const pathname = usePathname();
   const { user } = useAuth();
-  
+
   // Poll for escalated orders count (only for managers)
   const { count: escalatedCount } = useEscalationPolling({
-    enabled: user?.role?.toUpperCase() === 'ADMIN',
+    enabled: user?.role?.toUpperCase() === "ADMIN",
   });
 
   return (
@@ -45,7 +46,7 @@ export const Sidebar: React.FC = () => {
             Smart
           </span>
           <span className="text-gray-400 font-medium text-sm capitalize">
-            {user?.role?.toLowerCase() || 'Admin'}
+            {user?.role?.toLowerCase() || "Admin"}
           </span>
         </div>
       </div>
@@ -53,51 +54,55 @@ export const Sidebar: React.FC = () => {
       {/* Navigation */}
       <nav className="flex-1 space-y-2 flex flex-col items-center lg:items-stretch">
         {/* Admin menu items - only show for ADMIN role */}
-        {user?.role?.toUpperCase() === 'ADMIN' && menuItems.map((item) => {
-          const Icon = item.icon;
-          const isActive = pathname === item.href;
+        {user?.role?.toUpperCase() === "ADMIN" &&
+          menuItems.map((item) => {
+            const Icon = item.icon;
+            const isActive = pathname === item.href;
 
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={`flex items-center gap-4 px-4 py-3.5 rounded-2xl transition-all group ${
-                isActive
-                  ? "bg-slate-800 text-white shadow-lg shadow-slate-200"
-                  : "text-gray-500 hover:text-slate-800 hover:bg-slate-50"
-              }`}
-            >
-              <Icon
-                className={`w-6 h-6 ${
-                  isActive ? "" : "group-hover:scale-110 transition-transform"
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={`flex items-center gap-4 px-4 py-3.5 rounded-2xl transition-all group ${
+                  isActive
+                    ? "bg-slate-800 text-white shadow-lg shadow-slate-200"
+                    : "text-gray-500 hover:text-slate-800 hover:bg-slate-50"
                 }`}
-              />
-              <span
-                className={`font-${isActive ? "bold" : "semibold"} hidden lg:block`}
               >
-                {item.label}
-              </span>
-            </Link>
-          );
-        })}
+                <Icon
+                  className={`w-6 h-6 ${
+                    isActive ? "" : "group-hover:scale-110 transition-transform"
+                  }`}
+                />
+                <span
+                  className={`font-${isActive ? "bold" : "semibold"} hidden lg:block`}
+                >
+                  {item.label}
+                </span>
+              </Link>
+            );
+          })}
 
         {/* Waiter Orders - visible to WAITER and ADMIN roles */}
-        {(user?.role?.toUpperCase() === 'WAITER' || user?.role?.toUpperCase() === 'ADMIN') && (
+        {(user?.role?.toUpperCase() === "WAITER" ||
+          user?.role?.toUpperCase() === "ADMIN") && (
           <Link
             href="/waiter/orders"
             className={`flex items-center gap-4 px-4 py-3.5 rounded-2xl transition-all group ${
-              pathname === '/waiter/orders'
+              pathname === "/waiter/orders"
                 ? "bg-slate-800 text-white shadow-lg shadow-slate-200"
                 : "text-gray-500 hover:text-slate-800 hover:bg-slate-50"
             }`}
           >
             <ClipboardList
               className={`w-6 h-6 ${
-                pathname === '/waiter/orders' ? "" : "group-hover:scale-110 transition-transform"
+                pathname === "/waiter/orders"
+                  ? ""
+                  : "group-hover:scale-110 transition-transform"
               }`}
             />
             <span
-              className={`font-${pathname === '/waiter/orders' ? "bold" : "semibold"} hidden lg:block`}
+              className={`font-${pathname === "/waiter/orders" ? "bold" : "semibold"} hidden lg:block`}
             >
               Waiter Orders
             </span>
@@ -105,34 +110,62 @@ export const Sidebar: React.FC = () => {
         )}
 
         {/* Waiter Tables - visible to WAITER and ADMIN roles */}
-        {(user?.role?.toUpperCase() === 'WAITER' || user?.role?.toUpperCase() === 'ADMIN') && (
+        {(user?.role?.toUpperCase() === "WAITER" ||
+          user?.role?.toUpperCase() === "ADMIN") && (
           <Link
             href="/waiter/tables"
             className={`flex items-center gap-4 px-4 py-3.5 rounded-2xl transition-all group ${
-              pathname === '/waiter/tables'
+              pathname === "/waiter/tables"
                 ? "bg-slate-800 text-white shadow-lg shadow-slate-200"
                 : "text-gray-500 hover:text-slate-800 hover:bg-slate-50"
             }`}
           >
             <Table2
               className={`w-6 h-6 ${
-                pathname === '/waiter/tables' ? "" : "group-hover:scale-110 transition-transform"
+                pathname === "/waiter/tables"
+                  ? ""
+                  : "group-hover:scale-110 transition-transform"
               }`}
             />
             <span
-              className={`font-${pathname === '/waiter/tables' ? "bold" : "semibold"} hidden lg:block`}
+              className={`font-${pathname === "/waiter/tables" ? "bold" : "semibold"} hidden lg:block`}
             >
               My Tables
             </span>
           </Link>
         )}
 
+        {/* Kitchen Display - visible to ADMIN role */}
+        {user?.role?.toUpperCase() === "ADMIN" && (
+          <Link
+            href="/kitchen"
+            className={`flex items-center gap-4 px-4 py-3.5 rounded-2xl transition-all group ${
+              pathname === "/kitchen"
+                ? "bg-slate-800 text-white shadow-lg shadow-slate-200"
+                : "text-gray-500 hover:text-slate-800 hover:bg-slate-50"
+            }`}
+          >
+            <Soup
+              className={`w-6 h-6 ${
+                pathname === "/kitchen"
+                  ? ""
+                  : "group-hover:scale-110 transition-transform"
+              }`}
+            />
+            <span
+              className={`font-${pathname === "/kitchen" ? "bold" : "semibold"} hidden lg:block`}
+            >
+              Kitchen
+            </span>
+          </Link>
+        )}
+
         {/* Manager Escalated Orders - visible only to ADMIN role */}
-        {user?.role?.toUpperCase() === 'ADMIN' && (
+        {user?.role?.toUpperCase() === "ADMIN" && (
           <Link
             href="/manager/escalated-orders"
             className={`flex items-center justify-between px-4 py-3.5 rounded-2xl transition-all group ${
-              pathname === '/manager/escalated-orders'
+              pathname === "/manager/escalated-orders"
                 ? "bg-slate-800 text-white shadow-lg shadow-slate-200"
                 : "text-gray-500 hover:text-slate-800 hover:bg-slate-50"
             }`}
@@ -140,21 +173,25 @@ export const Sidebar: React.FC = () => {
             <div className="flex items-center gap-4">
               <AlertCircle
                 className={`w-6 h-6 ${
-                  pathname === '/manager/escalated-orders' ? "" : "group-hover:scale-110 transition-transform"
+                  pathname === "/manager/escalated-orders"
+                    ? ""
+                    : "group-hover:scale-110 transition-transform"
                 }`}
               />
               <span
-                className={`font-${pathname === '/manager/escalated-orders' ? "bold" : "semibold"} hidden lg:block`}
+                className={`font-${pathname === "/manager/escalated-orders" ? "bold" : "semibold"} hidden lg:block`}
               >
                 Escalated
               </span>
             </div>
             {escalatedCount > 0 && (
-              <span className={`hidden lg:flex items-center justify-center min-w-[24px] h-6 px-2 rounded-full text-xs font-bold ${
-                pathname === '/manager/escalated-orders'
-                  ? "bg-red-500 text-white"
-                  : "bg-red-100 text-red-700"
-              }`}>
+              <span
+                className={`hidden lg:flex items-center justify-center min-w-[24px] h-6 px-2 rounded-full text-xs font-bold ${
+                  pathname === "/manager/escalated-orders"
+                    ? "bg-red-500 text-white"
+                    : "bg-red-100 text-red-700"
+                }`}
+              >
                 {escalatedCount}
               </span>
             )}

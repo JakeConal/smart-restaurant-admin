@@ -121,86 +121,8 @@ function CartContent() {
     setError("");
 
     try {
-      // Check if there's an active unpaid order
-      const existingOrderId = orderId || activeOrder?.id;
-
-      // Check if adding to existing order
-      if (existingOrderId) {
-        const existingOrderJson = sessionStorage.getItem(
-          `order-${existingOrderId}`,
-        );
-        if (existingOrderJson) {
-          const existingOrder = JSON.parse(existingOrderJson) as Order;
-
-          // Only add if order is not paid
-          if (!existingOrder.isPaid) {
-            // Add new items to existing order
-            const newOrderItems = items.map((item) => ({
-              id: item.id,
-              menuItemId: item.menuItem.id,
-              menuItemName: item.menuItem.name,
-              quantity: item.quantity,
-              unitPrice: item.menuItem.price,
-              totalPrice: item.totalPrice,
-              modifiers: item.modifiers,
-              specialInstructions: item.specialInstructions,
-            }));
-
-            // Calculate total price of new items from cart
-            const cartTotal = getTotalPrice();
-
-            // Recalculate totals
-            const newSubtotal = existingOrder.subtotal + cartTotal;
-            const newTax = newSubtotal * 0.1;
-            const newTotal = newSubtotal + newTax;
-
-            const updatedOrder: Order = {
-              ...existingOrder,
-              items: [...existingOrder.items, ...newOrderItems],
-              subtotal: newSubtotal,
-              tax: newTax,
-              total: newTotal,
-              updatedAt: new Date().toISOString(),
-            };
-
-            sessionStorage.setItem(
-              `order-${existingOrderId}`,
-              JSON.stringify(updatedOrder),
-            );
-
-            console.log(`Updating order ${existingOrderId}:`, {
-              items: updatedOrder.items.length,
-              subtotal: newSubtotal,
-              total: newTotal,
-            });
-
-            // Try to update in database
-            try {
-              await orderApi.updateOrderByOrderId(existingOrderId, {
-                items: updatedOrder.items,
-                subtotal: newSubtotal,
-                tax: newTax,
-                total: newTotal,
-                updatedAt: new Date().toISOString(),
-              });
-              console.log(
-                `Order ${existingOrderId} updated successfully in database`,
-              );
-            } catch (dbErr) {
-              console.warn("Failed to update order in database:", dbErr);
-            }
-
-            clearCart();
-            setShowOrderModal(false);
-            setActiveOrder(updatedOrder);
-
-            router.push(
-              `/order-tracking?token=${currentToken}&orderId=${existingOrderId}`,
-            );
-            return;
-          }
-        }
-      }
+      // Always create a new order - don't add to existing orders
+      // This ensures each order is independent and tracked separately
 
       // Create new order
       const simulatedOrder: Order = {

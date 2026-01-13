@@ -171,6 +171,7 @@ export class OrderGateway implements OnGatewayConnection, OnGatewayDisconnect {
       `[OrderGateway] Broadcasting status progression for ${orderId}: ${previousStatus} -> ${newStatus} (${progress}%)`,
     );
 
+    // Broadcast to order room (for customer tracking)
     this.server.to(roomName).emit('order:progress', {
       orderId,
       previousStatus,
@@ -179,6 +180,25 @@ export class OrderGateway implements OnGatewayConnection, OnGatewayDisconnect {
       order,
       timestamp: new Date().toISOString(),
     });
+
+    // Also broadcast to all connected clients for kitchen updates
+    this.server.emit('order:progress', {
+      orderId,
+      previousStatus,
+      newStatus,
+      progress,
+      order,
+      timestamp: new Date().toISOString(),
+    });
+
+    // If order just moved to RECEIVED status, notify kitchen
+    if (newStatus === 'received') {
+      this.server.emit('kitchen:neworder', {
+        orderId,
+        order,
+        timestamp: new Date().toISOString(),
+      });
+    }
   }
 
   /**

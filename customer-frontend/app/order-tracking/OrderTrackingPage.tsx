@@ -7,7 +7,7 @@ import { getOrderWebSocketClient } from "@/lib/orderWebSocket";
 import BottomNav from "@/components/BottomNav";
 
 interface OrderTrackingPageProps {
-  order: Order;
+  orders: Order[];
   onAddMoreItems: () => void;
   onRequestBill: () => void;
   onContinue?: () => void;
@@ -16,24 +16,42 @@ interface OrderTrackingPageProps {
 }
 
 export default function OrderTrackingPage({
-  order,
+  orders,
   onAddMoreItems,
   onRequestBill,
   onContinue,
   currentToken,
 }: OrderTrackingPageProps) {
-  const [displayOrder, setDisplayOrder] = useState(order);
+  const [displayOrders, setDisplayOrders] = useState(orders);
   const [requestingBill, setRequestingBill] = useState(false);
   const [billRequested, setBillRequested] = useState(false);
   const [wsConnected, setWsConnected] = useState(false);
-  const unsubscribeRef = useRef<(() => void) | null>(null);
+  const unsubscribeRefs = useRef<Map<string, () => void>>(new Map());
 
-  // Update sessionStorage whenever displayOrder changes
+  // Debug: Log orders on mount to check orderId field
   useEffect(() => {
-    sessionStorage.setItem(`order-${order.id}`, JSON.stringify(displayOrder));
-  }, [displayOrder, order.id]);
+    console.log(
+      "[OrderTracking] Orders loaded:",
+      orders.map((o) => ({
+        id: o.id,
+        orderId: o.orderId,
+        status: o.status,
+      })),
+    );
+  }, []);
 
-  // WebSocket setup
+  // Update sessionStorage whenever displayOrders changes
+  useEffect(() => {
+    displayOrders.forEach((order) => {
+      // Use orderId for storage key if available, otherwise use id
+      const storageKey = order.orderId
+        ? `order-${order.orderId}`
+        : `order-${order.id}`;
+      sessionStorage.setItem(storageKey, JSON.stringify(order));
+    });
+  }, [displayOrders]);
+
+  // WebSocket setup for all orders - only run once on mount
   useEffect(() => {
     const setupWebSocket = async () => {
       try {
@@ -46,59 +64,67 @@ export default function OrderTrackingPage({
 
         setWsConnected(true);
 
-        // Subscribe to order updates
-        const unsubscribe = client.subscribeToOrder(order.id, (data) => {
-          console.log("[OrderTracking] Received WebSocket update:", data);
+        // Subscribe to updates for each order
+        orders.forEach((order) => {
+          // Use orderId for WebSocket subscription (backend uses orderId in room name)
+          // If orderId not available, fallback to id
+          const subscriptionId = order.orderId || String(order.id);
 
-          if (data.type === "order:accepted") {
-            // Order was accepted by waiter - update status to accepted
-            console.log(
-              "[OrderTracking] Order accepted, updating to accepted status",
-            );
-            setDisplayOrder((prev) => ({
-              ...prev,
-              status: "accepted",
-            }));
-          } else if (data.type === "order:rejected") {
-            // Order was rejected
-            console.log("[OrderTracking] Order rejected:", data.reason);
-            setDisplayOrder((prev) => ({
-              ...prev,
-              status: "rejected",
-            }));
-          } else if (data.type === "order:progress") {
-            // Order status progressed
-            console.log(
-              `[OrderTracking] Status progression: ${data.previousStatus} -> ${data.newStatus}`,
-            );
-            setDisplayOrder((prev) => ({
-              ...prev,
-              status: data.newStatus,
-            }));
-          } else if (data.type === "order:updated") {
-            // General order update
-            console.log("[OrderTracking] Order updated");
-            if (data.order) {
-              setDisplayOrder(data.order);
-            }
+          // Skip if already subscribed
+          if (unsubscribeRefs.current.has(subscriptionId)) {
+            return;
           }
-        });
 
-        unsubscribeRef.current = unsubscribe;
+          const unsubscribe = client.subscribeToOrder(
+            subscriptionId,
+            (data) => {
+              console.log(
+                "[OrderTracking] Received WebSocket update for order",
+                subscriptionId,
+                ":",
+                data,
+              );
+
+              setDisplayOrders((prev) =>
+                prev.map((o) => {
+                  // Match by orderId if available, otherwise by id
+                  const orderSubId = o.orderId || String(o.id);
+                  if (orderSubId !== subscriptionId) return o;
+
+                  if (data.type === "order:accepted") {
+                    return { ...o, status: "accepted" };
+                  } else if (data.type === "order:rejected") {
+                    return { ...o, status: "rejected" };
+                  } else if (data.type === "order:progress") {
+                    return { ...o, status: data.newStatus };
+                  } else if (data.type === "order:updated" && data.order) {
+                    return data.order;
+                  }
+                  return o;
+                }),
+              );
+            },
+          );
+
+          unsubscribeRefs.current.set(subscriptionId, unsubscribe);
+        });
       } catch (error) {
         console.error("[OrderTracking] Failed to setup WebSocket:", error);
         setWsConnected(false);
       }
     };
 
-    setupWebSocket();
+    if (orders.length > 0) {
+      setupWebSocket();
+    }
 
     return () => {
-      if (unsubscribeRef.current) {
-        unsubscribeRef.current();
-      }
+      unsubscribeRefs.current.forEach((unsubscribe) => {
+        unsubscribe();
+      });
+      unsubscribeRefs.current.clear();
     };
-  }, [order.id]);
+  }, []); // Empty dependency - only run once on mount
 
   const getStatusInfo = (status: OrderStatus) => {
     switch (status) {
@@ -170,20 +196,6 @@ export default function OrderTrackingPage({
     }
   };
 
-  const statusInfo = getStatusInfo(displayOrder.status);
-
-  const handleRequestBill = async () => {
-    setRequestingBill(true);
-    try {
-      // Simulate bill request
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      setBillRequested(true);
-      onRequestBill();
-    } finally {
-      setRequestingBill(false);
-    }
-  };
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-25 via-white to-orange-50 pb-24 safe-bottom">
       {/* Header */}
@@ -207,187 +219,188 @@ export default function OrderTrackingPage({
       </div>
 
       <div className="px-6 py-6">
-        {/* Order ID and Table */}
-        <div className="flex justify-between items-start mb-6">
-          <div>
-            <p className="text-xs text-gray-500 uppercase tracking-wide">
-              Order ID
-            </p>
-            <p className="text-lg font-bold text-gray-900">
-              #{displayOrder.id.slice(-6).toUpperCase()}
-            </p>
-          </div>
-          <div className="text-right">
-            <p className="text-xs text-gray-500 uppercase tracking-wide">
-              Table
-            </p>
-            <p className="text-lg font-bold text-orange-600">
-              {displayOrder.tableNumber}
-            </p>
-          </div>
-        </div>
+        {/* Multiple Orders */}
+        <div className="space-y-6">
+          {displayOrders.map((displayOrder) => {
+            const statusInfo = getStatusInfo(displayOrder.status);
 
-        {/* Order Summary */}
-        <div className="mb-8 p-6 bg-white rounded-3xl border border-orange-100/50 shadow-sm">
-          <h3 className="text-lg font-bold text-gray-900 mb-4">
-            Order Details
-          </h3>
-
-          {/* Items List with Individual Progress */}
-          <div className="space-y-4 mb-4">
-            {displayOrder.items.map((item) => {
-              // Calculate progress for each item based on order status
-              const getItemProgress = () => {
-                switch (displayOrder.status) {
-                  case "accepted":
-                    return 15;
-                  case "received":
-                    return 33;
-                  case "preparing":
-                    return 66;
-                  case "ready":
-                  case "completed":
-                    return 100;
-                  default:
-                    return 0;
-                }
-              };
-
-              const itemProgress = getItemProgress();
-
-              return (
-                <div
-                  key={item.id}
-                  className="p-4 bg-gray-50 rounded-xl border border-gray-100"
-                >
-                  {/* Item Info */}
-                  <div className="flex justify-between items-start mb-3">
-                    <div className="flex-1">
-                      <p className="font-semibold text-gray-900">
-                        {item.menuItemName}
-                      </p>
-                      {item.modifiers.length > 0 && (
-                        <p className="text-xs text-gray-500 mt-1">
-                          {item.modifiers.map((m) => m.optionName).join(", ")}
-                        </p>
-                      )}
-                      {item.specialInstructions && (
-                        <p className="text-xs text-gray-500 mt-1 italic">
-                          {item.specialInstructions}
-                        </p>
-                      )}
-                      <p className="text-sm text-gray-600 mt-2">
-                        × {item.quantity}
-                      </p>
-                    </div>
-                    <span className="font-bold text-gray-900">
-                      ${item.totalPrice?.toFixed(2) || "0.00"}
-                    </span>
+            return (
+              <div key={displayOrder.id}>
+                {/* Order ID and Table */}
+                <div className="flex justify-between items-start mb-4">
+                  <div>
+                    <p className="text-xs text-gray-500 uppercase tracking-wide">
+                      Order ID
+                    </p>
+                    <p className="text-lg font-bold text-gray-900">
+                      #{String(displayOrder.id).slice(-6).toUpperCase()}
+                    </p>
                   </div>
-
-                  {/* Individual Item Progress Bar */}
-                  <div className="pt-3 border-t border-gray-200">
-                    <div className="flex items-center gap-2 mb-2">
-                      <div className="h-1.5 flex-1 bg-gray-300 rounded-full overflow-hidden">
-                        <div
-                          className={`h-full bg-gradient-to-r ${statusInfo.color} rounded-full transition-all duration-1000 ease-out`}
-                          style={{ width: `${itemProgress}%` }}
-                        />
-                      </div>
-                      <span className="text-xs font-semibold text-gray-600 w-8 text-right">
-                        {itemProgress}%
-                      </span>
-                    </div>
-                    <p className="text-xs text-gray-500">
-                      {displayOrder.status === "received"
-                        ? "Order Received"
-                        : displayOrder.status === "preparing"
-                          ? "Preparing"
-                          : "Ready"}
+                  <div className="text-right">
+                    <p className="text-xs text-gray-500 uppercase tracking-wide">
+                      Table
+                    </p>
+                    <p className="text-lg font-bold text-orange-600">
+                      {displayOrder.tableNumber}
                     </p>
                   </div>
                 </div>
-              );
-            })}
-          </div>
 
-          {/* Price Summary */}
-          <div className="border-t border-gray-200 pt-4 space-y-2">
-            <div className="flex justify-between text-sm text-gray-600">
-              <span>Subtotal:</span>
-              <span>${displayOrder.subtotal?.toFixed(2) || "0.00"}</span>
-            </div>
-            <div className="flex justify-between text-sm text-gray-600">
-              <span>Tax (10%):</span>
-              <span>${displayOrder.tax?.toFixed(2) || "0.00"}</span>
-            </div>
-            <div className="flex justify-between text-lg font-bold text-gray-900 pt-2 border-t border-gray-200">
-              <span>Total:</span>
-              <span className="text-orange-600">
-                ${displayOrder.total?.toFixed(2) || "0.00"}
-              </span>
-            </div>
-          </div>
+                {/* Order Summary */}
+                <div className="mb-6 p-6 bg-white rounded-3xl border border-orange-100/50 shadow-sm">
+                  <h3 className="text-lg font-bold text-gray-900 mb-4">
+                    Order Details
+                  </h3>
+
+                  {/* Items List with Individual Progress */}
+                  <div className="space-y-4 mb-4">
+                    {displayOrder.items.map((item) => {
+                      const getItemProgress = () => {
+                        switch (displayOrder.status) {
+                          case "accepted":
+                            return 15;
+                          case "received":
+                            return 33;
+                          case "preparing":
+                            return 66;
+                          case "ready":
+                          case "completed":
+                            return 100;
+                          default:
+                            return 0;
+                        }
+                      };
+
+                      const itemProgress = getItemProgress();
+
+                      return (
+                        <div
+                          key={item.id}
+                          className="p-4 bg-gray-50 rounded-xl border border-gray-100"
+                        >
+                          {/* Item Info */}
+                          <div className="flex justify-between items-start mb-3">
+                            <div className="flex-1">
+                              <p className="font-semibold text-gray-900">
+                                {item.menuItemName}
+                              </p>
+                              {item.modifiers.length > 0 && (
+                                <p className="text-xs text-gray-500 mt-1">
+                                  {item.modifiers
+                                    .map((m) => m.optionName)
+                                    .join(", ")}
+                                </p>
+                              )}
+                              {item.specialInstructions && (
+                                <p className="text-xs text-gray-500 mt-1 italic">
+                                  {item.specialInstructions}
+                                </p>
+                              )}
+                              <p className="text-sm text-gray-600 mt-2">
+                                × {item.quantity}
+                              </p>
+                            </div>
+                            <span className="font-bold text-gray-900">
+                              ${item.totalPrice?.toFixed(2) || "0.00"}
+                            </span>
+                          </div>
+
+                          {/* Individual Item Progress Bar */}
+                          <div className="pt-3 border-t border-gray-200">
+                            <div className="flex items-center gap-2 mb-2">
+                              <div className="h-1.5 flex-1 bg-gray-300 rounded-full overflow-hidden">
+                                <div
+                                  className={`h-full bg-gradient-to-r ${statusInfo.color} rounded-full transition-all duration-1000 ease-out`}
+                                  style={{ width: `${itemProgress}%` }}
+                                />
+                              </div>
+                              <span className="text-xs font-semibold text-gray-600 w-8 text-right">
+                                {itemProgress}%
+                              </span>
+                            </div>
+                            <p className="text-xs text-gray-500">
+                              {displayOrder.status === "received"
+                                ? "Order Received"
+                                : displayOrder.status === "preparing"
+                                  ? "Preparing"
+                                  : "Ready"}
+                            </p>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {/* Price Summary */}
+                  <div className="border-t border-gray-200 pt-4 space-y-2">
+                    <div className="flex justify-between text-sm text-gray-600">
+                      <span>Subtotal:</span>
+                      <span>
+                        ${displayOrder.subtotal?.toFixed(2) || "0.00"}
+                      </span>
+                    </div>
+                    <div className="flex justify-between text-sm text-gray-600">
+                      <span>Tax (10%):</span>
+                      <span>${displayOrder.tax?.toFixed(2) || "0.00"}</span>
+                    </div>
+                    <div className="flex justify-between text-lg font-bold text-gray-900 pt-2 border-t border-gray-200">
+                      <span>Total:</span>
+                      <span className="text-orange-600">
+                        ${displayOrder.total?.toFixed(2) || "0.00"}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Paid Status for this order */}
+                  {displayOrder.isPaid && (
+                    <div className="p-4 bg-blue-50 rounded-2xl border border-blue-200 mt-4">
+                      <p className="text-sm text-blue-800">
+                        ✓ Payment completed!
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })}
         </div>
 
-        {/* Action Buttons */}
-        <div className="grid grid-cols-2 gap-3 mb-4">
-          {!displayOrder.isPaid && (
-            <button
-              onClick={onAddMoreItems}
-              className="py-3 bg-white border-2 border-orange-500 text-orange-600 font-semibold rounded-2xl hover:bg-orange-50 transition-all"
-            >
-              + Add Items
-            </button>
-          )}
+        {/* Action Buttons (for all orders) */}
+        <div className="grid grid-cols-2 gap-3 mt-6">
           <button
-            onClick={handleRequestBill}
-            disabled={requestingBill || billRequested || displayOrder.isPaid}
+            onClick={onAddMoreItems}
+            className="py-3 bg-white border-2 border-orange-500 text-orange-600 font-semibold rounded-2xl hover:bg-orange-50 transition-all"
+          >
+            + Add Items
+          </button>
+          <button
+            onClick={() => {
+              setRequestingBill(true);
+              setTimeout(() => {
+                setBillRequested(true);
+                onRequestBill();
+                setRequestingBill(false);
+              }, 1000);
+            }}
+            disabled={requestingBill || billRequested}
             className={`py-3 font-semibold rounded-2xl transition-all ${
-              displayOrder.isPaid
-                ? "bg-gray-100 text-gray-600"
-                : billRequested
-                  ? "bg-green-100 text-green-700"
-                  : "bg-gradient-to-r from-orange-500 to-orange-600 text-white hover:shadow-lg"
+              billRequested
+                ? "bg-green-100 text-green-700"
+                : "bg-gradient-to-r from-orange-500 to-orange-600 text-white hover:shadow-lg"
             } disabled:opacity-50`}
           >
-            {displayOrder.isPaid
-              ? "✓ Paid"
-              : billRequested
-                ? "✓ Bill Requested"
-                : "Request Bill"}
+            {billRequested ? "✓ Bill Requested" : "Request Bill"}
           </button>
         </div>
 
         {/* Bill Requested Message */}
-        {billRequested && !displayOrder.isPaid && (
-          <div className="p-4 bg-green-50 rounded-2xl border border-green-200 mb-4">
+        {billRequested && (
+          <div className="p-4 bg-green-50 rounded-2xl border border-green-200 mt-4">
             <p className="text-sm text-green-800">
               ✓ Bill request sent! A server will bring your bill shortly.
             </p>
           </div>
         )}
-
-        {/* Paid Message */}
-        {displayOrder.isPaid && (
-          <div className="p-4 bg-blue-50 rounded-2xl border border-blue-200 mb-4">
-            <p className="text-sm text-blue-800">
-              ✓ Payment completed! Thank you for your order.
-            </p>
-          </div>
-        )}
-
-        {/* Continue to Payment (if order is ready and not paid) */}
-        {displayOrder.status === "ready" &&
-          !displayOrder.isPaid &&
-          onContinue && (
-            <button
-              onClick={onContinue}
-              className="w-full py-3 mt-4 bg-gradient-to-r from-green-500 to-green-600 text-white font-semibold rounded-2xl hover:shadow-lg transition-all"
-            >
-              Proceed to Payment
-            </button>
-          )}
       </div>
 
       <BottomNav token={currentToken || ""} />

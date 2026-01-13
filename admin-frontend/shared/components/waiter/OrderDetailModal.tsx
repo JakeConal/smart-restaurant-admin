@@ -5,7 +5,6 @@ import {
   X,
   Check,
   XCircle,
-  Send,
   Clock,
   ShoppingBag,
   AlertCircle,
@@ -14,7 +13,7 @@ import {
 import type { Order } from "../../types/order";
 import { Button } from "../ui/Button";
 import { useToast } from "../ui/Toast";
-import { acceptOrder, sendToKitchen } from "../../lib/api/waiter";
+import { acceptOrder } from "../../lib/api/waiter";
 
 interface OrderDetailModalProps {
   order: Order;
@@ -22,7 +21,6 @@ interface OrderDetailModalProps {
   onClose: () => void;
   onAccept: (order: Order) => void;
   onReject: (orderId: string) => void;
-  onSendToKitchen: (order: Order) => void;
   isOnline: boolean;
 }
 
@@ -32,13 +30,16 @@ export function OrderDetailModal({
   onClose,
   onAccept,
   onReject,
-  onSendToKitchen,
   isOnline,
 }: OrderDetailModalProps) {
   const toast = useToast();
   const [isAccepting, setIsAccepting] = useState(false);
-  const [isSending, setIsSending] = useState(false);
-  const [elapsedMinutes, setElapsedMinutes] = useState(0);
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
+  const [referenceTime] = useState(() => {
+    // Use the current time as reference (when modal opened)
+    // This ensures orders show correct elapsed time
+    return new Date().getTime();
+  });
 
   if (!isOpen) return null;
 
@@ -46,22 +47,21 @@ export function OrderDetailModal({
   React.useEffect(() => {
     const calculateElapsed = () => {
       const now = new Date().getTime();
-      // Use acceptedAt if order has been accepted, otherwise use createdAt
-      const referenceTime = order.acceptedAt || order.createdAt;
-      const timeToUse =
-        typeof referenceTime === "number"
-          ? referenceTime
-          : new Date(referenceTime).getTime();
-      const elapsed = Math.floor((now - timeToUse) / 60000);
-      setElapsedMinutes(Math.max(0, elapsed)); // Ensure non-negative
+      const elapsed = Math.floor((now - referenceTime) / 1000);
+      setElapsedSeconds(Math.max(0, elapsed)); // Ensure non-negative
     };
 
     calculateElapsed();
     const interval = setInterval(calculateElapsed, 1000);
     return () => clearInterval(interval);
-  }, [order.createdAt, order.acceptedAt]);
+  }, [referenceTime]);
 
-  const getElapsedMinutes = () => elapsedMinutes;
+  const formatElapsedTime = () => {
+    const hours = Math.floor(elapsedSeconds / 3600);
+    const minutes = Math.floor((elapsedSeconds % 3600) / 60);
+    const seconds = elapsedSeconds % 60;
+    return `${hours.toString().padStart(2, "0")}:${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
+  };
 
   const handleAccept = async () => {
     if (!isOnline) {
@@ -102,26 +102,7 @@ export function OrderDetailModal({
     onReject(order.orderId);
   };
 
-  const handleSendToKitchen = async () => {
-    setIsSending(true);
-    try {
-      const updatedOrder = await sendToKitchen(order.orderId);
-      toast.success("Order sent to kitchen!");
-      onSendToKitchen(updatedOrder);
-      onClose();
-    } catch (error) {
-      const message =
-        error instanceof Error
-          ? error.message
-          : "Failed to send order to kitchen";
-      toast.error(message);
-    } finally {
-      setIsSending(false);
-    }
-  };
-
-  const canAccept = order.status === "PENDING_ACCEPTANCE";
-  const canSendToKitchen = order.status === "ACCEPTED";
+  const canAccept = order.status === "pending_acceptance";
 
   return (
     <>
@@ -164,7 +145,7 @@ export function OrderDetailModal({
               )}
               <div className="flex items-center gap-2 bg-blue-50 text-blue-700 px-3 py-1 rounded-lg text-sm">
                 <Clock className="w-4 h-4" />
-                {getElapsedMinutes()} min ago
+                <span className="font-mono">{formatElapsedTime()}</span>
               </div>
               {!isOnline && (
                 <div className="flex items-center gap-1 bg-gray-100 text-gray-700 px-3 py-1 rounded-lg text-sm">
@@ -276,18 +257,6 @@ export function OrderDetailModal({
                     Reject Order
                   </Button>
                 </>
-              )}
-
-              {canSendToKitchen && (
-                <Button
-                  onClick={handleSendToKitchen}
-                  disabled={isSending}
-                  variant="primary"
-                  className="flex-1 flex items-center justify-center gap-2"
-                >
-                  <Send className="w-5 h-5" />
-                  {isSending ? "Sending..." : "Send to Kitchen"}
-                </Button>
               )}
             </div>
           </div>

@@ -1,13 +1,13 @@
 export enum OrderStatus {
-  PENDING_ACCEPTANCE = "PENDING_ACCEPTANCE",
-  ACCEPTED = "ACCEPTED",
-  REJECTED = "REJECTED",
-  RECEIVED = "RECEIVED",
-  PREPARING = "PREPARING",
-  READY = "READY",
-  SERVED = "SERVED",
-  COMPLETED = "COMPLETED",
-  CANCELLED = "CANCELLED",
+  PENDING_ACCEPTANCE = "pending_acceptance",
+  ACCEPTED = "accepted",
+  REJECTED = "rejected",
+  RECEIVED = "received",
+  PREPARING = "preparing",
+  READY = "ready",
+  SERVED = "served",
+  COMPLETED = "completed",
+  CANCELLED = "cancelled",
 }
 
 export interface OrderItem {
@@ -48,6 +48,9 @@ export interface Order {
   rejectedAt?: string;
   rejectionReason?: string;
   sentToKitchenAt?: string;
+  kitchenReceivedAt?: string;
+  kitchenPreparingAt?: string;
+  kitchenReadyAt?: string;
   servedAt?: string;
   createdAt: string;
   updatedAt: string;

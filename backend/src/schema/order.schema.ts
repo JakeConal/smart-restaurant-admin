@@ -123,6 +123,16 @@ export class Order {
   @Column({ type: 'datetime', nullable: true })
   lastItemAddedAt: Date | null;
 
+  // Kitchen tracking timestamps
+  @Column({ type: 'datetime', nullable: true })
+  kitchenReceivedAt: Date | null;
+
+  @Column({ type: 'datetime', nullable: true })
+  kitchenPreparingAt: Date | null;
+
+  @Column({ type: 'datetime', nullable: true })
+  kitchenReadyAt: Date | null;
+
   // Optimistic locking
   @VersionColumn()
   version: number;

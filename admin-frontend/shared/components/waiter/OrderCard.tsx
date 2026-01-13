@@ -22,20 +22,19 @@ export function OrderCard({
   isAccepting = false,
   isRejecting = false,
 }: OrderCardProps) {
-  const [elapsedMinutes, setElapsedMinutes] = useState(0);
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
+  const [referenceTime] = useState(() => {
+    // Use the current time as reference (when component mounted)
+    // This ensures new orders start from 00:00:00
+    return new Date().getTime();
+  });
 
   useEffect(() => {
     // Initial calculation
     const calculateElapsed = () => {
       const now = new Date().getTime();
-      // Use acceptedAt if order has been accepted, otherwise use createdAt
-      const referenceTime = order.acceptedAt || order.createdAt;
-      const timeToUse =
-        typeof referenceTime === "number"
-          ? referenceTime
-          : new Date(referenceTime).getTime();
-      const elapsed = Math.floor((now - timeToUse) / 60000);
-      setElapsedMinutes(Math.max(0, elapsed)); // Ensure non-negative
+      const elapsed = Math.floor((now - referenceTime) / 1000);
+      setElapsedSeconds(Math.max(0, elapsed)); // Ensure non-negative
     };
 
     calculateElapsed();
@@ -43,22 +42,29 @@ export function OrderCard({
     // Update every second for live countdown
     const interval = setInterval(calculateElapsed, 1000);
     return () => clearInterval(interval);
-  }, [order.createdAt, order.acceptedAt]);
+  }, [referenceTime]);
 
   // Color code based on elapsed time
   const getTimeColor = () => {
-    if (elapsedMinutes < 2)
+    if (elapsedSeconds < 120)
       return "text-green-600 bg-green-50 border-green-200";
-    if (elapsedMinutes < 4)
+    if (elapsedSeconds < 240)
       return "text-orange-600 bg-orange-50 border-orange-200";
     return "text-red-600 bg-red-50 border-red-200";
   };
 
   const getCardBorder = () => {
     if (order.isEscalated) return "border-red-500 border-2 shadow-lg";
-    if (elapsedMinutes < 2) return "border-green-200 border";
-    if (elapsedMinutes < 4) return "border-orange-200 border";
+    if (elapsedSeconds < 120) return "border-green-200 border";
+    if (elapsedSeconds < 240) return "border-orange-200 border";
     return "border-red-200 border-2";
+  };
+
+  const formatElapsedTime = () => {
+    const hours = Math.floor(elapsedSeconds / 3600);
+    const minutes = Math.floor((elapsedSeconds % 3600) / 60);
+    const seconds = elapsedSeconds % 60;
+    return `${hours.toString().padStart(2, "0")}:${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
   };
 
   return (
@@ -106,8 +112,8 @@ export function OrderCard({
         className={`${getTimeColor()} flex items-center gap-2 px-3 py-2 rounded-lg border mb-3`}
       >
         <Clock className="w-4 h-4" />
-        <span className="text-sm font-medium">
-          {elapsedMinutes} minute{elapsedMinutes !== 1 ? "s" : ""} ago
+        <span className="text-sm font-medium font-mono">
+          {formatElapsedTime()}
         </span>
       </div>
 
