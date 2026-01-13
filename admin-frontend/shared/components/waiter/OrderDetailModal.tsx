@@ -207,14 +207,14 @@ export function OrderDetailModal({
               </div>
             </div>
 
-            {/* Special instructions */}
-            {order.specialInstructions && (
+            {/* Special requests */}
+            {(order.specialRequests || order.specialInstructions) && (
               <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
                 <h3 className="text-sm font-semibold text-orange-900 mb-1">
-                  Special Instructions
+                  Special Requests
                 </h3>
                 <p className="text-sm text-orange-700">
-                  {order.specialInstructions}
+                  {order.specialRequests || order.specialInstructions}
                 </p>
               </div>
             )}

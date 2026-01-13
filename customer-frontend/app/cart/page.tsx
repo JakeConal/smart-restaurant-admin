@@ -143,10 +143,15 @@ function CartContent() {
             quantity: item.quantity,
             unitPrice: price,
             totalPrice: adjustedTotalPrice,
-            modifiers: item.modifiers,
+            modifiers: item.modifiers.map((mod) => ({
+              id: mod.optionId,
+              modifierOptionId: mod.optionId,
+              modifierOptionName: mod.optionName,
+              price: mod.priceAdjustment,
+            })) as any, // Backend expects this format for modifier storage
             specialInstructions: item.specialInstructions,
           };
-        }),
+        }) as any,
         subtotal: getTotalPrice(),
         tax: getTotalPrice() * 0.1,
         total: getTotalPrice() * 1.1,

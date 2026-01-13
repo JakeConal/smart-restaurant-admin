@@ -102,48 +102,51 @@ function KitchenOrderCard({
       </div>
 
       {/* Items list */}
-      <div className="space-y-2">
+      <div className="space-y-3">
         {order.items.map((item, idx) => (
           <div
             key={idx}
-            className="flex items-start justify-between py-2 border-b border-slate-100 last:border-0"
+            className="py-3 border-b border-slate-100 last:border-0"
           >
-            <div className="flex-1">
-              <div className="flex items-center gap-2">
-                <span className="bg-slate-100 text-slate-700 text-xs font-bold px-2 py-0.5 rounded">
-                  {item.quantity}x
-                </span>
-                <span className="text-sm font-medium text-gray-800">
-                  {item.menuItemName}
-                </span>
-              </div>
-              {item.specialInstructions && (
-                <p className="text-xs text-orange-600 mt-1 italic">
-                  Note: {item.specialInstructions}
-                </p>
-              )}
-              {item.modifiers && item.modifiers.length > 0 && (
-                <div className="flex flex-wrap gap-1 mt-1">
-                  {item.modifiers.map((mod, modIdx) => (
-                    <span
-                      key={modIdx}
-                      className="text-xs bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded"
-                    >
-                      +{mod.modifierOptionName}
-                    </span>
-                  ))}
-                </div>
-              )}
+            <div className="flex items-start gap-2 mb-2">
+              <span className="bg-slate-100 text-slate-700 text-xs font-bold px-2 py-0.5 rounded min-w-fit">
+                {item.quantity}x
+              </span>
+              <span className="text-sm font-medium text-gray-800 flex-1">
+                {item.menuItemName}
+              </span>
             </div>
+            {item.modifiers && item.modifiers.length > 0 && (
+              <div className="ml-2 space-y-1 mb-2">
+                {item.modifiers.map((mod, modIdx) => (
+                  <div
+                    key={modIdx}
+                    className="text-xs bg-blue-50 text-blue-700 px-2 py-1 rounded flex items-center justify-between"
+                  >
+                    <span>+ {mod.modifierOptionName}</span>
+                    {mod.price > 0 && (
+                      <span className="font-semibold">
+                        +${Number(mod.price).toFixed(2)}
+                      </span>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+            {item.specialInstructions && (
+              <p className="text-xs text-orange-600 ml-2 p-2 bg-orange-50 rounded italic border-l-2 border-orange-200">
+                📝 {item.specialInstructions}
+              </p>
+            )}
           </div>
         ))}
       </div>
 
       {/* Special requests */}
-      {order.specialInstructions && (
+      {(order.specialRequests || order.specialInstructions) && (
         <div className="mt-3 p-2 bg-orange-50 rounded-lg border border-orange-100">
           <p className="text-xs text-orange-700 font-medium">
-            📝 {order.specialInstructions}
+            📝 {order.specialRequests || order.specialInstructions}
           </p>
         </div>
       )}

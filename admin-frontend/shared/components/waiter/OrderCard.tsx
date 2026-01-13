@@ -94,11 +94,39 @@ export function OrderCard({
         )}
       </div>
 
-      {/* Items count */}
+      {/* Items list preview */}
+      <div className="mb-3 space-y-2 max-h-40 overflow-y-auto">
+        {order.items.map((item, idx) => (
+          <div key={idx} className="text-sm">
+            <div className="flex items-center gap-1.5">
+              <span className="bg-slate-100 text-slate-700 text-xs font-bold px-1.5 py-0.5 rounded min-w-fit">
+                {item.quantity}x
+              </span>
+              <span className="text-gray-800 font-medium flex-1">
+                {item.menuItemName}
+              </span>
+            </div>
+            {item.modifiers && item.modifiers.length > 0 && (
+              <div className="ml-4 space-y-0.5">
+                {item.modifiers.map((mod, modIdx) => (
+                  <p key={modIdx} className="text-xs text-blue-600">
+                    + {mod.modifierOptionName}
+                    {mod.price > 0 && ` (+$${Number(mod.price).toFixed(2)})`}
+                  </p>
+                ))}
+              </div>
+            )}
+            {item.specialInstructions && (
+              <p className="text-xs text-orange-600 ml-4 italic">
+                📝 {item.specialInstructions}
+              </p>
+            )}
+          </div>
+        ))}
+      </div>
+
+      {/* Price */}
       <div className="mb-3">
-        <p className="text-sm text-gray-600">
-          {order.items.length} item{order.items.length !== 1 ? "s" : ""}
-        </p>
         <p className="text-lg font-bold text-gray-900">
           $
           {typeof order.total === "number"
@@ -117,10 +145,12 @@ export function OrderCard({
         </span>
       </div>
 
-      {/* Special instructions indicator */}
-      {order.specialInstructions && (
-        <div className="mt-2 mb-3 text-xs text-gray-500 italic">
-          Has special instructions
+      {/* Special requests indicator */}
+      {(order.specialRequests || order.specialInstructions) && (
+        <div className="mb-3 p-2 bg-orange-50 rounded-lg border border-orange-200">
+          <p className="text-xs text-orange-700 font-medium">
+            📝 {order.specialRequests || order.specialInstructions}
+          </p>
         </div>
       )}
 
