@@ -83,9 +83,8 @@ export const Sidebar: React.FC = () => {
             );
           })}
 
-        {/* Waiter Orders - visible to WAITER and ADMIN roles */}
-        {(user?.role?.toUpperCase() === "WAITER" ||
-          user?.role?.toUpperCase() === "ADMIN") && (
+        {/* Waiter Orders - visible to WAITER role only */}
+        {user?.role?.toUpperCase() === "WAITER" && (
           <Link
             href="/waiter/orders"
             className={`flex items-center gap-4 px-4 py-3.5 rounded-2xl transition-all group ${
@@ -109,9 +108,8 @@ export const Sidebar: React.FC = () => {
           </Link>
         )}
 
-        {/* Waiter Tables - visible to WAITER and ADMIN roles */}
-        {(user?.role?.toUpperCase() === "WAITER" ||
-          user?.role?.toUpperCase() === "ADMIN") && (
+        {/* Waiter Tables - visible to WAITER role only */}
+        {user?.role?.toUpperCase() === "WAITER" && (
           <Link
             href="/waiter/tables"
             className={`flex items-center gap-4 px-4 py-3.5 rounded-2xl transition-all group ${
