@@ -45,6 +45,9 @@ function OrderTrackingContent() {
     }
   }, [isAuthenticated, currentToken, router]);
 
+  const [paymentOrders, setPaymentOrders] = useState<Order[]>([]);
+  const [paymentTotal, setPaymentTotal] = useState(0);
+
   const handleAddMoreItems = () => {
     router.push(`/menu?token=${currentToken}`);
   };
@@ -53,7 +56,13 @@ function OrderTrackingContent() {
     console.log("Bill requested for orders");
   };
 
-  const handleContinuePayment = () => {
+  const handleContinuePayment = (
+    unpaidOrders: Order[],
+    totalAmount: number,
+  ) => {
+    // Save payment data
+    setPaymentOrders(unpaidOrders);
+    setPaymentTotal(totalAmount);
     // Redirect to payment page
     router.push(`/payment?token=${currentToken}`);
   };

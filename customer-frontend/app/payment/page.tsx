@@ -14,12 +14,14 @@ function PaymentContent() {
   const { isAuthenticated } = useApp();
 
   const currentToken = searchParams.get("token") || "";
-  const orderId = searchParams.get("orderId");
-  const [order, setOrder] = useState<Order | null>(null);
+  const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState(false);
   const [error, setError] = useState("");
   const [paymentMethod, setPaymentMethod] = useState<"card" | "cash">("card");
+
+  // Calculate total from orders
+  const totalAmount = orders.reduce((sum, order) => sum + order.total, 0);
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -27,25 +29,38 @@ function PaymentContent() {
       return;
     }
 
-    // Load order from session storage
+    // Load unpaid orders from sessionStorage
     try {
-      console.log(`Payment page loading order-${orderId}`);
-      const savedOrderJson = sessionStorage.getItem(`order-${orderId}`);
-      if (savedOrderJson) {
-        const parsedOrder = JSON.parse(savedOrderJson);
-        console.log("Payment page loaded order:", parsedOrder);
-        setOrder(parsedOrder);
+      const unpaidOrders: Order[] = [];
+      for (let i = 0; i < sessionStorage.length; i++) {
+        const key = sessionStorage.key(i);
+        if (key && key.startsWith("order-")) {
+          const orderJson = sessionStorage.getItem(key);
+          if (orderJson) {
+            const parsedOrder = JSON.parse(orderJson) as Order;
+            if (!parsedOrder.isPaid) {
+              unpaidOrders.push(parsedOrder);
+            }
+          }
+        }
+      }
+
+      if (unpaidOrders.length > 0) {
+        setOrders(unpaidOrders);
+        console.log("Payment page loaded orders:", unpaidOrders);
       } else {
-        console.warn(`Order order-${orderId} not found in sessionStorage`);
+        console.warn("No unpaid orders found in sessionStorage");
+        setError("No orders to pay for");
       }
     } catch (err) {
-      console.error("Failed to load order:", err);
+      console.error("Failed to load orders:", err);
+      setError("Failed to load orders");
     }
     setLoading(false);
-  }, [isAuthenticated, currentToken, orderId, router]);
+  }, [isAuthenticated, currentToken, router]);
 
   const handlePayment = async () => {
-    if (!order || !orderId) return;
+    if (!orders || orders.length === 0) return;
 
     setProcessing(true);
     setError("");
@@ -53,32 +68,41 @@ function PaymentContent() {
       // Simulate payment processing
       await new Promise((resolve) => setTimeout(resolve, 2000));
 
-      // Mark order as paid
-      const paidOrder: Order = {
+      // Mark all orders as paid
+      const paidOrders = orders.map((order) => ({
         ...order,
         isPaid: true,
         paidAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
-      };
+      }));
 
-      // Save to session storage with correct key
-      const orderKey = `order-${orderId}`;
-      sessionStorage.setItem(orderKey, JSON.stringify(paidOrder));
-      console.log("Order saved to sessionStorage:", orderKey, paidOrder);
+      // Save all orders to session storage
+      paidOrders.forEach((order) => {
+        const orderKey = order.orderId
+          ? `order-${order.orderId}`
+          : `order-${order.id}`;
+        sessionStorage.setItem(orderKey, JSON.stringify(order));
+        console.log("Order saved to sessionStorage:", orderKey);
+      });
 
-      // Save to database
+      // Save to database for each order
       try {
-        await orderApi.markAsPaid(orderId);
-        console.log("Order marked as paid in database");
+        await Promise.all(
+          orders.map((order) => {
+            const orderId = order.orderId || String(order.id);
+            return orderApi.markAsPaid(orderId);
+          }),
+        );
+        console.log("All orders marked as paid in database");
       } catch (dbErr) {
         console.warn(
-          "Failed to save order to database, but payment processed locally:",
+          "Failed to save orders to database, but payment processed locally:",
           dbErr,
         );
       }
 
       // Redirect back to order tracking
-      router.push(`/order-tracking?token=${currentToken}&orderId=${orderId}`);
+      router.push(`/order-tracking?token=${currentToken}`);
     } catch (err) {
       setError("Payment failed. Please try again.");
       console.error("Payment failed:", err);
@@ -89,13 +113,13 @@ function PaymentContent() {
 
   if (!isAuthenticated || loading) return null;
 
-  if (!order) {
+  if (!orders || orders.length === 0) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <p className="text-gray-600">Order not found</p>
+          <p className="text-gray-600">{error || "No orders to pay for"}</p>
           <Link
-            href={`/menu?token=${currentToken}`}
+            href={`/order-tracking?token=${currentToken}`}
             className="text-orange-600 hover:text-orange-700 font-semibold mt-4 inline-block"
           >
             Back to Menu
@@ -112,11 +136,7 @@ function PaymentContent() {
         <div className="flex items-center justify-between">
           <h1 className="text-2xl font-bold text-gray-900">Payment</h1>
           <button
-            onClick={() =>
-              router.push(
-                `/order-tracking?token=${currentToken}&orderId=${orderId}`,
-              )
-            }
+            onClick={() => router.push(`/order-tracking?token=${currentToken}`)}
             className="text-gray-500 hover:text-gray-700 text-2xl"
           >
             ✕
@@ -135,41 +155,36 @@ function PaymentContent() {
         {/* Order Summary */}
         <div className="mb-6 p-6 bg-white rounded-3xl border border-orange-100/50 shadow-sm">
           <h2 className="text-lg font-bold text-gray-900 mb-4">
-            Order Summary
+            Order Summary ({orders.length}{" "}
+            {orders.length === 1 ? "order" : "orders"})
           </h2>
 
           <div className="space-y-3 mb-4 pb-4 border-b border-gray-200">
-            {order.items.map((item) => (
-              <div
-                key={item.id}
-                className="flex justify-between items-start text-sm"
-              >
-                <div>
+            {orders.map((order) =>
+              order.items.map((item) => (
+                <div
+                  key={`${order.id}-${item.id}`}
+                  className="flex justify-between items-start text-sm"
+                >
+                  <div>
+                    <p className="font-semibold text-gray-900">
+                      {item.menuItemName}
+                    </p>
+                    <p className="text-gray-500 text-xs">× {item.quantity}</p>
+                  </div>
                   <p className="font-semibold text-gray-900">
-                    {item.menuItemName}
+                    ${item.totalPrice.toFixed(2)}
                   </p>
-                  <p className="text-gray-500 text-xs">× {item.quantity}</p>
                 </div>
-                <p className="font-semibold text-gray-900">
-                  ${item.totalPrice.toFixed(2)}
-                </p>
-              </div>
-            ))}
+              )),
+            )}
           </div>
 
           {/* Price Breakdown */}
           <div className="space-y-2">
-            <div className="flex justify-between text-sm text-gray-600">
-              <span>Subtotal:</span>
-              <span>${order.subtotal.toFixed(2)}</span>
-            </div>
-            <div className="flex justify-between text-sm text-gray-600">
-              <span>Tax (10%):</span>
-              <span>${order.tax.toFixed(2)}</span>
-            </div>
             <div className="flex justify-between text-lg font-bold text-gray-900 pt-2 border-t border-gray-200">
-              <span>Total:</span>
-              <span className="text-orange-600">${order.total.toFixed(2)}</span>
+              <span>Total Amount:</span>
+              <span className="text-orange-600">${totalAmount.toFixed(2)}</span>
             </div>
           </div>
         </div>
@@ -241,16 +256,12 @@ function PaymentContent() {
         >
           {processing
             ? "Processing..."
-            : `Complete Payment - $${order.total.toFixed(2)}`}
+            : `Complete Payment - $${totalAmount.toFixed(2)}`}
         </button>
 
         {/* Back Button */}
         <button
-          onClick={() =>
-            router.push(
-              `/order-tracking?token=${currentToken}&orderId=${orderId}`,
-            )
-          }
+          onClick={() => router.push(`/order-tracking?token=${currentToken}`)}
           className="w-full py-3 mt-3 bg-white border border-gray-200 text-gray-900 rounded-2xl font-semibold hover:bg-gray-50 transition-colors"
         >
           Cancel

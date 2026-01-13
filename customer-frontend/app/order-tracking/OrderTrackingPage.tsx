@@ -10,7 +10,7 @@ interface OrderTrackingPageProps {
   orders: Order[];
   onAddMoreItems: () => void;
   onRequestBill: () => void;
-  onContinue?: () => void;
+  onContinue?: (unpaidOrders: Order[], totalAmount: number) => void;
   tableId?: string;
   currentToken?: string;
 }
@@ -27,6 +27,36 @@ export default function OrderTrackingPage({
   const [billRequested, setBillRequested] = useState(false);
   const [wsConnected, setWsConnected] = useState(false);
   const unsubscribeRefs = useRef<Map<string, () => void>>(new Map());
+
+  // Check if all orders are ready
+  const allOrdersReady =
+    displayOrders.length > 0 &&
+    displayOrders.every((order) => order.status === "ready");
+
+  // Get unpaid orders for bill/payment
+  const unpaidOrders = displayOrders.filter((order) => !order.isPaid);
+  const totalAmount = unpaidOrders.reduce((sum, order) => sum + order.total, 0);
+
+  // Handle request bill for all unpaid orders
+  const handleRequestBill = () => {
+    setRequestingBill(true);
+    setTimeout(() => {
+      setBillRequested(true);
+      // Call onRequestBill for each unpaid order
+      unpaidOrders.forEach((order) => {
+        onRequestBill();
+      });
+      setRequestingBill(false);
+    }, 1000);
+  };
+
+  // Handle continue to payment for all unpaid orders
+  const handleContinuePayment = () => {
+    // Call onContinue with unpaid orders and total amount
+    if (onContinue) {
+      onContinue(unpaidOrders, totalAmount);
+    }
+  };
 
   // Debug: Log orders on mount to check orderId field
   useEffect(() => {
@@ -374,14 +404,7 @@ export default function OrderTrackingPage({
             + Add Items
           </button>
           <button
-            onClick={() => {
-              setRequestingBill(true);
-              setTimeout(() => {
-                setBillRequested(true);
-                onRequestBill();
-                setRequestingBill(false);
-              }, 1000);
-            }}
+            onClick={handleRequestBill}
             disabled={requestingBill || billRequested}
             className={`py-3 font-semibold rounded-2xl transition-all ${
               billRequested
@@ -392,6 +415,16 @@ export default function OrderTrackingPage({
             {billRequested ? "✓ Bill Requested" : "Request Bill"}
           </button>
         </div>
+
+        {/* Payment Button - Show when all orders are ready */}
+        {allOrdersReady && unpaidOrders.length > 0 && (
+          <button
+            onClick={handleContinuePayment}
+            className="w-full py-4 mt-4 bg-gradient-to-r from-green-500 to-green-600 text-white font-semibold rounded-2xl hover:shadow-lg transition-all text-lg"
+          >
+            Continue to Payment - ${totalAmount.toFixed(2)}
+          </button>
+        )}
 
         {/* Bill Requested Message */}
         {billRequested && (
