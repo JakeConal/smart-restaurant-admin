@@ -19,6 +19,8 @@ import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import type { AuthUser } from '../auth/interfaces/auth-user.interface';
 import { CreateWaiterDto } from '../dto/create-waiter.dto';
 import { UpdateWaiterDto } from '../dto/update-waiter.dto';
+import { CreateKitchenStaffDto } from '../dto/create-kitchen-staff.dto';
+import { UpdateKitchenStaffDto } from '../dto/update-kitchen-staff.dto';
 
 @Controller('api/admin/users')
 @UseGuards(AdminGuard, PermissionGuard)
@@ -64,5 +66,51 @@ export class UsersController {
   async suspendWaiter(@Param('id') id: string) {
     await this.usersService.suspendWaiter(id);
     return { message: 'Waiter status updated successfully' };
+  }
+
+  // ============= KITCHEN STAFF ENDPOINTS =============
+
+  @Get('kitchen')
+  @RequirePermission('user:read')
+  async getKitchenStaff(@CurrentUser() user: AuthUser) {
+    return this.usersService.getKitchenStaff(user.restaurantId);
+  }
+
+  @Get('kitchen/:id')
+  @RequirePermission('user:read')
+  async getKitchenStaffById(@Param('id') id: string) {
+    return this.usersService.getKitchenStaffById(id);
+  }
+
+  @Post('kitchen')
+  @RequirePermission('user:create')
+  @HttpCode(HttpStatus.CREATED)
+  async createKitchenStaff(@Body() dto: CreateKitchenStaffDto) {
+    return this.usersService.createKitchenStaff(dto);
+  }
+
+  @Put('kitchen/:id')
+  @RequirePermission('user:update')
+  @HttpCode(HttpStatus.OK)
+  async updateKitchenStaff(
+    @Param('id') id: string,
+    @Body() dto: UpdateKitchenStaffDto,
+  ) {
+    return this.usersService.updateKitchenStaff(id, dto);
+  }
+
+  @Delete('kitchen/:id')
+  @RequirePermission('user:delete')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async deleteKitchenStaff(@Param('id') id: string) {
+    await this.usersService.deleteKitchenStaff(id);
+  }
+
+  @Patch('kitchen/:id/suspend')
+  @RequirePermission('user:update')
+  @HttpCode(HttpStatus.OK)
+  async suspendKitchenStaff(@Param('id') id: string) {
+    await this.usersService.suspendKitchenStaff(id);
+    return { message: 'Kitchen staff status updated successfully' };
   }
 }

@@ -4,7 +4,7 @@ import React, { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { DashboardLayout, TopBar } from "@/shared/components/layout";
 import { Card } from "@/shared/components/ui";
-import { LayoutGrid, Layers, Utensils, Users2 } from "lucide-react";
+import { LayoutGrid, Layers, Utensils, Users2, ChefHat } from "lucide-react";
 import { useAuth } from "@/shared/components/auth/AuthContext";
 
 export default function AdminHome() {
@@ -50,6 +50,13 @@ export default function AdminHome() {
       icon: Users2,
       href: "/waiters",
       color: "purple",
+    },
+    {
+      title: "Kitchen Staff",
+      description: "Manage kitchen personnel and accounts",
+      icon: ChefHat,
+      href: "/kitchen-staff",
+      color: "orange",
     },
   ];
 

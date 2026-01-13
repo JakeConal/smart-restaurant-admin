@@ -11,6 +11,8 @@ import { UserCredentials } from '../schema/user-credentials.schema';
 import { Table } from '../schema/table.schema';
 import { CreateWaiterDto } from '../dto/create-waiter.dto';
 import { UpdateWaiterDto } from '../dto/update-waiter.dto';
+import { CreateKitchenStaffDto } from '../dto/create-kitchen-staff.dto';
+import { UpdateKitchenStaffDto } from '../dto/update-kitchen-staff.dto';
 
 @Injectable()
 export class UsersService {
@@ -253,6 +255,209 @@ export class UsersService {
     // Toggle between ACTIVE and SUSPENDED
     const newStatus =
       waiter.status === UserStatus.SUSPENDED
+        ? UserStatus.ACTIVE
+        : UserStatus.SUSPENDED;
+
+    await this.usersRepository.update(id, { status: newStatus });
+  }
+
+  // ============= KITCHEN STAFF METHODS =============
+
+  async getKitchenStaff(restaurantId: string) {
+    const staff = await this.usersRepository
+      .createQueryBuilder('user')
+      .leftJoin('user.role', 'role')
+      .where('role.code = :roleCode', { roleCode: 'KITCHEN' })
+      .andWhere('user.status IN (:...statuses)', {
+        statuses: [UserStatus.ACTIVE, UserStatus.SUSPENDED],
+      })
+      .select([
+        'user.id',
+        'user.email',
+        'user.full_name',
+        'user.avatar_url',
+        'user.status',
+        'user.created_at',
+        'user.updated_at',
+      ])
+      .addSelect('role.code', 'role_code')
+      .addSelect('role.name', 'role_name')
+      .orderBy('user.full_name', 'ASC')
+      .getRawAndEntities();
+
+    return staff.entities.map((member, index) => ({
+      id: member.id,
+      email: member.email,
+      full_name: member.full_name,
+      avatar_url: member.avatar_url,
+      status: member.status,
+      created_at: member.created_at,
+      updated_at: member.updated_at,
+      role: {
+        code: staff.raw[index].role_code,
+        name: staff.raw[index].role_name,
+      },
+    }));
+  }
+
+  async getKitchenStaffById(id: string): Promise<any> {
+    const result = await this.usersRepository
+      .createQueryBuilder('user')
+      .leftJoin('user.role', 'role')
+      .where('user.id = :id', { id })
+      .andWhere('role.code = :roleCode', { roleCode: 'KITCHEN' })
+      .select([
+        'user.id',
+        'user.email',
+        'user.full_name',
+        'user.avatar_url',
+        'user.status',
+        'user.created_at',
+        'user.updated_at',
+      ])
+      .addSelect('role.code', 'role_code')
+      .addSelect('role.name', 'role_name')
+      .getRawAndEntities();
+
+    if (!result.entities.length) {
+      throw new NotFoundException('Kitchen staff not found');
+    }
+
+    const staff = result.entities[0];
+    const raw = result.raw[0];
+
+    return {
+      id: staff.id,
+      email: staff.email,
+      full_name: staff.full_name,
+      avatar_url: staff.avatar_url,
+      status: staff.status,
+      created_at: staff.created_at,
+      updated_at: staff.updated_at,
+      role: {
+        code: raw.role_code,
+        name: raw.role_name,
+      },
+    };
+  }
+
+  async createKitchenStaff(dto: CreateKitchenStaffDto): Promise<Users> {
+    const exists = await this.usersRepository.findOne({
+      where: { email: dto.email },
+    });
+    if (exists) {
+      throw new BadRequestException('Email already exists');
+    }
+
+    const kitchenRole = await this.roleRepo.findOne({
+      where: { code: 'KITCHEN' },
+    });
+    if (!kitchenRole) {
+      throw new BadRequestException('KITCHEN role not found');
+    }
+
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
+    try {
+      const user = this.usersRepository.create({
+        email: dto.email,
+        full_name: dto.full_name,
+        avatar_url: dto.avatar_url,
+        role_id: kitchenRole.id,
+        status: UserStatus.ACTIVE,
+        isEmailVerified: true,
+      });
+      await queryRunner.manager.save(user);
+
+      const passwordHash = await UserCredentials.hashPassword(dto.password);
+      const credentials = this.credentialsRepo.create({
+        user_id: user.id,
+        password_hash: passwordHash,
+        password_updated_at: new Date(),
+      });
+      await queryRunner.manager.save(credentials);
+
+      await queryRunner.commitTransaction();
+
+      return this.usersRepository.findOne({
+        where: { id: user.id },
+        relations: ['role'],
+      });
+    } catch (error) {
+      await queryRunner.rollbackTransaction();
+      throw error;
+    } finally {
+      await queryRunner.release();
+    }
+  }
+
+  async updateKitchenStaff(
+    id: string,
+    dto: UpdateKitchenStaffDto,
+  ): Promise<Users> {
+    const staff = await this.usersRepository.findOne({
+      where: { id },
+      relations: ['role'],
+    });
+
+    if (!staff || staff.role.code !== 'KITCHEN') {
+      throw new NotFoundException('Kitchen staff not found');
+    }
+
+    if (dto.email && dto.email !== staff.email) {
+      const emailExists = await this.usersRepository.findOne({
+        where: { email: dto.email },
+      });
+      if (emailExists) {
+        throw new BadRequestException('Email already exists');
+      }
+    }
+
+    if (dto.email) staff.email = dto.email;
+    if (dto.full_name) staff.full_name = dto.full_name;
+    if (dto.avatar_url !== undefined) staff.avatar_url = dto.avatar_url;
+
+    if (dto.password) {
+      const passwordHash = await UserCredentials.hashPassword(dto.password);
+      await this.credentialsRepo.update(
+        { user_id: id },
+        {
+          password_hash: passwordHash,
+          password_updated_at: new Date(),
+        },
+      );
+    }
+
+    return this.usersRepository.save(staff);
+  }
+
+  async deleteKitchenStaff(id: string): Promise<void> {
+    const staff = await this.usersRepository.findOne({
+      where: { id },
+      relations: ['role'],
+    });
+
+    if (!staff || staff.role.code !== 'KITCHEN') {
+      throw new NotFoundException('Kitchen staff not found');
+    }
+
+    await this.usersRepository.update(id, { status: UserStatus.DELETED });
+  }
+
+  async suspendKitchenStaff(id: string): Promise<void> {
+    const staff = await this.usersRepository.findOne({
+      where: { id },
+      relations: ['role'],
+    });
+
+    if (!staff || staff.role.code !== 'KITCHEN') {
+      throw new NotFoundException('Kitchen staff not found');
+    }
+
+    const newStatus =
+      staff.status === UserStatus.SUSPENDED
         ? UserStatus.ACTIVE
         : UserStatus.SUSPENDED;
 
