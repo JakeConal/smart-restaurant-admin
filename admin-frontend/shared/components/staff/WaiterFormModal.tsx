@@ -27,7 +27,6 @@ export const WaiterFormModal: React.FC<WaiterFormModalProps> = ({
     email: '',
     full_name: '',
     password: '',
-    avatar_url: '',
   });
 
   useEffect(() => {
@@ -36,14 +35,12 @@ export const WaiterFormModal: React.FC<WaiterFormModalProps> = ({
         email: waiter.email,
         full_name: waiter.full_name,
         password: '',
-        avatar_url: waiter.avatar_url || '',
       });
     } else if (isOpen && mode === 'create') {
       setFormData({
         email: '',
         full_name: '',
         password: '',
-        avatar_url: '',
       });
     }
     setErrors({});
@@ -80,15 +77,6 @@ export const WaiterFormModal: React.FC<WaiterFormModalProps> = ({
       }
     }
 
-    // Avatar URL validation (optional)
-    if (formData.avatar_url && formData.avatar_url.trim()) {
-      try {
-        new URL(formData.avatar_url);
-      } catch {
-        newErrors.avatar_url = 'Invalid URL format';
-      }
-    }
-
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -103,7 +91,6 @@ export const WaiterFormModal: React.FC<WaiterFormModalProps> = ({
       const submitData: any = {
         email: formData.email.trim(),
         full_name: formData.full_name.trim(),
-        avatar_url: formData.avatar_url?.trim() || undefined,
       };
 
       // Only include password if provided
@@ -117,7 +104,6 @@ export const WaiterFormModal: React.FC<WaiterFormModalProps> = ({
         email: '',
         full_name: '',
         password: '',
-        avatar_url: '',
       });
       setErrors({});
     } catch (error: any) {
@@ -233,26 +219,6 @@ export const WaiterFormModal: React.FC<WaiterFormModalProps> = ({
                 <p className="mt-1 text-xs font-medium text-gray-500">
                   Must be 8+ characters with uppercase, lowercase, and number
                 </p>
-              )}
-            </div>
-
-            {/* Avatar URL */}
-            <div>
-              <label className="block text-sm font-bold text-gray-700 mb-2">
-                Avatar URL (Optional)
-              </label>
-              <input
-                type="url"
-                value={formData.avatar_url}
-                onChange={(e) => setFormData({ ...formData, avatar_url: e.target.value })}
-                className={`w-full px-4 py-2.5 bg-white border rounded-xl text-sm font-medium focus:ring-2 focus:ring-slate-200 focus:border-slate-400 transition-all ${
-                  errors.avatar_url ? 'border-red-300' : 'border-slate-200'
-                }`}
-                placeholder="https://example.com/avatar.jpg"
-                disabled={loading}
-              />
-              {errors.avatar_url && (
-                <p className="mt-1 text-xs font-semibold text-red-600">{errors.avatar_url}</p>
               )}
             </div>
 

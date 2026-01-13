@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Users2, Plus, RefreshCw } from 'lucide-react';
+import { Users2, Plus, RefreshCw, Filter } from 'lucide-react';
 import { DashboardLayout } from '../../shared/components/layout';
 import { WaiterCard } from '../../shared/components/staff/WaiterCard';
 import { WaiterFormModal } from '../../shared/components/staff/WaiterFormModal';
@@ -21,7 +21,7 @@ export default function WaitersPage() {
   const [waiters, setWaiters] = useState<Waiter[]>([]);
   const [filteredWaiters, setFilteredWaiters] = useState<Waiter[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [statusFilter, setStatusFilter] = useState<'ALL' | 'ACTIVE' | 'SUSPENDED' | 'DELETED'>('ALL');
 
   // Modals
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -62,10 +62,10 @@ export default function WaitersPage() {
 
   // Filter waiters by status
   useEffect(() => {
-    if (statusFilter === 'all') {
-      setFilteredWaiters(waiters);
+    if (statusFilter === 'ALL') {
+      setFilteredWaiters(waiters.filter((w) => w.status !== 'DELETED'));
     } else {
-      setFilteredWaiters(waiters.filter((w) => w.status === statusFilter.toUpperCase()));
+      setFilteredWaiters(waiters.filter((w) => w.status === statusFilter));
     }
   }, [statusFilter, waiters]);
 
@@ -198,22 +198,27 @@ export default function WaitersPage() {
       />
 
       {/* Filters */}
-      <div className="bg-white rounded-[1.75rem] border border-slate-200/10 shadow-md p-4">
-        <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
-          <label className="text-sm font-bold text-gray-700">Filter by Status:</label>
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            className="px-4 py-2 bg-white border border-slate-200 rounded-xl text-sm font-medium focus:ring-2 focus:ring-slate-200 focus:border-slate-400 transition-all"
-          >
-            <option value="all">All Waiters</option>
-            <option value="active">Active Only</option>
-            <option value="suspended">Suspended Only</option>
-            <option value="deleted">Deleted Only</option>
-          </select>
-          <span className="text-sm font-medium text-gray-500">
-            Showing {filteredWaiters.length} of {totalWaiters} waiters
-          </span>
+      <div className="mt-8 bg-white rounded-[1.75rem] border border-slate-200/10 shadow-md p-5">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Filter className="w-5 h-5 text-gray-500" />
+            <span className="text-sm font-bold text-gray-700">Filter by Status:</span>
+          </div>
+          <div className="flex gap-2">
+            {(['ALL', 'ACTIVE', 'SUSPENDED', 'DELETED'] as const).map((status) => (
+              <button
+                key={status}
+                onClick={() => setStatusFilter(status)}
+                className={`px-4 py-2 rounded-xl text-sm font-bold transition-all ${
+                  statusFilter === status
+                    ? 'bg-slate-700 text-white shadow-lg'
+                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                }`}
+              >
+                {status === 'ALL' ? 'All' : status.charAt(0) + status.slice(1).toLowerCase()}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 

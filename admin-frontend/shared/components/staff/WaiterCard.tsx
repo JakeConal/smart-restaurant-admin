@@ -50,17 +50,9 @@ export const WaiterCard: React.FC<WaiterCardProps> = ({
       <div className="flex justify-between items-start">
         <div className="flex items-center gap-3">
           {/* Avatar */}
-          {waiter.avatar_url ? (
-            <img
-              src={waiter.avatar_url}
-              alt={waiter.full_name}
-              className="w-12 h-12 rounded-xl object-cover"
-            />
-          ) : (
-            <div className="w-12 h-12 bg-slate-100 rounded-xl flex items-center justify-center">
-              <User className="w-6 h-6 text-slate-700" />
-            </div>
-          )}
+          <div className="w-12 h-12 bg-slate-100 rounded-xl flex items-center justify-center">
+            <User className="w-6 h-6 text-slate-700" />
+          </div>
 
           {/* Name & Email */}
           <div>

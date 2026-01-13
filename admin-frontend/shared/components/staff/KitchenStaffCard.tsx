@@ -50,17 +50,9 @@ export const KitchenStaffCard: React.FC<KitchenStaffCardProps> = ({
       <div className="flex justify-between items-start">
         <div className="flex items-center gap-3">
           {/* Avatar */}
-          {staff.avatar_url ? (
-            <img
-              src={staff.avatar_url}
-              alt={staff.full_name}
-              className="w-12 h-12 rounded-xl object-cover"
-            />
-          ) : (
-            <div className="w-12 h-12 bg-slate-100 rounded-xl flex items-center justify-center">
-              <ChefHat className="w-6 h-6 text-slate-700" />
-            </div>
-          )}
+          <div className="w-12 h-12 bg-slate-100 rounded-xl flex items-center justify-center">
+            <ChefHat className="w-6 h-6 text-slate-700" />
+          </div>
 
           {/* Name & Email */}
           <div>
@@ -76,18 +68,7 @@ export const KitchenStaffCard: React.FC<KitchenStaffCardProps> = ({
         <div>{getStatusBadge()}</div>
       </div>
 
-      {/* Role Badge */}
-      <div className="flex items-center gap-2 bg-slate-50 rounded-xl p-3">
-        <div className="bg-slate-100 p-2 rounded-lg">
-          <ChefHat className="w-5 h-5 text-slate-700" />
-        </div>
-        <div>
-          <p className="text-xs font-bold uppercase tracking-wide text-gray-400">
-            Role
-          </p>
-          <p className="text-lg font-bold text-gray-900">Kitchen Staff</p>
-        </div>
-      </div>
+
 
       {/* Actions */}
       <div className="mt-auto pt-4 border-t border-gray-50 flex gap-2 opacity-50 group-hover:opacity-100 transition-opacity relative">

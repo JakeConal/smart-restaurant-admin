@@ -99,7 +99,7 @@ export default function KitchenStaffPage() {
     }
   };
 
-  const handleSuspend = async (id: number) => {
+  const handleSuspend = async (id: string) => {
     try {
       await kitchenStaffApi.suspendKitchenStaff(id);
       toast.success('Status updated successfully');
@@ -110,7 +110,7 @@ export default function KitchenStaffPage() {
     }
   };
 
-  const handleDelete = async (id: number) => {
+  const handleDelete = async (id: string) => {
     if (!window.confirm('Are you sure you want to delete this kitchen staff? This action cannot be undone.')) {
       return;
     }
