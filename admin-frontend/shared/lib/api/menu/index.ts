@@ -205,6 +205,20 @@ export class MenuApi {
     return response.data;
   }
 
+  /**
+   * Set a photo as the primary photo for an item
+   */
+  async setPrimaryPhoto(
+    itemId: string,
+    photoId: string,
+  ): Promise<MenuItemPhoto> {
+    const response = await apiClient.patch(
+      `/api/admin/menu/items/${itemId}/photos/${photoId}/primary`,
+      {},
+    );
+    return response.data;
+  }
+
   // ============================================
   // Modifier Group Methods
   // ============================================

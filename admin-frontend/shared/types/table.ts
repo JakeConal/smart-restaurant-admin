@@ -1,5 +1,6 @@
 export interface Waiter {
-  userId: string;
+  id?: string;
+  userId?: string;
   full_name: string;
   email: string;
 }
@@ -10,12 +11,12 @@ export interface Table {
   capacity: number;
   location?: string;
   description?: string;
-  status: 'active' | 'inactive';
+  status: "active" | "inactive";
   qrToken?: string;
   qrTokenCreatedAt?: string;
   waiter_id?: string;
   waiter?: Waiter;
-  occupancyStatus?: 'available' | 'occupied' | 'reserved';
+  occupancyStatus?: "available" | "occupied" | "reserved";
   createdAt: string;
   updatedAt: string;
 }
@@ -25,7 +26,7 @@ export interface CreateTableDto {
   capacity: number;
   location?: string;
   description?: string;
-  status?: 'active' | 'inactive';
+  status?: "active" | "inactive";
   waiter_id?: string;
 }
 
@@ -34,14 +35,14 @@ export interface UpdateTableDto {
   capacity?: number;
   location?: string;
   description?: string;
-  status?: 'active' | 'inactive';
+  status?: "active" | "inactive";
   waiter_id?: string;
 }
 
 export interface TableFilters {
-  status?: 'active' | 'inactive';
+  status?: "active" | "inactive";
   location?: string;
-  sortBy?: 'tableNumber' | 'capacity' | 'createdAt';
+  sortBy?: "tableNumber" | "capacity" | "createdAt";
 }
 
 export interface QRCodeData {

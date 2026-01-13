@@ -1,9 +1,13 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, LessThan } from 'typeorm';
+import { Repository } from 'typeorm';
 import { Order, OrderStatus } from '../schema/order.schema';
-import { AdminAuditLog, AdminAuditAction, AdminAuditStatus } from '../schema/admin-audit-log.schema';
+import {
+  AdminAuditLog,
+  AdminAuditAction,
+  AdminAuditStatus,
+} from '../schema/admin-audit-log.schema';
 
 @Injectable()
 export class OrderEscalationService {
@@ -18,34 +22,42 @@ export class OrderEscalationService {
 
   /**
    * Cron job that runs every minute to check for orders pending acceptance
-   * for more than 5 minutes and escalate them
+   * for more than 10 minutes since last item was added and escalate them
    */
   @Cron(CronExpression.EVERY_MINUTE)
   async checkForStaleOrders() {
     try {
-      // Calculate 5 minutes ago
-      const fiveMinutesAgo = new Date();
-      fiveMinutesAgo.setMinutes(fiveMinutesAgo.getMinutes() - 5);
+      // Calculate 10 minutes ago
+      const staleThresholdMinutes = 10;
+      const staleOrderTime = new Date();
+      staleOrderTime.setMinutes(
+        staleOrderTime.getMinutes() - staleThresholdMinutes,
+      );
 
       // Find orders that are:
       // 1. Status = PENDING_ACCEPTANCE
-      // 2. Created more than 5 minutes ago
+      // 2. Last item added more than 10 minutes ago (or use createdAt if lastItemAddedAt is null)
       // 3. Not yet escalated
-      const staleOrders = await this.orderRepository.find({
-        where: {
+      const staleOrders = await this.orderRepository
+        .createQueryBuilder('order')
+        .where('order.status = :status', {
           status: OrderStatus.PENDING_ACCEPTANCE,
-          isEscalated: false,
-          createdAt: LessThan(fiveMinutesAgo),
-        },
-        relations: ['waiter'],
-      });
+        })
+        .andWhere('order.isEscalated = :isEscalated', { isEscalated: false })
+        .andWhere(
+          'COALESCE(order.lastItemAddedAt, order.createdAt) < :staleTime',
+          { staleTime: staleOrderTime },
+        )
+        .leftJoinAndSelect('order.waiter', 'waiter')
+        .orderBy('COALESCE(order.lastItemAddedAt, order.createdAt)', 'ASC')
+        .getMany();
 
       if (staleOrders.length === 0) {
         return;
       }
 
       this.logger.warn(
-        `Found ${staleOrders.length} stale order(s) pending acceptance for >5 minutes`,
+        `Found ${staleOrders.length} stale order(s) pending acceptance for >10 minutes since last item added`,
       );
 
       // Escalate each order

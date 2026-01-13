@@ -49,28 +49,28 @@ export class ProfileController {
 
       if (!customerId) {
         console.log('❌ No customerId in req.user:', req.user);
-        return res.status(401).json({ error: 'Unauthorized' });
+        return (res as any).status(401).json({ error: 'Unauthorized' });
       }
 
       console.log('✅ Loading avatar for customer:', customerId);
       const picture = await this.profileService.getProfilePicture(customerId);
 
       // Set proper cache control headers to prevent caching
-      res.setHeader(
+      (res as any).setHeader(
         'Cache-Control',
         'no-cache, no-store, must-revalidate, max-age=0',
       );
-      res.setHeader('Pragma', 'no-cache');
-      res.setHeader('Expires', '0');
-      res.setHeader('ETag', `"${Date.now()}"`); // Add timestamp as ETag to bust cache
-      res.setHeader('Content-Type', 'image/jpeg');
-      res.setHeader('Content-Length', Buffer.byteLength(picture));
+      (res as any).setHeader('Pragma', 'no-cache');
+      (res as any).setHeader('Expires', '0');
+      (res as any).setHeader('ETag', `"${Date.now()}"`); // Add timestamp as ETag to bust cache
+      (res as any).setHeader('Content-Type', 'image/jpeg');
+      (res as any).setHeader('Content-Length', Buffer.byteLength(picture));
 
-      res.send(picture);
+      (res as any).send(picture);
     } catch (error) {
       // Return 404 for any error (picture not found, customer not found, etc)
       console.log('❌ Error in getProfilePicture:', error);
-      res.status(404).end();
+      (res as any).status(404).end();
     }
   }
 
@@ -84,3 +84,4 @@ export class ProfileController {
     );
   }
 }
+

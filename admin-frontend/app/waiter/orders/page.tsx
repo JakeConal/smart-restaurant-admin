@@ -1,17 +1,21 @@
-'use client';
+"use client";
 
-import React, { useState, useEffect } from 'react';
-import { ClipboardList, RefreshCw, WifiOff, Wifi } from 'lucide-react';
-import { DashboardLayout } from '../../../shared/components/layout';
-import { OrderCard } from '../../../shared/components/waiter/OrderCard';
-import { OrderDetailModal } from '../../../shared/components/waiter/OrderDetailModal';
-import { RejectOrderModal } from '../../../shared/components/waiter/RejectOrderModal';
-import { Button } from '../../../shared/components/ui/Button';
-import { useToast } from '../../../shared/components/ui/Toast';
-import { useOrderPolling } from '../../../shared/lib/hooks/useOrderPolling';
-import { getMyPendingOrders } from '../../../shared/lib/api/waiter';
-import { initializeOfflineQueueProcessor } from '../../../shared/lib/offlineQueueProcessor';
-import type { Order } from '../../../shared/types/order';
+import React, { useState, useEffect, useRef } from "react";
+import { ClipboardList, RefreshCw, WifiOff, Wifi } from "lucide-react";
+import { DashboardLayout } from "../../../shared/components/layout";
+import { OrderCard } from "../../../shared/components/waiter/OrderCard";
+import { OrderDetailModal } from "../../../shared/components/waiter/OrderDetailModal";
+import { RejectOrderModal } from "../../../shared/components/waiter/RejectOrderModal";
+import { Button } from "../../../shared/components/ui/Button";
+import { useToast } from "../../../shared/components/ui/Toast";
+import { useOrderPolling } from "../../../shared/lib/hooks/useOrderPolling";
+import {
+  getMyPendingOrders,
+  acceptOrder,
+} from "../../../shared/lib/api/waiter";
+import { initializeOfflineQueueProcessor } from "../../../shared/lib/offlineQueueProcessor";
+import { getOrderWebSocketClient } from "../../../shared/lib/orderWebSocket";
+import type { Order } from "../../../shared/types/order";
 
 export default function WaiterOrdersPage() {
   const toast = useToast();
@@ -19,13 +23,17 @@ export default function WaiterOrdersPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [rejectingOrderId, setRejectingOrderId] = useState<string | null>(null);
+  const [acceptingOrderId, setAcceptingOrderId] = useState<string | null>(null);
+  const [wsConnected, setWsConnected] = useState(false);
+  const unsubscribesRef = useRef<Map<string, () => void>>(new Map());
 
   // Use polling hook for notifications
   const { count, isOnline, refetch } = useOrderPolling({
     enabled: true,
-    onNewOrder: () => {
+    onNewOrder: async () => {
       // Refresh orders when new order comes in
-      loadOrders();
+      await loadOrders();
+      setIsLoading(false);
     },
   });
 
@@ -33,19 +41,98 @@ export default function WaiterOrdersPage() {
     try {
       const data = await getMyPendingOrders();
       setOrders(data);
+
+      // Subscribe to WebSocket updates for each order
+      data.forEach((order) => {
+        subscribeToOrder(order.orderId);
+      });
     } catch (error) {
-      console.error('Failed to load orders:', error);
+      console.error("Failed to load orders:", error);
       if (isLoading) {
-        toast.error('Failed to load orders');
+        toast.error("Failed to load orders");
       }
     } finally {
       setIsLoading(false);
     }
   };
 
+  const subscribeToOrder = async (orderId: string) => {
+    try {
+      const client = getOrderWebSocketClient();
+
+      // Check if already connected, otherwise connect
+      if (!client.isConnected()) {
+        await client.connect();
+        setWsConnected(true);
+      }
+
+      // Skip if already subscribed
+      if (unsubscribesRef.current.has(orderId)) {
+        return;
+      }
+
+      // Subscribe to order updates
+      const unsubscribe = client.subscribeToOrder(orderId, (data) => {
+        console.log("[WaiterOrders] Received WebSocket update:", data);
+
+        if (data.type === "order:accepted") {
+          // Order was accepted by this waiter - remove from pending list
+          console.log("[WaiterOrders] Order accepted, removing from list");
+          setOrders((prev) => prev.filter((o) => o.orderId !== orderId));
+
+          if (selectedOrder?.orderId === orderId) {
+            setSelectedOrder(null);
+          }
+        } else if (data.type === "order:rejected") {
+          // Order was rejected - remove from list
+          console.log("[WaiterOrders] Order rejected, removing from list");
+          setOrders((prev) => prev.filter((o) => o.orderId !== orderId));
+
+          if (selectedOrder?.orderId === orderId) {
+            setSelectedOrder(null);
+          }
+        } else if (data.type === "order:progress") {
+          // Order status progressed - update the order
+          console.log("[WaiterOrders] Order status progressed");
+          if (data.order) {
+            setOrders((prev) =>
+              prev.map((o) => (o.orderId === orderId ? data.order : o)),
+            );
+            if (selectedOrder?.orderId === orderId) {
+              setSelectedOrder(data.order);
+            }
+          }
+        } else if (data.type === "order:updated") {
+          // General order update
+          console.log("[WaiterOrders] Order updated");
+          if (data.order) {
+            setOrders((prev) =>
+              prev.map((o) => (o.orderId === orderId ? data.order : o)),
+            );
+            if (selectedOrder?.orderId === orderId) {
+              setSelectedOrder(data.order);
+            }
+          }
+        }
+      });
+
+      unsubscribesRef.current.set(orderId, unsubscribe);
+    } catch (error) {
+      console.error("[WaiterOrders] Failed to subscribe to order:", error);
+    }
+  };
+
   useEffect(() => {
     loadOrders();
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Cleanup subscriptions on unmount
+  useEffect(() => {
+    return () => {
+      unsubscribesRef.current.forEach((unsubscribe) => unsubscribe());
+      unsubscribesRef.current.clear();
+    };
   }, []);
 
   // Initialize offline queue processor
@@ -56,27 +143,41 @@ export default function WaiterOrdersPage() {
     const handleQueueProcessed = (event: Event) => {
       const customEvent = event as CustomEvent;
       const { results } = customEvent.detail;
-      
+
       if (results.success > 0) {
         toast.success(
-          `${results.success} queued rejection${results.success > 1 ? 's' : ''} processed successfully`
+          `${results.success} queued rejection${results.success > 1 ? "s" : ""} processed successfully`,
         );
         // Refresh orders after processing queue
         loadOrders();
       }
-      
+
       if (results.failed > 0) {
         toast.error(
-          `Failed to process ${results.failed} queued rejection${results.failed > 1 ? 's' : ''}`
+          `Failed to process ${results.failed} queued rejection${results.failed > 1 ? "s" : ""}`,
         );
       }
     };
 
-    window.addEventListener('offline-queue-processed', handleQueueProcessed);
+    // Listen for new orders from WebSocket
+    const handleNewOrder = (event: Event) => {
+      const customEvent = event as CustomEvent;
+      const { orderId } = customEvent.detail;
+      console.log("[WaiterOrders] New order from WebSocket:", orderId);
+      toast.info("New order received!");
+      loadOrders();
+    };
+
+    window.addEventListener("offline-queue-processed", handleQueueProcessed);
+    window.addEventListener("waiter:neworder", handleNewOrder);
 
     return () => {
       cleanup();
-      window.removeEventListener('offline-queue-processed', handleQueueProcessed);
+      window.removeEventListener(
+        "offline-queue-processed",
+        handleQueueProcessed,
+      );
+      window.removeEventListener("waiter:neworder", handleNewOrder);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -91,9 +192,29 @@ export default function WaiterOrdersPage() {
     setSelectedOrder(order);
   };
 
-  const handleAccept = (updatedOrder: Order) => {
-    // Remove from list since it's no longer pending
-    setOrders(orders.filter((o) => o.orderId !== updatedOrder.orderId));
+  const handleAccept = async (order: Order) => {
+    if (acceptingOrderId) return; // Prevent multiple clicks
+
+    setAcceptingOrderId(order.orderId);
+    try {
+      const updatedOrder = await acceptOrder(order.orderId, {
+        version: order.version,
+      });
+      toast.success("Order accepted successfully!");
+      // Update order in list with new data (waiter_id, acceptedAt)
+      setOrders(
+        orders.map((o) => (o.orderId === order.orderId ? updatedOrder : o)),
+      );
+      if (selectedOrder?.orderId === order.orderId) {
+        setSelectedOrder(updatedOrder);
+      }
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Failed to accept order";
+      toast.error(message);
+    } finally {
+      setAcceptingOrderId(null);
+    }
   };
 
   const handleReject = (orderId: string) => {
@@ -129,7 +250,7 @@ export default function WaiterOrdersPage() {
                 Pending Orders
               </h1>
               <p className="text-gray-500 text-xs sm:text-sm font-medium">
-                {count} order{count !== 1 ? 's' : ''} waiting for review
+                {count} order{count !== 1 ? "s" : ""} waiting for review
               </p>
             </div>
           </div>
@@ -139,8 +260,8 @@ export default function WaiterOrdersPage() {
             <div
               className={`flex items-center gap-2 px-2 sm:px-3 py-1 rounded-full text-xs font-extrabold uppercase tracking-wide ${
                 isOnline
-                  ? 'bg-green-100 text-green-700'
-                  : 'bg-red-100 text-red-700'
+                  ? "bg-green-100 text-green-700"
+                  : "bg-red-100 text-red-700"
               }`}
             >
               {isOnline ? (
@@ -163,7 +284,9 @@ export default function WaiterOrdersPage() {
               disabled={isLoading}
               className="flex items-center gap-2 flex-1 sm:flex-initial justify-center"
             >
-              <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
+              <RefreshCw
+                className={`w-4 h-4 ${isLoading ? "animate-spin" : ""}`}
+              />
               <span className="hidden sm:inline">Refresh</span>
             </Button>
           </div>
@@ -176,7 +299,9 @@ export default function WaiterOrdersPage() {
           <div className="flex items-center justify-center py-12">
             <div className="text-center">
               <RefreshCw className="w-8 h-8 text-slate-700 animate-spin mx-auto mb-4" />
-              <p className="text-gray-600 text-sm font-medium">Loading orders...</p>
+              <p className="text-gray-600 text-sm font-medium">
+                Loading orders...
+              </p>
             </div>
           </div>
         ) : orders.length === 0 ? (
@@ -198,6 +323,9 @@ export default function WaiterOrdersPage() {
                 key={order.orderId}
                 order={order}
                 onClick={() => handleOrderClick(order)}
+                onAccept={handleAccept}
+                onReject={handleReject}
+                isAccepting={acceptingOrderId === order.orderId}
               />
             ))}
           </div>

@@ -1,13 +1,13 @@
 export enum OrderStatus {
-  PENDING_ACCEPTANCE = 'PENDING_ACCEPTANCE',
-  ACCEPTED = 'ACCEPTED',
-  REJECTED = 'REJECTED',
-  RECEIVED = 'RECEIVED',
-  PREPARING = 'PREPARING',
-  READY = 'READY',
-  SERVED = 'SERVED',
-  COMPLETED = 'COMPLETED',
-  CANCELLED = 'CANCELLED',
+  PENDING_ACCEPTANCE = "PENDING_ACCEPTANCE",
+  ACCEPTED = "ACCEPTED",
+  REJECTED = "REJECTED",
+  RECEIVED = "RECEIVED",
+  PREPARING = "PREPARING",
+  READY = "READY",
+  SERVED = "SERVED",
+  COMPLETED = "COMPLETED",
+  CANCELLED = "CANCELLED",
 }
 
 export interface OrderItem {
@@ -15,8 +15,10 @@ export interface OrderItem {
   menuItemId: number;
   menuItemName: string;
   quantity: number;
-  price: number;
-  subtotal: number;
+  price?: number;
+  subtotal?: number;
+  totalPrice?: number;
+  unitPrice?: number;
   specialInstructions?: string;
   modifiers?: OrderItemModifier[];
 }

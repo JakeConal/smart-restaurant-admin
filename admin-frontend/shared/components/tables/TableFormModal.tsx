@@ -1,30 +1,35 @@
-'use client';
+"use client";
 
-import React, { useState, useEffect } from 'react';
-import { Modal, Button, Input, Select } from '@/shared/components/ui';
-import type { Table, CreateTableDto, UpdateTableDto, Waiter } from '@/shared/types/table';
-import { tablesApi } from '@/shared/lib/api/tables';
+import React, { useState, useEffect } from "react";
+import { Modal, Button, Input, Select } from "@/shared/components/ui";
+import type {
+  Table,
+  CreateTableDto,
+  UpdateTableDto,
+  Waiter,
+} from "@/shared/types/table";
+import { tablesApi } from "@/shared/lib/api/tables";
 
 export interface TableFormModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSubmit: (data: CreateTableDto | UpdateTableDto) => Promise<void>;
   table?: Table;
-  mode: 'create' | 'edit';
+  mode: "create" | "edit";
 }
 
 const locationOptions = [
-  { value: '', label: 'Select location' },
-  { value: 'Indoor', label: 'Indoor' },
-  { value: 'Outdoor', label: 'Outdoor' },
-  { value: 'Patio', label: 'Patio' },
-  { value: 'VIP Room', label: 'VIP Room' },
-  { value: 'Bar Area', label: 'Bar Area' },
+  { value: "", label: "Select location" },
+  { value: "Indoor", label: "Indoor" },
+  { value: "Outdoor", label: "Outdoor" },
+  { value: "Patio", label: "Patio" },
+  { value: "VIP Room", label: "VIP Room" },
+  { value: "Bar Area", label: "Bar Area" },
 ];
 
 const statusOptions = [
-  { value: 'active', label: 'Active' },
-  { value: 'inactive', label: 'Inactive' },
+  { value: "active", label: "Active" },
+  { value: "inactive", label: "Inactive" },
 ];
 
 export const TableFormModal: React.FC<TableFormModalProps> = ({
@@ -38,14 +43,14 @@ export const TableFormModal: React.FC<TableFormModalProps> = ({
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [waiters, setWaiters] = useState<Waiter[]>([]);
   const [loadingWaiters, setLoadingWaiters] = useState(false);
-  
+
   const [formData, setFormData] = useState<CreateTableDto>({
-    tableNumber: table?.tableNumber || '',
+    tableNumber: table?.tableNumber || "",
     capacity: table?.capacity || 4,
-    location: table?.location || '',
-    description: table?.description || '',
-    status: table?.status || 'active',
-    waiter_id: table?.waiter_id || '',
+    location: table?.location || "",
+    description: table?.description || "",
+    status: table?.status || "active",
+    waiter_id: table?.waiter_id || "",
   });
 
   // Load waiters when modal opens
@@ -61,31 +66,33 @@ export const TableFormModal: React.FC<TableFormModalProps> = ({
       const data = await tablesApi.getWaiters();
       setWaiters(data);
     } catch (error) {
-      console.error('Failed to load waiters:', error);
+      console.error("Failed to load waiters:", error);
     } finally {
       setLoadingWaiters(false);
     }
   };
 
   const waiterOptions = [
-    { value: '', label: 'No waiter assigned' },
+    { value: "", label: "No waiter assigned" },
     ...waiters.map((waiter) => ({
-      value: waiter.id,
+      value: waiter.id || waiter.userId || "",
       label: waiter.full_name,
     })),
   ];
 
   const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
+    >,
   ) => {
     const { name, value } = e.target;
     setFormData((prev) => ({
       ...prev,
-      [name]: name === 'capacity' ? parseInt(value) || 0 : value,
+      [name]: name === "capacity" ? parseInt(value) || 0 : value,
     }));
     // Clear error when user types
     if (errors[name]) {
-      setErrors((prev) => ({ ...prev, [name]: '' }));
+      setErrors((prev) => ({ ...prev, [name]: "" }));
     }
   };
 
@@ -93,11 +100,11 @@ export const TableFormModal: React.FC<TableFormModalProps> = ({
     const newErrors: Record<string, string> = {};
 
     if (!formData.tableNumber.trim()) {
-      newErrors.tableNumber = 'Table number is required';
+      newErrors.tableNumber = "Table number is required";
     }
 
     if (!formData.capacity || formData.capacity < 1 || formData.capacity > 20) {
-      newErrors.capacity = 'Capacity must be between 1 and 20';
+      newErrors.capacity = "Capacity must be between 1 and 20";
     }
 
     setErrors(newErrors);
@@ -106,7 +113,7 @@ export const TableFormModal: React.FC<TableFormModalProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!validate()) return;
 
     setLoading(true);
@@ -115,16 +122,16 @@ export const TableFormModal: React.FC<TableFormModalProps> = ({
       onClose();
       // Reset form
       setFormData({
-        tableNumber: '',
+        tableNumber: "",
         capacity: 4,
-        location: '',
-        description: '',
-        status: 'active',
-        waiter_id: '',
+        location: "",
+        description: "",
+        status: "active",
+        waiter_id: "",
       });
       setErrors({});
     } catch (error: any) {
-      setErrors({ submit: error.message || 'Failed to save table' });
+      setErrors({ submit: error.message || "Failed to save table" });
     } finally {
       setLoading(false);
     }
@@ -134,7 +141,7 @@ export const TableFormModal: React.FC<TableFormModalProps> = ({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title={mode === 'create' ? 'Create New Table' : 'Edit Table'}
+      title={mode === "create" ? "Create New Table" : "Edit Table"}
       maxWidth="lg"
     >
       <form onSubmit={handleSubmit} className="space-y-4">
@@ -173,7 +180,7 @@ export const TableFormModal: React.FC<TableFormModalProps> = ({
         <Select
           label="Assigned Waiter"
           name="waiter_id"
-          value={formData.waiter_id || ''}
+          value={formData.waiter_id || ""}
           onChange={handleChange}
           options={waiterOptions}
           disabled={loadingWaiters}
@@ -208,10 +215,20 @@ export const TableFormModal: React.FC<TableFormModalProps> = ({
         )}
 
         <div className="flex gap-3 pt-4">
-          <Button type="submit" variant="primary" loading={loading} className="flex-1">
-            {mode === 'create' ? 'Create Table' : 'Save Changes'}
+          <Button
+            type="submit"
+            variant="primary"
+            loading={loading}
+            className="flex-1"
+          >
+            {mode === "create" ? "Create Table" : "Save Changes"}
           </Button>
-          <Button type="button" variant="secondary" onClick={onClose} disabled={loading}>
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={onClose}
+            disabled={loading}
+          >
             Cancel
           </Button>
         </div>

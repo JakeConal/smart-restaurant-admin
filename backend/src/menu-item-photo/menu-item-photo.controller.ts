@@ -30,8 +30,8 @@ export class MenuItemPhotoController {
     @Res() res: Response,
   ) {
     const photo = await this.service.getPhoto(itemId, photoId);
-    res.set('Content-Type', photo.mimeType);
-    res.send(photo.data);
+    (res as any).set('Content-Type', photo.mimeType);
+    (res as any).send(photo.data);
   }
 
   @Get(':itemId/photos')
@@ -80,3 +80,4 @@ export class MenuItemPhotoController {
     return this.service.setPrimaryPhoto(user.restaurantId, itemId, photoId);
   }
 }
+

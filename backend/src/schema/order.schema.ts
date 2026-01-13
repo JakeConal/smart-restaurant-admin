@@ -120,6 +120,9 @@ export class Order {
   @Column({ type: 'datetime', nullable: true })
   escalatedAt: Date | null;
 
+  @Column({ type: 'datetime', nullable: true })
+  lastItemAddedAt: Date | null;
+
   // Optimistic locking
   @VersionColumn()
   version: number;

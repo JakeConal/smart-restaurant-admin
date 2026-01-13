@@ -207,7 +207,7 @@ function CartContent() {
         id: `order-${Date.now()}`,
         tableId,
         tableNumber: tableNumber || "Unknown",
-        status: "received",
+        status: "pending_acceptance",
         items: items.map((item) => {
           // Ensure price values are valid (not 0 or undefined)
           const price = item.menuItem.price || 0;
@@ -258,7 +258,7 @@ function CartContent() {
           subtotal: simulatedOrder.subtotal,
           tax: simulatedOrder.tax,
           total: simulatedOrder.total,
-          status: simulatedOrder.status,
+          // Note: Do NOT send status - backend will set it to PENDING_ACCEPTANCE
           isPaid: false,
         };
 

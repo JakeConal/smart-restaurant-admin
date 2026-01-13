@@ -1,6 +1,6 @@
-'use client';
+"use client";
 
-import React, { useState } from 'react';
+import React, { useState } from "react";
 import {
   X,
   Check,
@@ -10,11 +10,11 @@ import {
   ShoppingBag,
   AlertCircle,
   WifiOff,
-} from 'lucide-react';
-import type { Order } from '../../types/order';
-import { Button } from '../ui/Button';
-import { useToast } from '../ui/Toast';
-import { acceptOrder, sendToKitchen } from '../../lib/api/waiter';
+} from "lucide-react";
+import type { Order } from "../../types/order";
+import { Button } from "../ui/Button";
+import { useToast } from "../ui/Toast";
+import { acceptOrder, sendToKitchen } from "../../lib/api/waiter";
 
 interface OrderDetailModalProps {
   order: Order;
@@ -38,18 +38,36 @@ export function OrderDetailModal({
   const toast = useToast();
   const [isAccepting, setIsAccepting] = useState(false);
   const [isSending, setIsSending] = useState(false);
+  const [elapsedMinutes, setElapsedMinutes] = useState(0);
 
   if (!isOpen) return null;
 
-  const getElapsedMinutes = () => {
-    const now = new Date().getTime();
-    const created = new Date(order.createdAt).getTime();
-    return Math.floor((now - created) / 60000);
-  };
+  // Update elapsed time every second
+  React.useEffect(() => {
+    const calculateElapsed = () => {
+      const now = new Date().getTime();
+      // Use acceptedAt if order has been accepted, otherwise use createdAt
+      const referenceTime = order.acceptedAt || order.createdAt;
+      const timeToUse =
+        typeof referenceTime === "number"
+          ? referenceTime
+          : new Date(referenceTime).getTime();
+      const elapsed = Math.floor((now - timeToUse) / 60000);
+      setElapsedMinutes(Math.max(0, elapsed)); // Ensure non-negative
+    };
+
+    calculateElapsed();
+    const interval = setInterval(calculateElapsed, 1000);
+    return () => clearInterval(interval);
+  }, [order.createdAt, order.acceptedAt]);
+
+  const getElapsedMinutes = () => elapsedMinutes;
 
   const handleAccept = async () => {
     if (!isOnline) {
-      toast.error('Cannot accept orders while offline. Please check your connection.');
+      toast.error(
+        "Cannot accept orders while offline. Please check your connection.",
+      );
       return;
     }
 
@@ -58,17 +76,21 @@ export function OrderDetailModal({
       const updatedOrder = await acceptOrder(order.orderId, {
         version: order.version,
       });
-      toast.success('Order accepted successfully!');
+      toast.success("Order accepted successfully!");
       onAccept(updatedOrder);
       onClose();
     } catch (error) {
-      if (error instanceof Error && error.message?.includes('modified by another user')) {
+      if (
+        error instanceof Error &&
+        error.message?.includes("modified by another user")
+      ) {
         toast.error(
-          'Order was modified by another user. Please refresh and try again.',
-          7000
+          "Order was modified by another user. Please refresh and try again.",
+          7000,
         );
       } else {
-        const message = error instanceof Error ? error.message : 'Failed to accept order';
+        const message =
+          error instanceof Error ? error.message : "Failed to accept order";
         toast.error(message);
       }
     } finally {
@@ -84,27 +106,27 @@ export function OrderDetailModal({
     setIsSending(true);
     try {
       const updatedOrder = await sendToKitchen(order.orderId);
-      toast.success('Order sent to kitchen!');
+      toast.success("Order sent to kitchen!");
       onSendToKitchen(updatedOrder);
       onClose();
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Failed to send order to kitchen';
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Failed to send order to kitchen";
       toast.error(message);
     } finally {
       setIsSending(false);
     }
   };
 
-  const canAccept = order.status === 'PENDING_ACCEPTANCE';
-  const canSendToKitchen = order.status === 'ACCEPTED';
+  const canAccept = order.status === "PENDING_ACCEPTANCE";
+  const canSendToKitchen = order.status === "ACCEPTED";
 
   return (
     <>
       {/* Backdrop */}
-      <div
-        className="fixed inset-0 bg-black/50 z-40"
-        onClick={onClose}
-      />
+      <div className="fixed inset-0 bg-black/50 z-40" onClick={onClose} />
 
       {/* Modal */}
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -168,14 +190,17 @@ export function OrderDetailModal({
                         <span className="font-medium text-gray-900">
                           {item.quantity}x
                         </span>
-                        <span className="text-gray-900">{item.menuItemName}</span>
+                        <span className="text-gray-900">
+                          {item.menuItemName}
+                        </span>
                       </div>
                       {item.modifiers && item.modifiers.length > 0 && (
                         <div className="mt-1 ml-8 space-y-1">
                           {item.modifiers.map((mod, modIndex) => (
                             <p key={modIndex} className="text-sm text-gray-600">
                               + {mod.modifierOptionName}
-                              {mod.price > 0 && ` (+$${Number(mod.price).toFixed(2)})`}
+                              {mod.price > 0 &&
+                                ` (+$${Number(mod.price).toFixed(2)})`}
                             </p>
                           ))}
                         </div>
@@ -187,7 +212,14 @@ export function OrderDetailModal({
                       )}
                     </div>
                     <span className="font-semibold text-gray-900">
-                      ${Number(item.subtotal).toFixed(2)}
+                      $
+                      {typeof (item.totalPrice || item.subtotal) === "number"
+                        ? (
+                            (item.totalPrice || item.subtotal) as number
+                          ).toFixed(2)
+                        : Number(item.totalPrice || item.subtotal || 0).toFixed(
+                            2,
+                          )}
                     </span>
                   </div>
                 ))}
@@ -200,7 +232,9 @@ export function OrderDetailModal({
                 <h3 className="text-sm font-semibold text-orange-900 mb-1">
                   Special Instructions
                 </h3>
-                <p className="text-sm text-orange-700">{order.specialInstructions}</p>
+                <p className="text-sm text-orange-700">
+                  {order.specialInstructions}
+                </p>
               </div>
             )}
 
@@ -231,7 +265,7 @@ export function OrderDetailModal({
                     className="flex-1 flex items-center justify-center gap-2"
                   >
                     <Check className="w-5 h-5" />
-                    {isAccepting ? 'Accepting...' : 'Accept Order'}
+                    {isAccepting ? "Accepting..." : "Accept Order"}
                   </Button>
                   <Button
                     onClick={handleReject}
@@ -252,7 +286,7 @@ export function OrderDetailModal({
                   className="flex-1 flex items-center justify-center gap-2"
                 >
                   <Send className="w-5 h-5" />
-                  {isSending ? 'Sending...' : 'Send to Kitchen'}
+                  {isSending ? "Sending..." : "Send to Kitchen"}
                 </Button>
               )}
             </div>

@@ -36,7 +36,8 @@ function VerifyEmailContent() {
           router.push("/login");
         }, 3000);
       } catch (error: any) {
-        const errorMessage = error?.response?.data?.message || "Verification failed";
+        const errorMessage =
+          error?.response?.data?.message || "Verification failed";
 
         if (errorMessage.includes("expired")) {
           setState("expired");
@@ -91,7 +92,11 @@ function VerifyEmailContent() {
             <p className="text-gray-600 dark:text-gray-400 mb-4">{message}</p>
             <div className="bg-slate-50 dark:bg-slate-900/40 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 mb-8 text-center shadow-sm">
               <p className="text-sm font-medium text-slate-600 dark:text-slate-200">
-                You will be automatically redirected to the <strong className="text-blue-600 dark:text-blue-400">login page</strong> in 3 seconds.
+                You will be automatically redirected to the{" "}
+                <strong className="text-blue-600 dark:text-blue-400">
+                  login page
+                </strong>{" "}
+                in 3 seconds.
               </p>
             </div>
             <Link href="/login">
@@ -120,7 +125,11 @@ function VerifyEmailContent() {
                 </p>
               </div>
               <p className="text-sm font-medium text-slate-600 dark:text-slate-200 leading-relaxed">
-                Verification links expire after <strong className="text-orange-600 dark:text-orange-400">1 hour</strong> for security reasons. Please request a new link to continue.
+                Verification links expire after{" "}
+                <strong className="text-orange-600 dark:text-orange-400">
+                  1 hour
+                </strong>{" "}
+                for security reasons. Please request a new link to continue.
               </p>
             </div>
             <div className="space-y-3">
@@ -137,7 +146,7 @@ function VerifyEmailContent() {
                 </Button>
               </Link>
               <Link href="/login">
-                <Button className="w-full" variant="outline">
+                <Button className="w-full" variant="secondary">
                   Back to Sign In
                 </Button>
               </Link>
@@ -165,7 +174,7 @@ function VerifyEmailContent() {
                 </Button>
               </Link>
               <Link href="/login">
-                <Button className="w-full" variant="outline">
+                <Button className="w-full" variant="secondary">
                   Back to Sign In
                 </Button>
               </Link>

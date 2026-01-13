@@ -72,11 +72,11 @@ export const MenuItemDetailModal: React.FC<MenuItemDetailModalProps> = ({
       setModifierGroups(attachedGroups);
 
       // Load photo if available
-      if (detailedItem.primaryPhotoId) {
+      if (detailedItem.primaryPhoto) {
         try {
           const blob = await menuApi.getPhotoData(
             detailedItem.id,
-            detailedItem.primaryPhotoId,
+            detailedItem.primaryPhoto,
           );
           const url = URL.createObjectURL(blob);
           setPhotoUrl(url);

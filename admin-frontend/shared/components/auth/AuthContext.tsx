@@ -31,6 +31,7 @@ interface AuthContextType {
   signup: (data: SignupRequest) => Promise<void>;
   googleLogin: () => Promise<void>;
   logout: () => void;
+  loadUser: () => void;
   isLoading: boolean;
 }
 
@@ -75,7 +76,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signup = async (data: SignupRequest) => {
     try {
       setIsLoading(true);
-      const response: AuthResponse = await authApi.signup(data);
+      await authApi.signup(data);
       // Don't auto-login after signup - user needs to verify email first
       // Just return success, login page will show email verification message
       success("Account created! Please check your email to verify.");
@@ -107,9 +108,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     success("Logged out successfully.");
   };
 
+  const loadUser = () => {
+    const storedToken = localStorage.getItem("authToken");
+    const storedUser = localStorage.getItem("authUser");
+
+    if (storedToken && storedUser) {
+      setToken(storedToken);
+      setUser(JSON.parse(storedUser));
+    }
+  };
+
   return (
     <AuthContext.Provider
-      value={{ user, token, login, signup, googleLogin, logout, isLoading }}
+      value={{
+        user,
+        token,
+        login,
+        signup,
+        googleLogin,
+        logout,
+        loadUser,
+        isLoading,
+      }}
     >
       {children}
     </AuthContext.Provider>

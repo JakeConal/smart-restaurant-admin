@@ -38,7 +38,7 @@ export class AuthController {
       'http://localhost:3001/auth/customer/google/callback';
     const scope = 'email profile';
     const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${encodeURIComponent(scope)}&response_type=code&state=${encodeURIComponent(state)}`;
-    res.redirect(authUrl);
+    (res as any).redirect(authUrl);
   }
 
   @Get('customer/google/callback')
@@ -65,7 +65,7 @@ export class AuthController {
       }
     }
     const redirectUrl = `${frontendUrl}/${redirectPath}?auth_token=${authResponse.access_token}&auth_user=${encodeURIComponent(JSON.stringify(authResponse.user))}${extraParams}`;
-    res.redirect(redirectUrl);
+    (res as any).redirect(redirectUrl);
   }
 
   @Post('verify-email')
@@ -94,3 +94,4 @@ export class AuthController {
     return this.auth.resetPassword(token, password);
   }
 }
+

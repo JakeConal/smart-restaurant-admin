@@ -15,7 +15,11 @@ import { RefreshToken } from '../schema/refresh-token.schema';
 import { Role } from '../schema/role.schema';
 import { AdminEmailVerificationToken } from '../schema/admin-email-verification-token.schema';
 import { AdminPasswordResetToken } from '../schema/admin-password-reset-token.schema';
-import { AdminAuditLog, AdminAuditAction, AdminAuditStatus } from '../schema/admin-audit-log.schema';
+import {
+  AdminAuditLog,
+  AdminAuditAction,
+  AdminAuditStatus,
+} from '../schema/admin-audit-log.schema';
 import { SignupDto } from '../dto/sign-up.dto';
 import { LoginDto } from '../dto/login.dto';
 import { EmailService } from '../email/email.service';
@@ -95,8 +99,14 @@ export class AdminAuthService {
 
       // Send verification email (async, don't block)
       this.emailService
-        .sendAdminVerificationEmail(user.email, user.full_name, verificationToken)
-        .catch((err) => console.error('Failed to send verification email:', err));
+        .sendAdminVerificationEmail(
+          user.email,
+          user.full_name,
+          verificationToken,
+        )
+        .catch((err) =>
+          console.error('Failed to send verification email:', err),
+        );
 
       // Generate tokens
       const tokens = await this.generateTokens(user, role);
@@ -347,7 +357,10 @@ export class AdminAuthService {
 
   // ============= EMAIL VERIFICATION =============
 
-  async verifyEmail(token: string, req?: Request): Promise<{ message: string }> {
+  async verifyEmail(
+    token: string,
+    req?: Request,
+  ): Promise<{ message: string }> {
     const verificationToken = await this.verificationTokenRepo.findOne({
       where: { token },
     });
@@ -357,9 +370,12 @@ export class AdminAuthService {
         userId: null,
         action: AdminAuditAction.VERIFICATION_FAILED,
         status: AdminAuditStatus.FAILED,
-        metadata: JSON.stringify({ reason: 'Invalid token', token: token.substring(0, 10) }),
-        ipAddress: req?.ip,
-        userAgent: req?.headers['user-agent'],
+        metadata: JSON.stringify({
+          reason: 'Invalid token',
+          token: token.substring(0, 10),
+        }),
+        ipAddress: (req as any)?.ip,
+        userAgent: (req as any)?.headers?.['user-agent'],
       });
       throw new BadRequestException('Invalid verification token');
     }
@@ -370,8 +386,8 @@ export class AdminAuthService {
         action: AdminAuditAction.VERIFICATION_FAILED,
         status: AdminAuditStatus.FAILED,
         metadata: JSON.stringify({ reason: 'Token already used' }),
-        ipAddress: req?.ip,
-        userAgent: req?.headers['user-agent'],
+        ipAddress: (req as any)?.ip,
+        userAgent: (req as any)?.headers?.['user-agent'],
       });
       throw new BadRequestException('Verification token already used');
     }
@@ -382,8 +398,8 @@ export class AdminAuthService {
         action: AdminAuditAction.VERIFICATION_FAILED,
         status: AdminAuditStatus.FAILED,
         metadata: JSON.stringify({ reason: 'Token expired' }),
-        ipAddress: req?.ip,
-        userAgent: req?.headers['user-agent'],
+        ipAddress: (req as any)?.ip,
+        userAgent: (req as any)?.headers?.['user-agent'],
       });
       throw new BadRequestException('Verification token expired');
     }
@@ -412,14 +428,17 @@ export class AdminAuthService {
       action: AdminAuditAction.EMAIL_VERIFIED,
       status: AdminAuditStatus.SUCCESS,
       metadata: JSON.stringify({ email: user.email }),
-      ipAddress: req?.ip,
-      userAgent: req?.headers['user-agent'],
+      ipAddress: (req as any)?.ip,
+      userAgent: (req as any)?.headers?.['user-agent'],
     });
 
     return { message: 'Email verified successfully' };
   }
 
-  async resendVerification(email: string, req?: Request): Promise<{ message: string }> {
+  async resendVerification(
+    email: string,
+    req?: Request,
+  ): Promise<{ message: string }> {
     const user = await this.userRepo.findOne({ where: { email } });
 
     if (!user) {
@@ -465,8 +484,8 @@ export class AdminAuthService {
       action: AdminAuditAction.VERIFICATION_SENT,
       status: AdminAuditStatus.SUCCESS,
       metadata: JSON.stringify({ email: user.email }),
-      ipAddress: req?.ip,
-      userAgent: req?.headers['user-agent'],
+      ipAddress: (req as any)?.ip,
+      userAgent: (req as any)?.headers?.['user-agent'],
     });
 
     return { message: 'Verification email sent' };
@@ -474,12 +493,17 @@ export class AdminAuthService {
 
   // ============= PASSWORD RESET =============
 
-  async forgotPassword(email: string, req?: Request): Promise<{ message: string }> {
+  async forgotPassword(
+    email: string,
+    req?: Request,
+  ): Promise<{ message: string }> {
     const user = await this.userRepo.findOne({ where: { email } });
 
     if (!user) {
       // Don't reveal if user exists
-      return { message: 'If the email exists, a password reset link has been sent' };
+      return {
+        message: 'If the email exists, a password reset link has been sent',
+      };
     }
 
     // Check account status
@@ -522,11 +546,13 @@ export class AdminAuthService {
       action: AdminAuditAction.RESET_TOKEN_SENT,
       status: AdminAuditStatus.SUCCESS,
       metadata: JSON.stringify({ email: user.email }),
-      ipAddress: req?.ip,
-      userAgent: req?.headers['user-agent'],
+      ipAddress: (req as any)?.ip,
+      userAgent: (req as any)?.headers?.['user-agent'],
     });
 
-    return { message: 'If the email exists, a password reset link has been sent' };
+    return {
+      message: 'If the email exists, a password reset link has been sent',
+    };
   }
 
   async resetPassword(
@@ -543,9 +569,12 @@ export class AdminAuthService {
         userId: null,
         action: AdminAuditAction.RESET_FAILED,
         status: AdminAuditStatus.FAILED,
-        metadata: JSON.stringify({ reason: 'Invalid token', token: token.substring(0, 10) }),
-        ipAddress: req?.ip,
-        userAgent: req?.headers['user-agent'],
+        metadata: JSON.stringify({
+          reason: 'Invalid token',
+          token: token.substring(0, 10),
+        }),
+        ipAddress: (req as any)?.ip,
+        userAgent: (req as any)?.headers?.['user-agent'],
       });
       throw new BadRequestException('Invalid reset token');
     }
@@ -556,8 +585,8 @@ export class AdminAuthService {
         action: AdminAuditAction.RESET_FAILED,
         status: AdminAuditStatus.FAILED,
         metadata: JSON.stringify({ reason: 'Token already used' }),
-        ipAddress: req?.ip,
-        userAgent: req?.headers['user-agent'],
+        ipAddress: (req as any)?.ip,
+        userAgent: (req as any)?.headers?.['user-agent'],
       });
       throw new BadRequestException('Reset token already used');
     }
@@ -568,8 +597,8 @@ export class AdminAuthService {
         action: AdminAuditAction.RESET_FAILED,
         status: AdminAuditStatus.FAILED,
         metadata: JSON.stringify({ reason: 'Token expired' }),
-        ipAddress: req?.ip,
-        userAgent: req?.headers['user-agent'],
+        ipAddress: (req as any)?.ip,
+        userAgent: (req as any)?.headers?.['user-agent'],
       });
       throw new BadRequestException('Reset token expired');
     }
@@ -604,11 +633,14 @@ export class AdminAuthService {
       action: AdminAuditAction.PASSWORD_RESET,
       status: AdminAuditStatus.SUCCESS,
       metadata: JSON.stringify({ email: user.email }),
-      ipAddress: req?.ip,
-      userAgent: req?.headers['user-agent'],
+      ipAddress: (req as any)?.ip,
+      userAgent: (req as any)?.headers?.['user-agent'],
     });
 
-    return { message: 'Password reset successfully. Please login with your new password.' };
+    return {
+      message:
+        'Password reset successfully. Please login with your new password.',
+    };
   }
 
   // ============= AUDIT LOG =============

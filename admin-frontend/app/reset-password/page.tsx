@@ -5,7 +5,15 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Card, Button, Input, useToast } from "@/shared/components/ui";
 import { authApi } from "@/shared/lib/api/auth";
-import { KeyRound, Eye, EyeOff, CheckCircle, XCircle, Clock, Loader2 } from "lucide-react";
+import {
+  KeyRound,
+  Eye,
+  EyeOff,
+  CheckCircle,
+  XCircle,
+  Clock,
+  Loader2,
+} from "lucide-react";
 
 type ResetState = "form" | "loading" | "success" | "expired" | "invalid";
 
@@ -37,16 +45,22 @@ function ResetPasswordContent() {
       validationErrors.push("Password must be at least 8 characters");
     }
     if (!/[A-Z]/.test(password)) {
-      validationErrors.push("Password must contain at least one uppercase letter");
+      validationErrors.push(
+        "Password must contain at least one uppercase letter",
+      );
     }
     if (!/[a-z]/.test(password)) {
-      validationErrors.push("Password must contain at least one lowercase letter");
+      validationErrors.push(
+        "Password must contain at least one lowercase letter",
+      );
     }
     if (!/[0-9]/.test(password)) {
       validationErrors.push("Password must contain at least one number");
     }
     if (!/[!@#$%^&*(),.?":{}|<>]/.test(password)) {
-      validationErrors.push("Password must contain at least one special character");
+      validationErrors.push(
+        "Password must contain at least one special character",
+      );
     }
     if (password !== confirmPassword) {
       validationErrors.push("Passwords do not match");
@@ -75,11 +89,15 @@ function ResetPasswordContent() {
         router.push("/login");
       }, 3000);
     } catch (error: any) {
-      const errorMessage = error?.response?.data?.message || "Failed to reset password";
+      const errorMessage =
+        error?.response?.data?.message || "Failed to reset password";
 
       if (errorMessage.includes("expired")) {
         setState("expired");
-      } else if (errorMessage.includes("Invalid") || errorMessage.includes("already used")) {
+      } else if (
+        errorMessage.includes("Invalid") ||
+        errorMessage.includes("already used")
+      ) {
         setState("invalid");
       } else {
         setState("form");
@@ -97,9 +115,7 @@ function ResetPasswordContent() {
             <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
               Resetting Password
             </h2>
-            <p className="text-gray-600 dark:text-gray-400">
-              Please wait...
-            </p>
+            <p className="text-gray-600 dark:text-gray-400">Please wait...</p>
           </div>
         );
 
@@ -144,8 +160,8 @@ function ResetPasswordContent() {
             </p>
             <div className="bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-lg p-4 mb-6">
               <p className="text-sm text-orange-800 dark:text-orange-300">
-                <strong>Password reset links expire after 30 minutes</strong> for
-                security reasons. Please request a new link.
+                <strong>Password reset links expire after 30 minutes</strong>{" "}
+                for security reasons. Please request a new link.
               </p>
             </div>
             <Link href="/forgot-password">
@@ -173,7 +189,7 @@ function ResetPasswordContent() {
                 <Button className="w-full">Request New Reset Link</Button>
               </Link>
               <Link href="/login">
-                <Button className="w-full" variant="outline">
+                <Button className="w-full" variant="secondary">
                   Back to Sign In
                 </Button>
               </Link>

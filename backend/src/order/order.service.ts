@@ -1,10 +1,15 @@
-import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ConflictException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, In } from 'typeorm';
 import { Order, OrderStatus } from '../schema/order.schema';
 import { Table } from '../schema/table.schema';
 import { CreateOrderDto } from '../dto/create-order.dto';
 import { UpdateOrderDto } from '../dto/update-order.dto';
+import { OrderGateway } from './order.gateway';
 
 @Injectable()
 export class OrderService {
@@ -13,6 +18,7 @@ export class OrderService {
     private readonly orderRepository: Repository<Order>,
     @InjectRepository(Table)
     private readonly tableRepository: Repository<Table>,
+    private readonly orderGateway: OrderGateway,
   ) {}
 
   async create(createOrderDto: CreateOrderDto): Promise<Order> {
@@ -25,14 +31,31 @@ export class OrderService {
       assignedWaiterId = table?.waiter_id || null;
     }
 
+    // Create order with ONLY fields we want, explicitly ignore status from DTO
     const order = this.orderRepository.create({
-      ...createOrderDto,
-      status: OrderStatus.PENDING_ACCEPTANCE,
+      orderId: createOrderDto.orderId,
+      table_id: createOrderDto.table_id,
+      tableNumber: createOrderDto.tableNumber,
+      guestName: createOrderDto.guestName,
+      items: createOrderDto.items,
+      specialRequests: createOrderDto.specialRequests,
+      subtotal: createOrderDto.subtotal,
+      tax: createOrderDto.tax,
+      total: createOrderDto.total,
+      customer_id: createOrderDto.customer_id,
+      status: OrderStatus.PENDING_ACCEPTANCE, // Always set to PENDING_ACCEPTANCE
       waiter_id: assignedWaiterId,
       isDeleted: false,
+      isPaid: createOrderDto.isPaid || false,
+      lastItemAddedAt: new Date(), // Track when items were last added
     });
 
-    return this.orderRepository.save(order);
+    const savedOrder = await this.orderRepository.save(order);
+
+    // Broadcast new order to all connected waiters
+    void this.orderGateway.broadcastNewOrder(savedOrder);
+
+    return savedOrder;
   }
 
   async findByOrderId(orderId: string): Promise<Order> {
@@ -174,14 +197,14 @@ export class OrderService {
   }
 
   async getTotalRevenue(): Promise<number> {
-    const result = await this.orderRepository
+    const result = (await this.orderRepository
       .createQueryBuilder('order')
       .select('SUM(order.total)', 'total')
       .where('order.isDeleted = :isDeleted', { isDeleted: false })
       .andWhere('order.isPaid = :isPaid', { isPaid: true })
-      .getRawOne();
+      .getRawOne()) as { total: string | null } | undefined;
 
-    return parseFloat(result?.total || 0);
+    return parseFloat(result?.total || '0');
   }
 
   // ============================================
@@ -189,15 +212,15 @@ export class OrderService {
   // ============================================
 
   /**
-   * Get pending orders for a specific waiter (non-escalated)
+   * Get pending orders for a waiter (PENDING_ACCEPTANCE orders not yet accepted by anyone)
    */
-  async getMyPendingOrders(waiterId: string): Promise<Order[]> {
+  async getMyPendingOrders(): Promise<Order[]> {
     return this.orderRepository.find({
       where: {
-        waiter_id: waiterId,
         status: OrderStatus.PENDING_ACCEPTANCE,
         isEscalated: false,
         isDeleted: false,
+        waiter_id: null, // Only show orders not yet accepted by anyone
       },
       order: { createdAt: 'ASC' },
     });
@@ -206,19 +229,22 @@ export class OrderService {
   /**
    * Get count of pending orders for a waiter
    */
-  async getMyPendingOrdersCount(waiterId: string): Promise<{
+  async getMyPendingOrdersCount(): Promise<{
     count: number;
     oldestOrderMinutes: number | null;
   }> {
-    const orders = await this.getMyPendingOrders(waiterId);
+    const orders = await this.getMyPendingOrders();
     const count = orders.length;
-    
+
     let oldestOrderMinutes: number | null = null;
     if (orders.length > 0) {
       const oldestOrder = orders[0]; // Already sorted by createdAt ASC
-      oldestOrderMinutes = Math.floor(
-        (Date.now() - oldestOrder.createdAt.getTime()) / 60000,
-      );
+      // Handle both Date objects and numeric timestamps
+      const createdTime =
+        oldestOrder.createdAt instanceof Date
+          ? oldestOrder.createdAt.getTime()
+          : new Date(oldestOrder.createdAt).getTime();
+      oldestOrderMinutes = Math.floor((Date.now() - createdTime) / 60000);
     }
 
     return { count, oldestOrderMinutes };
@@ -255,7 +281,7 @@ export class OrderService {
   }
 
   /**
-   * Accept order (with optimistic locking)
+   * Accept order (with optimistic locking) - just claim the order, don't change status
    */
   async acceptOrder(
     orderId: string,
@@ -281,21 +307,24 @@ export class OrderService {
       );
     }
 
-    order.status = OrderStatus.ACCEPTED;
+    // Accept order: just assign to waiter, don't change status
     order.waiter_id = waiterId;
     order.acceptedAt = new Date();
 
     try {
-      return await this.orderRepository.save(order);
-    } catch (error) {
+      const updatedOrder = await this.orderRepository.save(order);
+
+      // Emit WebSocket event
+      this.orderGateway.broadcastOrderAccepted(orderId, updatedOrder);
+
+      return updatedOrder;
+    } catch {
       // TypeORM will throw OptimisticLockVersionMismatchError
       throw new ConflictException(
         'Order has been modified by another user. Please refresh and try again.',
       );
     }
-  }
-
-  /**
+  } /**
    * Reject order
    */
   async rejectOrder(
@@ -320,7 +349,12 @@ export class OrderService {
     order.rejectedAt = new Date();
     order.rejectionReason = reason;
 
-    return this.orderRepository.save(order);
+    const updatedOrder = await this.orderRepository.save(order);
+
+    // Emit WebSocket event
+    this.orderGateway.broadcastOrderRejected(orderId, updatedOrder, reason);
+
+    return updatedOrder;
   }
 
   /**
@@ -335,18 +369,31 @@ export class OrderService {
       throw new NotFoundException('Order not found');
     }
 
-    if (order.status !== OrderStatus.ACCEPTED) {
-      throw new ConflictException('Order must be accepted before sending to kitchen');
+    if (order.status !== OrderStatus.PENDING_ACCEPTANCE) {
+      throw new ConflictException(
+        'Order must be in pending acceptance status before sending to kitchen',
+      );
     }
 
     if (order.waiter_id !== waiterId) {
       throw new ConflictException('You are not assigned to this order');
     }
 
-    order.status = OrderStatus.PREPARING;
+    const previousStatus = order.status;
+    // Transition: PENDING_ACCEPTANCE -> ACCEPTED (and mark as sent to kitchen)
+    order.status = OrderStatus.ACCEPTED;
     order.sentToKitchenAt = new Date();
 
-    return this.orderRepository.save(order);
+    const updatedOrder = await this.orderRepository.save(order);
+
+    // Emit WebSocket event for status progression
+    this.orderGateway.broadcastStatusProgression(
+      orderId,
+      updatedOrder,
+      previousStatus,
+      updatedOrder.status,
+    );
+
+    return updatedOrder;
   }
 }
-

@@ -47,11 +47,11 @@ export const MenuItemCard: React.FC<MenuItemCardProps> = ({
   const menuRef = useRef<HTMLDivElement>(null);
   const isAvailable = item.status === "available";
 
-  // Fetch photo data when primaryPhotoId is available
+  // Fetch photo data when primaryPhoto is available
   useEffect(() => {
-    if (item.primaryPhotoId) {
+    if (item.primaryPhoto) {
       menuApi
-        .getPhotoData(item.id, item.primaryPhotoId)
+        .getPhotoData(item.id, item.primaryPhoto)
         .then((blob) => {
           const url = URL.createObjectURL(blob);
           setPhotoUrl(url);
@@ -68,7 +68,7 @@ export const MenuItemCard: React.FC<MenuItemCardProps> = ({
         URL.revokeObjectURL(photoUrl);
       }
     };
-  }, [item.primaryPhotoId, item.id]);
+  }, [item.primaryPhoto, item.id]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {

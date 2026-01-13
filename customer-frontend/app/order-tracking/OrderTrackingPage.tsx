@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { Order, OrderStatus } from "@/lib/types";
+import { getOrderWebSocketClient } from "@/lib/orderWebSocket";
 import BottomNav from "@/components/BottomNav";
 
 interface OrderTrackingPageProps {
@@ -24,41 +25,80 @@ export default function OrderTrackingPage({
   const [displayOrder, setDisplayOrder] = useState(order);
   const [requestingBill, setRequestingBill] = useState(false);
   const [billRequested, setBillRequested] = useState(false);
+  const [wsConnected, setWsConnected] = useState(false);
+  const unsubscribeRef = useRef<(() => void) | null>(null);
 
   // Update sessionStorage whenever displayOrder changes
   useEffect(() => {
     sessionStorage.setItem(`order-${order.id}`, JSON.stringify(displayOrder));
   }, [displayOrder, order.id]);
 
-  // Check if order is paid and redirect
+  // WebSocket setup
   useEffect(() => {
-    if (displayOrder.isPaid) {
-      // Order is paid, we can optionally keep showing it or redirect after a delay
-      // For now, we'll keep showing it with paid status
-      console.log("Order is paid:", displayOrder.id);
-    }
-  }, [displayOrder.isPaid, displayOrder.id]);
+    const setupWebSocket = async () => {
+      try {
+        const client = getOrderWebSocketClient();
 
-  useEffect(() => {
-    // Simulate status progression
-    const statusProgression: OrderStatus[] = ["received", "preparing", "ready"];
-    const currentIndex = statusProgression.indexOf(order.status);
+        // Check if already connected, otherwise connect
+        if (!client.isConnected()) {
+          await client.connect();
+        }
 
-    if (currentIndex < statusProgression.length - 1) {
-      const timers = statusProgression
-        .slice(currentIndex + 1)
-        .map((status, i) => {
-          return setTimeout(
-            () => {
-              setDisplayOrder((prev) => ({ ...prev, status }));
-            },
-            (i + 1) * 15000, // Each status takes 15 seconds
-          );
+        setWsConnected(true);
+
+        // Subscribe to order updates
+        const unsubscribe = client.subscribeToOrder(order.id, (data) => {
+          console.log("[OrderTracking] Received WebSocket update:", data);
+
+          if (data.type === "order:accepted") {
+            // Order was accepted by waiter - update status to accepted
+            console.log(
+              "[OrderTracking] Order accepted, updating to accepted status",
+            );
+            setDisplayOrder((prev) => ({
+              ...prev,
+              status: "accepted",
+            }));
+          } else if (data.type === "order:rejected") {
+            // Order was rejected
+            console.log("[OrderTracking] Order rejected:", data.reason);
+            setDisplayOrder((prev) => ({
+              ...prev,
+              status: "rejected",
+            }));
+          } else if (data.type === "order:progress") {
+            // Order status progressed
+            console.log(
+              `[OrderTracking] Status progression: ${data.previousStatus} -> ${data.newStatus}`,
+            );
+            setDisplayOrder((prev) => ({
+              ...prev,
+              status: data.newStatus,
+            }));
+          } else if (data.type === "order:updated") {
+            // General order update
+            console.log("[OrderTracking] Order updated");
+            if (data.order) {
+              setDisplayOrder(data.order);
+            }
+          }
         });
 
-      return () => timers.forEach((t) => clearTimeout(t));
-    }
-  }, [order.status]);
+        unsubscribeRef.current = unsubscribe;
+      } catch (error) {
+        console.error("[OrderTracking] Failed to setup WebSocket:", error);
+        setWsConnected(false);
+      }
+    };
+
+    setupWebSocket();
+
+    return () => {
+      if (unsubscribeRef.current) {
+        unsubscribeRef.current();
+      }
+    };
+  }, [order.id]);
 
   const getStatusInfo = (status: OrderStatus) => {
     switch (status) {
@@ -81,7 +121,8 @@ export default function OrderTrackingPage({
       case "rejected":
         return {
           label: "Order Rejected",
-          description: "Unfortunately, this order cannot be fulfilled. Please contact staff for assistance.",
+          description:
+            "Unfortunately, this order cannot be fulfilled. Please contact staff for assistance.",
           icon: "✕",
           color: "from-red-400 to-red-500",
           progress: 0,
@@ -148,7 +189,14 @@ export default function OrderTrackingPage({
       {/* Header */}
       <div className="sticky top-0 z-30 backdrop-blur-xl bg-white/90 border-b border-orange-100/50 shadow-sm px-6 py-4">
         <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold text-gray-900">Order Tracking</h1>
+          <div className="flex items-center gap-2">
+            <h1 className="text-2xl font-bold text-gray-900">Order Tracking</h1>
+            {wsConnected && (
+              <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full">
+                ● Live
+              </span>
+            )}
+          </div>
           <Link
             href={`/menu?token=${currentToken}`}
             className="text-orange-600 hover:text-orange-700 font-semibold text-sm"
@@ -191,6 +239,8 @@ export default function OrderTrackingPage({
               // Calculate progress for each item based on order status
               const getItemProgress = () => {
                 switch (displayOrder.status) {
+                  case "accepted":
+                    return 15;
                   case "received":
                     return 33;
                   case "preparing":
