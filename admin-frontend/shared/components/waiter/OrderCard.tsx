@@ -1,7 +1,14 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Clock, ShoppingBag, AlertCircle, Check, X } from "lucide-react";
+import {
+  Clock,
+  ShoppingBag,
+  AlertCircle,
+  Check,
+  X,
+  RefreshCw,
+} from "lucide-react";
 import type { Order } from "../../types/order";
 import { Button } from "../ui/Button";
 
@@ -10,8 +17,10 @@ interface OrderCardProps {
   onClick: () => void;
   onAccept?: (order: Order) => void;
   onReject?: (orderId: string) => void;
+  onServe?: (orderId: string) => void;
   isAccepting?: boolean;
   isRejecting?: boolean;
+  isServing?: boolean;
 }
 
 export function OrderCard({
@@ -19,8 +28,10 @@ export function OrderCard({
   onClick,
   onAccept,
   onReject,
+  onServe,
   isAccepting = false,
   isRejecting = false,
+  isServing = false,
 }: OrderCardProps) {
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [referenceTime] = useState(() => {
@@ -82,7 +93,24 @@ export function OrderCard({
             <h3 className="font-semibold text-gray-900">
               Table {order.tableNumber}
             </h3>
-            <p className="text-sm text-gray-500">Order #{order.orderId}</p>
+            <div className="flex items-center gap-2">
+              <p className="text-sm text-gray-500">
+                Order #{order.orderId.slice(-6)}
+              </p>
+              {order.status !== "pending_acceptance" && (
+                <span
+                  className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider ${
+                    order.status === "ready"
+                      ? "bg-green-100 text-green-700 animate-pulse"
+                      : order.status === "preparing"
+                        ? "bg-orange-100 text-orange-700"
+                        : "bg-blue-100 text-blue-700"
+                  }`}
+                >
+                  {order.status}
+                </span>
+              )}
+            </div>
           </div>
         </div>
 
@@ -156,33 +184,56 @@ export function OrderCard({
 
       {/* Action buttons */}
       <div className="flex gap-2">
-        {onAccept && (
+        {order.status === "pending_acceptance" ? (
+          <>
+            {onAccept && (
+              <Button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onAccept(order);
+                }}
+                disabled={isAccepting}
+                variant="secondary"
+                className="flex-1"
+              >
+                <Check className="w-4 h-4 mr-1" />
+                {isAccepting ? "Accepting..." : "Accept"}
+              </Button>
+            )}
+            {onReject && (
+              <Button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onReject(order.orderId);
+                }}
+                disabled={isRejecting}
+                variant="secondary"
+                className="flex-1"
+              >
+                <X className="w-4 h-4 mr-1" />
+                {isRejecting ? "Rejecting..." : "Decline"}
+              </Button>
+            )}
+          </>
+        ) : order.status === "ready" ? (
           <Button
+            className="w-full bg-green-600 hover:bg-green-700 text-white font-black h-12 shadow-lg shadow-green-100"
             onClick={(e) => {
               e.stopPropagation();
-              onAccept(order);
+              onServe && onServe(order.orderId);
             }}
-            disabled={isAccepting}
-            variant="secondary"
-            className="flex-1"
+            disabled={isServing}
           >
-            <Check className="w-4 h-4 mr-1" />
-            {isAccepting ? "Accepting..." : "Accept"}
+            <Check className="w-5 h-5 mr-2" />
+            {isServing ? "Delivering..." : "MARK AS DELIVERED"}
           </Button>
-        )}
-        {onReject && (
-          <Button
-            onClick={(e) => {
-              e.stopPropagation();
-              onReject(order.orderId);
-            }}
-            disabled={isRejecting}
-            variant="secondary"
-            className="flex-1"
-          >
-            <X className="w-4 h-4 mr-1" />
-            {isRejecting ? "Rejecting..." : "Decline"}
-          </Button>
+        ) : (
+          <div className="w-full py-3 bg-slate-50 rounded-xl border border-slate-200 flex items-center justify-center gap-2">
+            <RefreshCw className="w-4 h-4 text-slate-400 animate-spin" />
+            <span className="text-sm font-bold text-slate-500 uppercase tracking-widest">
+              Kitchen: {order.status}
+            </span>
+          </div>
         )}
       </div>
     </div>

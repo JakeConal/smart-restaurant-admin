@@ -45,6 +45,11 @@ export async function sendToKitchen(orderId: string): Promise<Order> {
   return response.data;
 }
 
+export async function serveOrder(orderId: string): Promise<Order> {
+  const response = await apiClient.put(`/api/waiter/orders/${orderId}/serve`);
+  return response.data;
+}
+
 export async function getMyAssignedTables(): Promise<Table[]> {
   const response = await apiClient.get("/api/waiter/tables/assigned");
   return response.data;

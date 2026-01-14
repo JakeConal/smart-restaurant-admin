@@ -255,7 +255,38 @@ export class OrderService {
   // ============================================
 
   /**
-   * Get pending orders for a waiter (PENDING_ACCEPTANCE orders not yet accepted by anyone)
+   * Get active orders for a waiter (PENDING_ACCEPTANCE orders not yet accepted, OR orders accepted by this waiter that are in kitchen)
+   */
+  async getMyActiveOrders(
+    waiterId: string,
+    restaurantId: string,
+  ): Promise<Order[]> {
+    return this.orderRepository.find({
+      where: [
+        {
+          status: OrderStatus.PENDING_ACCEPTANCE,
+          isEscalated: false,
+          isDeleted: false,
+          waiter_id: null, // Only show orders not yet accepted by anyone
+          restaurantId: restaurantId,
+        },
+        {
+          status: In([
+            OrderStatus.RECEIVED,
+            OrderStatus.PREPARING,
+            OrderStatus.READY,
+          ]),
+          isDeleted: false,
+          waiter_id: waiterId, // Orders specifically assigned to this waiter
+          restaurantId: restaurantId,
+        },
+      ],
+      order: { createdAt: 'ASC' },
+    });
+  }
+
+  /**
+   * Get pending orders for a waiter (legacy method, currently kept for compatibility)
    */
   async getMyPendingOrders(restaurantId: string): Promise<Order[]> {
     return this.orderRepository.find({
@@ -263,11 +294,37 @@ export class OrderService {
         status: OrderStatus.PENDING_ACCEPTANCE,
         isEscalated: false,
         isDeleted: false,
-        waiter_id: null, // Only show orders not yet accepted by anyone
+        waiter_id: null,
         restaurantId: restaurantId,
       },
       order: { createdAt: 'ASC' },
     });
+  }
+
+  /**
+   * Get count of active orders for a waiter
+   */
+  async getMyActiveOrdersCount(
+    waiterId: string,
+    restaurantId: string,
+  ): Promise<{
+    count: number;
+    oldestOrderMinutes: number | null;
+  }> {
+    const orders = await this.getMyActiveOrders(waiterId, restaurantId);
+    const count = orders.length;
+
+    let oldestOrderMinutes: number | null = null;
+    if (orders.length > 0) {
+      const oldestOrder = orders[0];
+      const createdTime =
+        oldestOrder.createdAt instanceof Date
+          ? oldestOrder.createdAt.getTime()
+          : new Date(oldestOrder.createdAt).getTime();
+      oldestOrderMinutes = Math.floor((Date.now() - createdTime) / 60000);
+    }
+
+    return { count, oldestOrderMinutes };
   }
 
   /**
@@ -292,6 +349,43 @@ export class OrderService {
     }
 
     return { count, oldestOrderMinutes };
+  }
+
+  /**
+   * Mark an order as served (delivered to table)
+   */
+  async markAsServed(orderId: string, waiterId: string): Promise<Order> {
+    const order = await this.orderRepository.findOne({
+      where: { orderId, isDeleted: false },
+    });
+
+    if (!order) {
+      throw new NotFoundException('Order not found');
+    }
+
+    if (order.status !== OrderStatus.READY) {
+      throw new ConflictException('Order must be in ready status to be served');
+    }
+
+    if (order.waiter_id !== waiterId) {
+      throw new ConflictException('You are not assigned to this order');
+    }
+
+    const previousStatus = order.status;
+    order.status = OrderStatus.SERVED;
+    order.updatedAt = new Date();
+
+    const updatedOrder = await this.orderRepository.save(order);
+
+    // Emit WebSocket event for status progression
+    this.orderGateway.broadcastStatusProgression(
+      orderId,
+      updatedOrder,
+      previousStatus,
+      updatedOrder.status,
+    );
+
+    return updatedOrder;
   }
 
   /**

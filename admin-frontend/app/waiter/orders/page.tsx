@@ -14,6 +14,7 @@ import { useOrderPolling } from "../../../shared/lib/hooks/useOrderPolling";
 import {
   getMyPendingOrders,
   acceptOrder,
+  serveOrder,
 } from "../../../shared/lib/api/waiter";
 import { initializeOfflineQueueProcessor } from "../../../shared/lib/offlineQueueProcessor";
 import { getOrderWebSocketClient } from "../../../shared/lib/orderWebSocket";
@@ -28,6 +29,7 @@ export default function WaiterOrdersPage() {
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [rejectingOrderId, setRejectingOrderId] = useState<string | null>(null);
   const [acceptingOrderId, setAcceptingOrderId] = useState<string | null>(null);
+  const [servingOrderId, setServingOrderId] = useState<string | null>(null);
   const [wsConnected, setWsConnected] = useState(false);
   const unsubscribesRef = useRef<Map<string, () => void>>(new Map());
 
@@ -112,20 +114,28 @@ export default function WaiterOrdersPage() {
               setSelectedOrder(null);
             }
           } else if (data.type === "order:progress") {
-            // Order status progressed - check if moved away from pending_acceptance
+            // Order status progressed
             console.log(
               "[WaiterOrders] Order status progressed:",
               data.newStatus,
             );
-            if (data.newStatus === "received") {
-              // Order was accepted and sent to kitchen - remove from waiter orders list
+
+            // If the order has been served, completed or cancelled, remove it from the list
+            if (["served", "completed", "cancelled"].includes(data.newStatus)) {
               console.log(
-                "[WaiterOrders] Order accepted and sent to kitchen, removing from list",
+                `[WaiterOrders] Order ${data.newStatus}, removing from list`,
               );
               setOrders((prev) => prev.filter((o) => o.orderId !== orderId));
               if (selectedOrder?.orderId === orderId) {
                 setSelectedOrder(null);
               }
+            } else {
+              // Otherwise, update the order in the list with the new status
+              setOrders((prev) =>
+                prev.map((o) =>
+                  o.orderId === orderId ? { ...o, status: data.newStatus } : o,
+                ),
+              );
             }
           } else if (data.type === "order:updated" && data.order) {
             // General order update
@@ -226,10 +236,12 @@ export default function WaiterOrdersPage() {
         version: order.version,
       });
       toast.success("Order accepted and sent to kitchen!");
-      // Remove order from list immediately (optimistic update)
-      setOrders(orders.filter((o) => o.orderId !== order.orderId));
+      // Update order status in list instead of removing it
+      setOrders(
+        orders.map((o) => (o.orderId === order.orderId ? updatedOrder : o)),
+      );
       if (selectedOrder?.orderId === order.orderId) {
-        setSelectedOrder(null);
+        setSelectedOrder(updatedOrder);
       }
     } catch (error) {
       const message =
@@ -237,6 +249,27 @@ export default function WaiterOrdersPage() {
       toast.error(message);
     } finally {
       setAcceptingOrderId(null);
+    }
+  };
+
+  const handleServe = async (orderId: string) => {
+    if (servingOrderId) return;
+
+    setServingOrderId(orderId);
+    try {
+      await serveOrder(orderId);
+      toast.success("Order marked as delivered!");
+      // Remove from list as it's now 'served'
+      setOrders(orders.filter((o) => o.orderId !== orderId));
+      if (selectedOrder?.orderId === orderId) {
+        setSelectedOrder(null);
+      }
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Failed to mark as delivered";
+      toast.error(message);
+    } finally {
+      setServingOrderId(null);
     }
   };
 
@@ -265,10 +298,10 @@ export default function WaiterOrdersPage() {
             </div>
             <div>
               <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900">
-                Pending Orders
+                My Orders
               </h1>
               <p className="text-gray-500 text-xs sm:text-sm font-medium">
-                {count} order{count !== 1 ? "s" : ""} waiting for review
+                {orders.length} active order{orders.length !== 1 ? "s" : ""}
               </p>
             </div>
           </div>
@@ -336,16 +369,29 @@ export default function WaiterOrdersPage() {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-            {orders.map((order) => (
-              <OrderCard
-                key={order.orderId}
-                order={order}
-                onClick={() => handleOrderClick(order)}
-                onAccept={handleAccept}
-                onReject={handleReject}
-                isAccepting={acceptingOrderId === order.orderId}
-              />
-            ))}
+            {[...orders]
+              .sort((a, b) => {
+                // Keep READY orders at the top
+                if (a.status === "ready" && b.status !== "ready") return -1;
+                if (a.status !== "ready" && b.status === "ready") return 1;
+                // Otherwise sort by creation time (ascending)
+                return (
+                  new Date(a.createdAt).getTime() -
+                  new Date(b.createdAt).getTime()
+                );
+              })
+              .map((order) => (
+                <OrderCard
+                  key={order.orderId}
+                  order={order}
+                  onClick={() => handleOrderClick(order)}
+                  onAccept={handleAccept}
+                  onReject={handleReject}
+                  onServe={handleServe}
+                  isAccepting={acceptingOrderId === order.orderId}
+                  isServing={servingOrderId === order.orderId}
+                />
+              ))}
           </div>
         )}
       </div>

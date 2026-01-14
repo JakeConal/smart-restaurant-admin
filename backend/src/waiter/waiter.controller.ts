@@ -26,19 +26,37 @@ export class WaiterController {
   ) {}
 
   /**
-   * Get my pending orders (non-escalated)
+   * Get my pending and active orders (in kitchen)
    */
   @Get('orders/pending')
   async getMyPendingOrders(@CurrentUser() user: AuthUser) {
-    return await this.orderService.getMyPendingOrders(user.restaurantId);
+    return await this.orderService.getMyActiveOrders(
+      user.userId,
+      user.restaurantId,
+    );
   }
 
   /**
-   * Get count of my pending orders
+   * Get count of my active orders
    */
   @Get('orders/pending/count')
   async getMyPendingOrdersCount(@CurrentUser() user: AuthUser) {
-    return await this.orderService.getMyPendingOrdersCount(user.restaurantId);
+    return await this.orderService.getMyActiveOrdersCount(
+      user.userId,
+      user.restaurantId,
+    );
+  }
+
+  /**
+   * Mark an order as served/delivered
+   */
+  @Put('orders/:orderId/serve')
+  @HttpCode(HttpStatus.OK)
+  async markAsServed(
+    @Param('orderId') orderId: string,
+    @CurrentUser() user: AuthUser,
+  ) {
+    return await this.orderService.markAsServed(orderId, user.userId);
   }
 
   /**
