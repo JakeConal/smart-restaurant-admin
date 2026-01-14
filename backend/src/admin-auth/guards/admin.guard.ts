@@ -15,7 +15,7 @@ export class AdminGuard extends AuthGuard('admin-jwt') {
 
     // Check if user has valid role (admin, waiter, or kitchen staff)
     // This guard just verifies they are authenticated staff, not customer
-    const validRoles = ['ADMIN', 'WAITER', 'KITCHEN'];
+    const validRoles = ['SUPER_ADMIN', 'ADMIN', 'WAITER', 'KITCHEN'];
     const hasValidRole = user && validRoles.includes(user.role?.toUpperCase());
     
     return hasValidRole;

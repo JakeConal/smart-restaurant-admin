@@ -31,7 +31,9 @@ function LoginForm() {
         loadUser();
         // Redirect based on user role
         const role = userData.role?.toUpperCase();
-        if (role === 'WAITER') {
+        if (role === 'SUPER_ADMIN') {
+          router.push("/super-admin/admins");
+        } else if (role === 'WAITER') {
           router.push("/waiter/orders");
         } else if (role === 'KITCHEN' || role === 'KITCHEN_STAFF') {
           router.push("/kitchen");
@@ -51,7 +53,9 @@ function LoginForm() {
         const result = await login({ email, password });
         // Redirect based on user role
         const role = result?.user?.role?.toUpperCase();
-        if (role === 'WAITER') {
+        if (role === 'SUPER_ADMIN') {
+          router.push("/super-admin/admins");
+        } else if (role === 'WAITER') {
           router.push("/waiter/orders");
         } else if (role === 'KITCHEN' || role === 'KITCHEN_STAFF') {
           router.push("/kitchen");

@@ -5,16 +5,18 @@ import { Role } from '../schema/role.schema';
 import { Permission } from '../schema/permission.schema';
 import { RolePermission } from '../schema/role-permission.schema';
 import { Users } from '../schema/user.schema';
+import { UserCredentials } from '../schema/user-credentials.schema';
 import { Table } from '../schema/table.schema';
 import { Order } from '../schema/order.schema';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([
-      Role, 
-      Permission, 
+      Role,
+      Permission,
       RolePermission,
       Users,
+      UserCredentials,
       Table,
       Order,
     ]),

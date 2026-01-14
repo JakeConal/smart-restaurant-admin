@@ -5,8 +5,9 @@ export { apiClient, downloadFile } from "./client";
 import { TablesApi, tablesApi } from "./tables";
 import { MenuApi, menuApi } from "./menu";
 import { AuthApi, authApi } from "./auth";
+import { superAdminApi } from "./super-admin";
 import type { LoginRequest, SignupRequest, AuthResponse } from "./auth";
 
 // Export route-based APIs
-export { TablesApi, tablesApi, MenuApi, menuApi, AuthApi, authApi };
+export { TablesApi, tablesApi, MenuApi, menuApi, AuthApi, authApi, superAdminApi };
 export type { LoginRequest, SignupRequest, AuthResponse };

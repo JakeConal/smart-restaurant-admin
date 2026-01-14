@@ -30,6 +30,11 @@ export const Sidebar: React.FC = () => {
   const pathname = usePathname();
   const { user, logout } = useAuth();
 
+  // Super Admin uses a different layout without sidebar
+  if (user?.role?.toUpperCase() === 'SUPER_ADMIN') {
+    return null;
+  }
+
   return (
     <aside className="w-24 lg:w-64 bg-white rounded-[1.75rem] border border-slate-200/10 shadow-md flex flex-col h-full py-6 px-4">
       {/* Brand */}

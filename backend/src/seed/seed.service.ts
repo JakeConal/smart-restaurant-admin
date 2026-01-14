@@ -4,7 +4,8 @@ import { Repository } from 'typeorm';
 import { Role } from '../schema/role.schema';
 import { Permission } from '../schema/permission.schema';
 import { RolePermission } from '../schema/role-permission.schema';
-import { Users } from '../schema/user.schema';
+import { Users, UserStatus } from '../schema/user.schema';
+import { UserCredentials } from '../schema/user-credentials.schema';
 import { Table } from '../schema/table.schema';
 import { Order, OrderStatus } from '../schema/order.schema';
 
@@ -19,6 +20,8 @@ export class SeedService {
     private rolePermissionRepository: Repository<RolePermission>,
     @InjectRepository(Users)
     private userRepository: Repository<Users>,
+    @InjectRepository(UserCredentials)
+    private credentialsRepository: Repository<UserCredentials>,
     @InjectRepository(Table)
     private tableRepository: Repository<Table>,
     @InjectRepository(Order)
@@ -27,12 +30,13 @@ export class SeedService {
 
   async seedAll() {
     console.log('🌱 Starting database seed...');
-    
+
     await this.seedRoles();
     await this.seedPermissions();
     await this.seedRolePermissions();
+    await this.seedSuperAdmin();
     await this.seedTablesAndOrders();
-    
+
     console.log('✅ Database seed completed!');
   }
 
@@ -44,6 +48,12 @@ export class SeedService {
     }
 
     const roles = [
+      {
+        code: 'SUPER_ADMIN',
+        name: 'Super Administrator',
+        description: 'Manage all admin accounts across restaurants',
+        is_system: true,
+      },
       {
         code: 'ADMIN',
         name: 'Restaurant Admin',
@@ -65,7 +75,7 @@ export class SeedService {
     ];
 
     await this.roleRepository.save(roles);
-    console.log('✓ Seeded 3 roles');
+    console.log('✓ Seeded 4 roles');
   }
 
   private async seedPermissions() {
@@ -102,10 +112,16 @@ export class SeedService {
       // Report permissions (Admin only)
       { code: 'report:view', resource: 'report', action: 'view', description: 'View reports' },
       { code: 'report:export', resource: 'report', action: 'export', description: 'Export reports' },
+
+      // Admin management permissions (Super Admin only)
+      { code: 'admin:read', resource: 'admin', action: 'read', description: 'View admin accounts' },
+      { code: 'admin:create', resource: 'admin', action: 'create', description: 'Create admin accounts' },
+      { code: 'admin:update', resource: 'admin', action: 'update', description: 'Update admin accounts' },
+      { code: 'admin:delete', resource: 'admin', action: 'delete', description: 'Deactivate admin accounts' },
     ];
 
     await this.permissionRepository.save(permissions);
-    console.log('✓ Seeded 17 permissions');
+    console.log('✓ Seeded 21 permissions');
   }
 
   private async seedRolePermissions() {
@@ -115,16 +131,30 @@ export class SeedService {
       return;
     }
 
+    const superAdminRole = await this.roleRepository.findOne({ where: { code: 'SUPER_ADMIN' } });
     const adminRole = await this.roleRepository.findOne({ where: { code: 'ADMIN' } });
     const waiterRole = await this.roleRepository.findOne({ where: { code: 'WAITER' } });
     const kitchenRole = await this.roleRepository.findOne({ where: { code: 'KITCHEN' } });
 
-    // ADMIN gets all permissions
-    const allPermissions = await this.permissionRepository.find();
-    const adminMappings = allPermissions.map(permission => ({
-      role_id: adminRole.id,
+    // SUPER_ADMIN gets only admin management permissions
+    const superAdminPermissionCodes = ['admin:read', 'admin:create', 'admin:update', 'admin:delete'];
+    const superAdminPermissions = await this.permissionRepository
+      .createQueryBuilder('permission')
+      .where('permission.code IN (:...codes)', { codes: superAdminPermissionCodes })
+      .getMany();
+    const superAdminMappings = superAdminPermissions.map(permission => ({
+      role_id: superAdminRole.id,
       permission_id: permission.id,
     }));
+
+    // ADMIN gets all permissions except admin management
+    const allPermissions = await this.permissionRepository.find();
+    const adminMappings = allPermissions
+      .filter(permission => !superAdminPermissionCodes.includes(permission.code))
+      .map(permission => ({
+        role_id: adminRole.id,
+        permission_id: permission.id,
+      }));
 
     // WAITER gets specific permissions
     const waiterPermissionCodes = [
@@ -153,12 +183,64 @@ export class SeedService {
     }));
 
     await this.rolePermissionRepository.save([
+      ...superAdminMappings,
       ...adminMappings,
       ...waiterMappings,
       ...kitchenMappings,
     ]);
-    
-    console.log(`✓ Seeded role permissions (ADMIN: ${adminMappings.length}, WAITER: ${waiterMappings.length}, KITCHEN: ${kitchenMappings.length})`);
+
+    console.log(`✓ Seeded role permissions (SUPER_ADMIN: ${superAdminMappings.length}, ADMIN: ${adminMappings.length}, WAITER: ${waiterMappings.length}, KITCHEN: ${kitchenMappings.length})`);
+  }
+
+  private async seedSuperAdmin() {
+    const superAdminEmail = 'superadmin@smartrestaurant.com';
+
+    // Check if super admin already exists
+    const existingSuperAdmin = await this.userRepository.findOne({
+      where: { email: superAdminEmail },
+    });
+
+    if (existingSuperAdmin) {
+      console.log('⏭️  Super Admin already exists, skipping...');
+      return;
+    }
+
+    // Get SUPER_ADMIN role
+    const superAdminRole = await this.roleRepository.findOne({
+      where: { code: 'SUPER_ADMIN' },
+    });
+
+    if (!superAdminRole) {
+      console.log('❌ SUPER_ADMIN role not found, skipping super admin seed');
+      return;
+    }
+
+    // Create Super Admin user
+    const superAdmin = this.userRepository.create({
+      email: superAdminEmail,
+      full_name: 'Super Administrator',
+      role_id: superAdminRole.id,
+      status: UserStatus.ACTIVE,
+      isEmailVerified: true,
+      emailVerifiedAt: new Date(),
+      restaurantId: 'system',
+    });
+
+    await this.userRepository.save(superAdmin);
+
+    // Create credentials (password: SuperAdmin@123)
+    const passwordHash = await UserCredentials.hashPassword('SuperAdmin@123');
+    const credentials = this.credentialsRepository.create({
+      user_id: superAdmin.id,
+      password_hash: passwordHash,
+      password_updated_at: new Date(),
+    });
+
+    await this.credentialsRepository.save(credentials);
+
+    console.log('✓ Seeded Super Admin user:');
+    console.log('  📧 Email: superadmin@smartrestaurant.com');
+    console.log('  🔑 Password: SuperAdmin@123');
   }
 
   private async seedTablesAndOrders() {
