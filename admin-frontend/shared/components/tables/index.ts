@@ -7,6 +7,9 @@ export type { StatsCardsProps } from "./StatsCards";
 export { TableFormModal } from "./TableFormModal";
 export type { TableFormModalProps } from "./TableFormModal";
 
+export { AssignWaiterModal } from "./AssignWaiterModal";
+export type { AssignWaiterModalProps } from "./AssignWaiterModal";
+
 export { QRCodeModal } from "./QRCodeModal";
 export type { QRCodeModalProps } from "./QRCodeModal";
 

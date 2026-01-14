@@ -7,6 +7,7 @@ import {
   StatsCards,
   TableCard,
   TableFormModal,
+  AssignWaiterModal,
   QRCodeModal,
   TablesGridSkeleton,
 } from "@/shared/components/tables";
@@ -32,6 +33,7 @@ export default function TablesPage() {
   // Modals
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [showAssignModal, setShowAssignModal] = useState(false);
   const [showQRModal, setShowQRModal] = useState(false);
   const [selectedTable, setSelectedTable] = useState<Table | undefined>();
 
@@ -116,6 +118,24 @@ export default function TablesPage() {
   const handleShowQR = (table: Table) => {
     setSelectedTable(table);
     setShowQRModal(true);
+  };
+
+  // Assign Waiter
+  const handleAssignWaiter = (table: Table) => {
+    setSelectedTable(table);
+    setShowAssignModal(true);
+  };
+
+  const onAssignWaiterSubmit = async (waiterId: string) => {
+    if (!selectedTable) return;
+    try {
+      await tablesApi.updateTable(selectedTable.id, { waiter_id: waiterId });
+      await loadTables();
+      toast.success("Staff assigned successfully");
+    } catch (error) {
+      console.error("Failed to assign staff:", error);
+      toast.error("Failed to assign staff");
+    }
   };
 
   // Edit table
@@ -285,6 +305,7 @@ export default function TablesPage() {
                 onEdit={handleEdit}
                 onDelete={handleDelete}
                 onToggleStatus={handleToggleStatus}
+                onAssignWaiter={handleAssignWaiter}
               />
             ))}
           </div>
@@ -308,6 +329,16 @@ export default function TablesPage() {
         onSubmit={handleUpdate}
         table={selectedTable}
         mode="edit"
+      />
+
+      <AssignWaiterModal
+        isOpen={showAssignModal}
+        onClose={() => {
+          setShowAssignModal(false);
+          setSelectedTable(undefined);
+        }}
+        onAssign={onAssignWaiterSubmit}
+        table={selectedTable}
       />
 
       {selectedTable && (

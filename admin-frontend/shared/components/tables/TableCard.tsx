@@ -11,6 +11,7 @@ export interface TableCardProps {
   onEdit: (table: Table) => void;
   onDelete: (table: Table) => void;
   onToggleStatus: (table: Table) => void;
+  onAssignWaiter: (table: Table) => void;
 }
 
 export const TableCard: React.FC<TableCardProps> = ({ 
@@ -18,7 +19,8 @@ export const TableCard: React.FC<TableCardProps> = ({
   onShowQR, 
   onEdit, 
   onDelete,
-  onToggleStatus 
+  onToggleStatus,
+  onAssignWaiter
 }) => {
   const [showMenu, setShowMenu] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -114,15 +116,26 @@ export const TableCard: React.FC<TableCardProps> = ({
         </button>
         
         {isActive && (
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              onShowQR(table);
-            }}
-            className="flex-1 bg-slate-800 text-white py-2.5 rounded-xl text-xs font-bold hover:bg-slate-900 transition-colors"
-          >
-            Show QR
-          </button>
+          <>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onAssignWaiter(table);
+              }}
+              className="flex-1 bg-blue-600 text-white py-2.5 rounded-xl text-xs font-bold hover:bg-blue-700 transition-colors"
+            >
+              Assign Waiter
+            </button>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onShowQR(table);
+              }}
+              className="flex-1 bg-slate-800 text-white py-2.5 rounded-xl text-xs font-bold hover:bg-slate-900 transition-colors"
+            >
+              Show QR
+            </button>
+          </>
         )}
 
         <div className="relative" ref={menuRef}>
