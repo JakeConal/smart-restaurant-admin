@@ -34,10 +34,12 @@ function LoginContent() {
   const [verificationEmail, setVerificationEmail] = useState("");
   const [resendLoading, setResendLoading] = useState(false);
   const [resendSuccess, setResendSuccess] = useState(false);
+  const [mounted, setMounted] = useState(false);
 
   const urlToken = searchParams.get("token");
 
   useEffect(() => {
+    setMounted(true);
     const authToken = searchParams.get("auth_token");
     const authUser = searchParams.get("auth_user");
 
@@ -157,6 +159,14 @@ function LoginContent() {
     );
   }
 
+  if (!mounted) {
+    return (
+      <div className="min-h-screen bg-ivory-100 flex items-center justify-center p-6">
+        <div className="w-12 h-12 border-4 border-slate-100 border-t-slate-800 rounded-full animate-spin" />
+      </div>
+    );
+  }
+
   if (!token && !searchParams.get("token") && !searchParams.get("auth_token")) {
     return (
       <div className="min-h-screen bg-ivory-100 flex items-center justify-center p-6 text-center">
@@ -176,10 +186,10 @@ function LoginContent() {
   }
 
   return (
-    <div className="min-h-screen bg-ivory-100 flex flex-col items-center justify-center p-6">
-      <div className="w-full max-w-md space-y-6">
+    <div className="min-h-screen bg-ivory-100 flex flex-col items-center justify-center p-6 isolate relative">
+      <div className="w-full max-w-md space-y-8 relative z-10">
         {/* Brand Header */}
-        <div className="flex flex-col items-center space-y-4 mb-4">
+        <div className="flex flex-col items-center space-y-4 mb-4 relative z-20">
           <div className="bento-card p-0 !rounded-[24px] flex items-center justify-center w-20 h-20 bg-slate-800 shadow-xl overflow-hidden group">
             <div className="absolute inset-0 bg-gradient-to-br from-slate-700 to-slate-900 opacity-50"></div>
             <svg className="w-10 h-10 text-white relative z-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -189,8 +199,8 @@ function LoginContent() {
           <p className="text-caption tracking-widest text-slate-400 font-bold">Premium Ordering</p>
         </div>
 
-        <div className="bento-card">
-          <div className="mb-8 flex justify-between items-center">
+        <div className="bento-card relative z-30">
+          <div className="mb-8 flex justify-between items-center bg-white">
             <h1 className="text-h2">{activeTab === "login" ? "Sign In" : "Register"}</h1>
             <div className="flex bg-slate-100 p-1 rounded-2xl">
               <button
