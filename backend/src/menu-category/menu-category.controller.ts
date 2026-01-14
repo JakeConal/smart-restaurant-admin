@@ -7,6 +7,7 @@ import {
   Patch,
   Post,
   Put,
+  Query,
   UseGuards,
 } from '@nestjs/common';
 import { MenuCategoryService } from './menu-category.service';
@@ -28,8 +29,12 @@ export class MenuCategoryController {
   }
 
   @Get()
-  findAll(@CurrentUser() user: AuthUser) {
-    return this.service.findAll(user.restaurantId);
+  findAll(
+    @CurrentUser() user: AuthUser,
+    @Query('status') status?: string,
+    @Query('sortBy') sortBy?: string,
+  ) {
+    return this.service.findAll(user.restaurantId, { status, sortBy });
   }
 
   @Put(':id')

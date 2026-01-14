@@ -75,7 +75,7 @@ export interface MenuItemFilters {
   categoryId?: string;
   status?: "available" | "unavailable" | "sold_out";
   isChefRecommended?: boolean;
-  sortBy?: "createdAt" | "price" | "name" | "popularity";
+  sortBy?: "createdAt" | "price_asc" | "price_desc" | "name" | "popularity";
   page?: number;
   limit?: number;
 }

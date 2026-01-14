@@ -70,6 +70,7 @@ export class MenuItemService {
       .leftJoinAndSelect('item.photos', 'photos')
       .leftJoinAndSelect('item.modifierGroups', 'modifierGroups')
       .leftJoinAndSelect('modifierGroups.options', 'options')
+      .addSelect('CAST(item.price AS DECIMAL(12,2))', 'numericPrice')
       .where('item.restaurantId = :restaurantId', { restaurantId })
       .andWhere('item.isDeleted = :isDeleted', { isDeleted: false });
 
@@ -102,9 +103,32 @@ export class MenuItemService {
     }
 
     // Apply sorting
-    const sortBy = filters?.sortBy || 'createdAt';
-    const sortOrder = sortBy === 'price' ? 'ASC' : 'DESC';
-    queryBuilder.orderBy(`item.${sortBy}`, sortOrder);
+    let sortColumn = 'createdAt';
+    let sortOrder: 'ASC' | 'DESC' = 'DESC';
+
+    if (filters?.sortBy) {
+      switch (filters.sortBy) {
+        case 'price_asc':
+          queryBuilder.orderBy('numericPrice', 'ASC');
+          break;
+        case 'price_desc':
+          queryBuilder.orderBy('numericPrice', 'DESC');
+          break;
+        case 'name':
+          queryBuilder.addOrderBy('item.name', 'ASC');
+          break;
+        case 'popularity':
+          queryBuilder.addOrderBy('item.popularityScore', 'DESC');
+          break;
+        case 'createdAt':
+          queryBuilder.addOrderBy('item.createdAt', 'DESC');
+          break;
+        default:
+          queryBuilder.addOrderBy('item.createdAt', 'DESC');
+      }
+    } else {
+      queryBuilder.addOrderBy('item.createdAt', 'DESC');
+    }
 
     // Apply pagination
     const page = filters?.page || 1;

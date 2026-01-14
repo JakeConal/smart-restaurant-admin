@@ -50,11 +50,43 @@ export class MenuCategoryService {
     };
   }
 
-  async findAll(restaurantId: string) {
-    const categories = await this.CategoryRepo.find({
-      where: { restaurantId, isDeleted: false },
-      order: { displayOrder: 'ASC', name: 'ASC' },
-    });
+  async findAll(
+    restaurantId: string,
+    filters?: { status?: string; sortBy?: string },
+  ) {
+    const queryBuilder = this.CategoryRepo.createQueryBuilder('category')
+      .where('category.restaurantId = :restaurantId', { restaurantId })
+      .andWhere('category.isDeleted = :isDeleted', { isDeleted: false });
+
+    if (filters?.status) {
+      queryBuilder.andWhere('category.status = :status', {
+        status: filters.status,
+      });
+    }
+
+    let sortColumn = 'displayOrder';
+    let sortOrder: 'ASC' | 'DESC' = 'ASC';
+
+    if (filters?.sortBy) {
+      switch (filters.sortBy) {
+        case 'name':
+          sortColumn = 'name';
+          sortOrder = 'ASC';
+          break;
+        case 'createdAt':
+          sortColumn = 'createdAt';
+          sortOrder = 'DESC';
+          break;
+        case 'displayOrder':
+          sortColumn = 'displayOrder';
+          sortOrder = 'ASC';
+          break;
+      }
+    }
+
+    queryBuilder.orderBy(`category.${sortColumn}`, sortOrder);
+
+    const categories = await queryBuilder.getMany();
 
     // Calculate item count for each category
     const categoriesWithCounts = await Promise.all(

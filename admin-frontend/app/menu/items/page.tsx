@@ -297,8 +297,9 @@ export default function MenuItemsPage() {
           >
             <option value="">Sort By</option>
             <option value="createdAt">Date Created</option>
-            <option value="name">Name</option>
-            <option value="price">Price</option>
+            <option value="name">Name (A-Z)</option>
+            <option value="price_asc">Price: Low to High</option>
+            <option value="price_desc">Price: High to Low</option>
             <option value="popularity">Popularity</option>
           </select>
 
