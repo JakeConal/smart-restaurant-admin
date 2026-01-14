@@ -65,7 +65,6 @@ export function OrderCard({
   };
 
   const getCardBorder = () => {
-    if (order.isEscalated) return "border-red-500 border-2 shadow-lg";
     if (elapsedSeconds < 120) return "border-green-200 border";
     if (elapsedSeconds < 240) return "border-orange-200 border";
     return "border-red-200 border-2";
@@ -113,13 +112,6 @@ export function OrderCard({
             </div>
           </div>
         </div>
-
-        {order.isEscalated && (
-          <div className="flex items-center gap-1 bg-red-100 text-red-700 px-2 py-1 rounded-md text-xs font-medium">
-            <AlertCircle className="w-3 h-3" />
-            ESCALATED
-          </div>
-        )}
       </div>
 
       {/* Items list preview */}

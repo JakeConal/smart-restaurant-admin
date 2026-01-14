@@ -137,12 +137,6 @@ export function OrderDetailModal({
           <div className="p-6 space-y-6">
             {/* Status badges */}
             <div className="flex items-center gap-2 flex-wrap">
-              {order.isEscalated && (
-                <div className="flex items-center gap-1 bg-red-100 text-red-700 px-3 py-1 rounded-lg text-sm font-medium">
-                  <AlertCircle className="w-4 h-4" />
-                  ESCALATED
-                </div>
-              )}
               <div className="flex items-center gap-2 bg-blue-50 text-blue-700 px-3 py-1 rounded-lg text-sm">
                 <Clock className="w-4 h-4" />
                 <span className="font-mono">{formatElapsedTime()}</span>

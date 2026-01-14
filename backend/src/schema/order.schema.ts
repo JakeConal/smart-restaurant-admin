@@ -120,13 +120,6 @@ export class Order {
   @Column({ type: 'datetime', nullable: true })
   servedAt: Date | null;
 
-  // Escalation fields
-  @Column({ type: 'boolean', default: false })
-  isEscalated: boolean;
-
-  @Column({ type: 'datetime', nullable: true })
-  escalatedAt: Date | null;
-
   @Column({ type: 'datetime', nullable: true })
   lastItemAddedAt: Date | null;
 

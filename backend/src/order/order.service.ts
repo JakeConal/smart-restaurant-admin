@@ -265,7 +265,6 @@ export class OrderService {
       where: [
         {
           status: OrderStatus.PENDING_ACCEPTANCE,
-          isEscalated: false,
           isDeleted: false,
           waiter_id: null, // Only show orders not yet accepted by anyone
           restaurantId: restaurantId,
@@ -292,7 +291,6 @@ export class OrderService {
     return this.orderRepository.find({
       where: {
         status: OrderStatus.PENDING_ACCEPTANCE,
-        isEscalated: false,
         isDeleted: false,
         waiter_id: null,
         restaurantId: restaurantId,
@@ -386,40 +384,6 @@ export class OrderService {
     );
 
     return updatedOrder;
-  }
-
-  /**
-   * Get all escalated orders (for manager)
-   */
-  async getEscalatedOrders(restaurantId: string): Promise<Order[]> {
-    return this.orderRepository.find({
-      where: {
-        isEscalated: true,
-        status: OrderStatus.PENDING_ACCEPTANCE,
-        isDeleted: false,
-        restaurantId: restaurantId,
-      },
-      relations: ['waiter'],
-      order: { escalatedAt: 'ASC' },
-    });
-  }
-
-  /**
-   * Get count of escalated orders
-   */
-  async getEscalatedOrdersCount(
-    restaurantId: string,
-  ): Promise<{ count: number }> {
-    const count = await this.orderRepository.count({
-      where: {
-        isEscalated: true,
-        status: OrderStatus.PENDING_ACCEPTANCE,
-        isDeleted: false,
-        restaurantId: restaurantId,
-      },
-    });
-
-    return { count };
   }
 
   /**

@@ -46,8 +46,6 @@ export interface Order {
   specialInstructions?: string; // Kept for backward compatibility, but use specialRequests
   customer_id?: string;
   waiter_id?: string;
-  isEscalated: boolean;
-  escalatedAt?: string;
   acceptedAt?: string;
   rejectedAt?: string;
   rejectionReason?: string;

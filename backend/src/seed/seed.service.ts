@@ -237,7 +237,7 @@ export class SeedService {
     });
     orders.push(order1);
 
-    // Order 2: Pending order close to escalation (4 minutes ago)
+    // Order 2: Pending order (4 minutes ago)
     const order2 = this.orderRepository.create({
       orderId: `order-${Date.now()}-2`,
       table_id: tables[1].id,
@@ -260,32 +260,6 @@ export class SeedService {
       createdAt: new Date(now.getTime() - 4 * 60 * 1000), // 4 minutes ago
     });
     orders.push(order2);
-
-    // Order 3: Escalated order (7 minutes ago)
-    const order3 = this.orderRepository.create({
-      orderId: `order-${Date.now()}-3`,
-      table_id: tables[2].id,
-      tableNumber: tables[2].tableNumber,
-      guestName: 'Lê Văn C',
-      items: [
-        {
-          id: '1',
-          menuItemId: 'menu-item-4',
-          menuItemName: 'Cơm Tấm',
-          quantity: 3,
-          unitPrice: 45000,
-          totalPrice: 135000,
-        },
-      ],
-      subtotal: 135000,
-      tax: 13500,
-      total: 148500,
-      status: OrderStatus.PENDING_ACCEPTANCE,
-      isEscalated: true,
-      escalatedAt: new Date(now.getTime() - 2 * 60 * 1000), // Escalated 2 minutes ago
-      createdAt: new Date(now.getTime() - 7 * 60 * 1000), // Created 7 minutes ago
-    });
-    orders.push(order3);
 
     // Order 4: Accepted order
     const order4 = this.orderRepository.create({
