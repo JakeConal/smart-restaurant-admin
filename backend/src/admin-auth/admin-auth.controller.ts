@@ -5,10 +5,11 @@ import {
   Body,
   UseGuards,
   Req,
+  Res,
   Headers,
   Ip,
 } from '@nestjs/common';
-import type { Request } from 'express';
+import type { Request, Response } from 'express';
 import { AdminAuthService } from './admin-auth.service';
 import { SignupDto } from '../dto/sign-up.dto';
 import { LoginDto } from '../dto/login.dto';
@@ -32,25 +33,65 @@ export class AdminAuthController {
     @Body() dto: LoginDto,
     @Headers('user-agent') userAgent: string,
     @Ip() ipAddress: string,
+    @Res({ passthrough: true }) res: Response,
   ) {
-    return this.adminAuthService.login(dto, userAgent, ipAddress);
+    const result = await this.adminAuthService.login(dto, userAgent, ipAddress);
+
+    // Set refresh token in cookie
+    res.cookie('refresh_token', result.refresh_token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+      path: '/',
+    });
+
+    return {
+      access_token: result.access_token,
+      user: result.user,
+    };
   }
 
   @Post('refresh')
-  async refresh(@Body('refresh_token') refreshToken: string) {
+  async refresh(
+    @Req() req: Request,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const refreshToken = req.cookies['refresh_token'];
     if (!refreshToken) {
       throw new Error('Refresh token is required');
     }
-    return this.adminAuthService.refreshAccessToken(refreshToken);
+    const result = await this.adminAuthService.refreshAccessToken(refreshToken);
+
+    // Set new refresh token in cookie (rotation)
+    res.cookie('refresh_token', result.refresh_token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+      path: '/',
+    });
+
+    return {
+      access_token: result.access_token,
+    };
   }
 
   @Post('logout')
   @UseGuards(JwtAuthGuard)
-  async logout(@Body('refresh_token') refreshToken: string) {
-    if (!refreshToken) {
-      throw new Error('Refresh token is required');
+  async logout(
+    @Req() req: Request,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const refreshToken = req.cookies['refresh_token'];
+    if (refreshToken) {
+      await this.adminAuthService.logout(refreshToken);
     }
-    await this.adminAuthService.logout(refreshToken);
+
+    res.clearCookie('refresh_token', {
+      path: '/',
+    });
+
     return { message: 'Logged out successfully' };
   }
 
