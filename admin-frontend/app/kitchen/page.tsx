@@ -286,9 +286,11 @@ export default function KitchenPage() {
   useEffect(() => {
     soundRef.current = new Howl({
       src: [
-        "https://cdn.freesound.org/previews/263/263133_2064400-lq.mp3",
-        "https://www.soundjay.com/buttons/sounds/button-10.mp3",
+        "https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3",
+        "https://cdn.pixabay.com/audio/2022/03/15/audio_78330a613f.mp3",
       ],
+      html5: true, // Better for cross-origin and diverse encoding
+      format: ["mp3"],
       volume: 1.0,
       preload: true,
       onloaderror: (id, err) =>

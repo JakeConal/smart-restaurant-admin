@@ -67,9 +67,9 @@ export default function KitchenStaffPage() {
     }
   };
 
-  const handleCreate = async (data: CreateKitchenStaffDto) => {
+  const handleCreate = async (data: CreateKitchenStaffDto | UpdateKitchenStaffDto) => {
     try {
-      await kitchenStaffApi.createKitchenStaff(data);
+      await kitchenStaffApi.createKitchenStaff(data as CreateKitchenStaffDto);
       toast.success('Kitchen staff created successfully');
       await fetchStaff();
       setIsCreateModalOpen(false);
@@ -99,9 +99,9 @@ export default function KitchenStaffPage() {
     }
   };
 
-  const handleSuspend = async (id: string) => {
+  const handleSuspend = async (staffMember: KitchenStaff) => {
     try {
-      await kitchenStaffApi.suspendKitchenStaff(id);
+      await kitchenStaffApi.suspendKitchenStaff(staffMember.id);
       toast.success('Status updated successfully');
       await fetchStaff();
     } catch (error: any) {
@@ -110,13 +110,13 @@ export default function KitchenStaffPage() {
     }
   };
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = async (staffMember: KitchenStaff) => {
     if (!window.confirm('Are you sure you want to delete this kitchen staff? This action cannot be undone.')) {
       return;
     }
 
     try {
-      await kitchenStaffApi.deleteKitchenStaff(id);
+      await kitchenStaffApi.deleteKitchenStaff(staffMember.id);
       toast.success('Kitchen staff deleted successfully');
       await fetchStaff();
     } catch (error: any) {

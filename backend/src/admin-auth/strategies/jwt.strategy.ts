@@ -20,14 +20,31 @@ export class AdminJwtStrategy extends PassportStrategy(Strategy, 'admin-jwt') {
   }
 
   async validate(payload: any) {
-    // Simply return payload data - user verification already done during login
+    // Check if user still exists and is ACTIVE
+    const user = await this.userRepo.findOne({
+      where: { id: payload.sub },
+      relations: ['role'],
+    });
+
+    if (!user) {
+      throw new UnauthorizedException('User no longer exists');
+    }
+
+    if (user.status === UserStatus.SUSPENDED) {
+      throw new UnauthorizedException('Your account has been suspended. Please contact admin.');
+    }
+
+    if (user.status === UserStatus.DELETED) {
+      throw new UnauthorizedException('Your account has been deleted.');
+    }
+
     return {
       sub: payload.sub,
       userId: payload.sub,
       email: payload.email,
-      role: payload.role,
+      role: user.role.code,
       permissions: payload.permissions || [],
-      restaurantId: 'default-restaurant',
+      restaurantId: user.restaurantId || 'default-restaurant',
     };
   }
 }
