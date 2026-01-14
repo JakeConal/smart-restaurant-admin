@@ -30,8 +30,11 @@ function LoginForm() {
         localStorage.setItem("authUser", JSON.stringify(userData));
         loadUser();
         // Redirect based on user role
-        if (userData.role?.toUpperCase() === 'WAITER') {
+        const role = userData.role?.toUpperCase();
+        if (role === 'WAITER') {
           router.push("/waiter/orders");
+        } else if (role === 'KITCHEN' || role === 'KITCHEN_STAFF') {
+          router.push("/kitchen");
         } else {
           router.push("/");
         }
@@ -47,8 +50,11 @@ function LoginForm() {
       if (isLogin) {
         const result = await login({ email, password });
         // Redirect based on user role
-        if (result?.user?.role?.toUpperCase() === 'WAITER') {
+        const role = result?.user?.role?.toUpperCase();
+        if (role === 'WAITER') {
           router.push("/waiter/orders");
+        } else if (role === 'KITCHEN' || role === 'KITCHEN_STAFF') {
+          router.push("/kitchen");
         } else {
           router.push("/");
         }

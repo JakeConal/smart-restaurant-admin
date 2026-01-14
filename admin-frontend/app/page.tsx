@@ -12,8 +12,17 @@ export default function AdminHome() {
   const router = useRouter();
 
   useEffect(() => {
-    if (!isLoading && !user) {
-      router.push("/login");
+    if (!isLoading) {
+      if (!user) {
+        router.push("/login");
+      } else {
+        const role = user.role?.toUpperCase();
+        if (role === 'WAITER') {
+          router.push("/waiter/orders");
+        } else if (role === 'KITCHEN' || role === 'KITCHEN_STAFF') {
+          router.push("/kitchen");
+        }
+      }
     }
   }, [user, isLoading, router]);
 
