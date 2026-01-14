@@ -188,16 +188,65 @@ export class OrderService {
     order.paidAt = new Date().toISOString();
     order.updatedAt = new Date();
 
+    // Auto apply 10% discount if total > 100
+    if (Number(order.total) > 100) {
+      order.discountPercentage = 10;
+      order.discountAmount = Number(order.total) * 0.1;
+      order.finalTotal = Number(order.total) - order.discountAmount;
+    } else {
+      order.discountPercentage = 0;
+      order.discountAmount = 0;
+      order.finalTotal = Number(order.total);
+    }
+
     return this.orderRepository.save(order);
   }
 
-  async markAsPaidByOrderId(orderId: string): Promise<Order> {
+  async markAsPaidByOrderId(
+    orderId: string,
+    paymentData?: {
+      paymentMethod?: string;
+      discountPercentage?: number;
+      discountAmount?: number;
+      finalTotal?: number;
+    },
+  ): Promise<Order> {
     const order = await this.findByOrderId(orderId);
     order.isPaid = true;
     order.paidAt = new Date().toISOString();
     order.updatedAt = new Date();
 
-    return this.orderRepository.save(order);
+    // Enforce 10% discount if order total > 100 or if paymentData specifies it
+    // (Supporting aggregate discounts from the frontend)
+    const hasDiscountInPaymentData =
+      paymentData &&
+      (paymentData.discountPercentage || paymentData.discountAmount);
+
+    if (hasDiscountInPaymentData) {
+      order.discountPercentage = paymentData.discountPercentage || 0;
+      order.discountAmount = paymentData.discountAmount || 0;
+      order.finalTotal =
+        paymentData.finalTotal || Number(order.total) - order.discountAmount;
+    } else if (Number(order.total) > 100) {
+      order.discountPercentage = 10;
+      order.discountAmount = Number(order.total) * 0.1;
+      order.finalTotal = Number(order.total) - order.discountAmount;
+    } else {
+      order.discountPercentage = 0;
+      order.discountAmount = 0;
+      order.finalTotal = Number(order.total);
+    }
+
+    if (paymentData && paymentData.paymentMethod) {
+      order.paymentMethod = paymentData.paymentMethod;
+    }
+
+    const savedOrder = await this.orderRepository.save(order);
+
+    // Notify staff through WebSocket
+    this.orderGateway.broadcastOrderUpdate(orderId, savedOrder);
+
+    return savedOrder;
   }
 
   async requestBill(id: number): Promise<Order> {
@@ -213,7 +262,12 @@ export class OrderService {
     order.billRequestedAt = new Date().toISOString();
     order.updatedAt = new Date();
 
-    return this.orderRepository.save(order);
+    const savedOrder = await this.orderRepository.save(order);
+
+    // Notify staff through WebSocket
+    this.orderGateway.broadcastOrderUpdate(orderId, savedOrder);
+
+    return savedOrder;
   }
 
   async delete(id: number): Promise<void> {

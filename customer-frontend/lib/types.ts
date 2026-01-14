@@ -158,6 +158,10 @@ export interface Order {
   subtotal: number;
   tax: number;
   total: number;
+  discountPercentage?: number;
+  discountAmount?: number;
+  finalTotal?: number;
+  paymentMethod?: string;
   specialRequests?: string;
   isPaid?: boolean;
   billRequestedAt?: string;

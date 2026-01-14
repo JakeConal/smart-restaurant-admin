@@ -101,9 +101,21 @@ export class OrderController {
   }
 
   @Put('by-orderId/:orderId/mark-paid')
-  async markAsPaidByOrderId(@Param('orderId') orderId: string) {
+  async markAsPaidByOrderId(
+    @Param('orderId') orderId: string,
+    @Body()
+    paymentData: {
+      paymentMethod?: string;
+      discountPercentage?: number;
+      discountAmount?: number;
+      finalTotal?: number;
+    },
+  ) {
     try {
-      const order = await this.orderService.markAsPaidByOrderId(orderId);
+      const order = await this.orderService.markAsPaidByOrderId(
+        orderId,
+        paymentData,
+      );
       return {
         success: true,
         data: order,

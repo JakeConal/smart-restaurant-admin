@@ -52,10 +52,6 @@ function OrderTrackingContent() {
     router.push(`/menu?token=${currentToken}`);
   };
 
-  const handleRequestBill = () => {
-    console.log("Bill requested for orders");
-  };
-
   const handleContinuePayment = (
     unpaidOrders: Order[],
     totalAmount: number,
@@ -115,7 +111,6 @@ function OrderTrackingContent() {
     <OrderTrackingPage
       orders={orders}
       onAddMoreItems={handleAddMoreItems}
-      onRequestBill={handleRequestBill}
       onContinue={handleContinuePayment}
       tableId={tableId || undefined}
       currentToken={currentToken || ""}

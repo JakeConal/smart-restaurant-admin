@@ -50,6 +50,10 @@ export async function serveOrder(orderId: string): Promise<Order> {
   return response.data;
 }
 
+export async function deleteOrder(orderId: string): Promise<void> {
+  await apiClient.delete(`/api/order/${orderId}`);
+}
+
 export async function getMyAssignedTables(): Promise<Table[]> {
   const response = await apiClient.get("/api/waiter/tables/assigned");
   return response.data;

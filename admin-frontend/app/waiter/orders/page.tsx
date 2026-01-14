@@ -7,6 +7,7 @@ import { DashboardLayout } from "../../../shared/components/layout";
 import { OrderCard } from "../../../shared/components/waiter/OrderCard";
 import { OrderDetailModal } from "../../../shared/components/waiter/OrderDetailModal";
 import { RejectOrderModal } from "../../../shared/components/waiter/RejectOrderModal";
+import { BillModal } from "../../../shared/components/waiter/BillModal";
 import { Button } from "../../../shared/components/ui/Button";
 import { useToast } from "../../../shared/components/ui/Toast";
 import { useAuth } from "../../../shared/components/auth/AuthContext";
@@ -15,6 +16,7 @@ import {
   getMyPendingOrders,
   acceptOrder,
   serveOrder,
+  deleteOrder,
 } from "../../../shared/lib/api/waiter";
 import { initializeOfflineQueueProcessor } from "../../../shared/lib/offlineQueueProcessor";
 import { getOrderWebSocketClient } from "../../../shared/lib/orderWebSocket";
@@ -27,9 +29,11 @@ export default function WaiterOrdersPage() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+  const [billOrder, setBillOrder] = useState<Order | null>(null);
   const [rejectingOrderId, setRejectingOrderId] = useState<string | null>(null);
   const [acceptingOrderId, setAcceptingOrderId] = useState<string | null>(null);
   const [servingOrderId, setServingOrderId] = useState<string | null>(null);
+  const [deletingOrderId, setDeletingOrderId] = useState<string | null>(null);
   const [wsConnected, setWsConnected] = useState(false);
   const unsubscribesRef = useRef<Map<string, () => void>>(new Map());
 
@@ -120,8 +124,9 @@ export default function WaiterOrdersPage() {
               data.newStatus,
             );
 
-            // If the order has been served, completed or cancelled, remove it from the list
-            if (["served", "completed", "cancelled"].includes(data.newStatus)) {
+            // If the order has been completed or cancelled, remove it from the list
+            // Note: We keep 'served' orders for manual deletion by the waiter
+            if (["completed", "cancelled"].includes(data.newStatus)) {
               console.log(
                 `[WaiterOrders] Order ${data.newStatus}, removing from list`,
               );
@@ -227,6 +232,10 @@ export default function WaiterOrdersPage() {
     setSelectedOrder(order);
   };
 
+  const handlePrintBill = (order: Order) => {
+    setBillOrder(order);
+  };
+
   const handleAccept = async (order: Order) => {
     if (acceptingOrderId) return; // Prevent multiple clicks
 
@@ -257,12 +266,12 @@ export default function WaiterOrdersPage() {
 
     setServingOrderId(orderId);
     try {
-      await serveOrder(orderId);
+      const updatedOrder = await serveOrder(orderId);
       toast.success("Order marked as delivered!");
-      // Remove from list as it's now 'served'
-      setOrders(orders.filter((o) => o.orderId !== orderId));
+      // Update order status in list instead of removing it
+      setOrders(orders.map((o) => (o.orderId === orderId ? updatedOrder : o)));
       if (selectedOrder?.orderId === orderId) {
-        setSelectedOrder(null);
+        setSelectedOrder(updatedOrder);
       }
     } catch (error) {
       const message =
@@ -270,6 +279,28 @@ export default function WaiterOrdersPage() {
       toast.error(message);
     } finally {
       setServingOrderId(null);
+    }
+  };
+
+  const handleDelete = async (orderId: string) => {
+    if (deletingOrderId) return;
+
+    if (!confirm("Remove this order card?")) return;
+
+    setDeletingOrderId(orderId);
+    try {
+      await deleteOrder(orderId);
+      toast.success("Order card removed");
+      setOrders(orders.filter((o) => o.orderId !== orderId));
+      if (selectedOrder?.orderId === orderId) {
+        setSelectedOrder(null);
+      }
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Failed to remove order card";
+      toast.error(message);
+    } finally {
+      setDeletingOrderId(null);
     }
   };
 
@@ -388,8 +419,11 @@ export default function WaiterOrdersPage() {
                   onAccept={handleAccept}
                   onReject={handleReject}
                   onServe={handleServe}
+                  onDelete={handleDelete}
+                  onPrintBill={handlePrintBill}
                   isAccepting={acceptingOrderId === order.orderId}
                   isServing={servingOrderId === order.orderId}
+                  isDeleting={deletingOrderId === order.orderId}
                 />
               ))}
           </div>
@@ -404,6 +438,7 @@ export default function WaiterOrdersPage() {
           onClose={() => setSelectedOrder(null)}
           onAccept={handleAccept}
           onReject={handleReject}
+          onPrintBill={handlePrintBill}
           isOnline={isOnline}
         />
       )}
@@ -412,12 +447,22 @@ export default function WaiterOrdersPage() {
         <RejectOrderModal
           orderId={rejectingOrderId}
           tableNumber={
-            orders.find((o) => o.orderId === rejectingOrderId)?.tableNumber || 0
+            Number(
+              orders.find((o) => o.orderId === rejectingOrderId)?.tableNumber,
+            ) || 0
           }
           isOpen={!!rejectingOrderId}
           onClose={() => setRejectingOrderId(null)}
           onSuccess={handleRejectSuccess}
           isOnline={isOnline}
+        />
+      )}
+
+      {billOrder && (
+        <BillModal
+          isOpen={!!billOrder}
+          onClose={() => setBillOrder(null)}
+          orders={[billOrder]}
         />
       )}
     </DashboardLayout>

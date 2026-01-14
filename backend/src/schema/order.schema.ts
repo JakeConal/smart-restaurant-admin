@@ -81,6 +81,18 @@ export class Order {
   @Column({ type: 'decimal', precision: 10, scale: 2 })
   total: number;
 
+  @Column({ type: 'decimal', precision: 10, scale: 2, default: 0 })
+  discountPercentage: number;
+
+  @Column({ type: 'decimal', precision: 10, scale: 2, default: 0 })
+  discountAmount: number;
+
+  @Column({ type: 'decimal', precision: 10, scale: 2, nullable: true })
+  finalTotal: number;
+
+  @Column({ type: 'varchar', length: 50, nullable: true })
+  paymentMethod: string;
+
   @Column({
     type: 'enum',
     enum: OrderStatus,

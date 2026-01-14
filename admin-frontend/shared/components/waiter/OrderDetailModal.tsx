@@ -9,6 +9,7 @@ import {
   ShoppingBag,
   AlertCircle,
   WifiOff,
+  Receipt,
 } from "lucide-react";
 import type { Order } from "../../types/order";
 import { Button } from "../ui/Button";
@@ -21,6 +22,7 @@ interface OrderDetailModalProps {
   onClose: () => void;
   onAccept: (order: Order) => void;
   onReject: (orderId: string) => void;
+  onPrintBill?: (order: Order) => void;
   isOnline: boolean;
 }
 
@@ -30,6 +32,7 @@ export function OrderDetailModal({
   onClose,
   onAccept,
   onReject,
+  onPrintBill,
   isOnline,
 }: OrderDetailModalProps) {
   const toast = useToast();
@@ -223,10 +226,42 @@ export function OrderDetailModal({
                 <span>Tax</span>
                 <span>${Number(order.tax).toFixed(2)}</span>
               </div>
-              <div className="flex justify-between text-xl font-bold text-gray-900">
-                <span>Total</span>
-                <span>${Number(order.total).toFixed(2)}</span>
-              </div>
+              {(() => {
+                const baseTotal = Number(order.total);
+                const hasDiscount =
+                  baseTotal > 100 ||
+                  (order.finalTotal && order.finalTotal < baseTotal);
+                const displayTotal =
+                  order.finalTotal ??
+                  (baseTotal > 100 ? baseTotal * 0.9 : baseTotal);
+                const discountAmount = baseTotal - displayTotal;
+
+                return (
+                  <>
+                    {hasDiscount && (
+                      <div className="flex justify-between text-green-600 font-medium">
+                        <span>Discount (10% OFF)</span>
+                        <span>-${discountAmount.toFixed(2)}</span>
+                      </div>
+                    )}
+                    <div className="flex justify-between text-2xl font-bold text-gray-900 border-t border-gray-100 pt-2 mt-2">
+                      <span>Final Total</span>
+                      <span className="text-orange-600">
+                        ${displayTotal.toFixed(2)}
+                      </span>
+                    </div>
+                  </>
+                );
+              })()}
+              {onPrintBill && (
+                <button
+                  onClick={() => onPrintBill(order)}
+                  className="w-full mt-4 flex items-center justify-center gap-2 py-3 bg-slate-100 text-slate-700 rounded-xl font-bold hover:bg-slate-200 transition-colors"
+                >
+                  <Receipt className="w-5 h-5" />
+                  Preview & Print Invoice
+                </button>
+              )}
             </div>
 
             {/* Action buttons */}

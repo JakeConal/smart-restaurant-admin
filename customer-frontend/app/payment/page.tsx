@@ -19,9 +19,15 @@ function PaymentContent() {
   const [processing, setProcessing] = useState(false);
   const [error, setError] = useState("");
   const [paymentMethod, setPaymentMethod] = useState<"card" | "cash">("card");
+  const [billRequested, setBillRequested] = useState(false);
 
   // Calculate total from orders
-  const totalAmount = orders.reduce((sum, order) => sum + order.total, 0);
+  const baseTotal = orders.reduce((sum, order) => sum + order.total, 0);
+
+  // Auto apply 10% discount if total > 100
+  const isAutoDiscount = baseTotal > 100;
+  const discountAmount = isAutoDiscount ? (baseTotal * 10) / 100 : 0;
+  const finalTotal = Math.max(0, baseTotal - discountAmount);
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -48,6 +54,10 @@ function PaymentContent() {
       if (unpaidOrders.length > 0) {
         setOrders(unpaidOrders);
         console.log("Payment page loaded orders:", unpaidOrders);
+        // Check if any order already has billRequestedAt
+        if (unpaidOrders.some((o) => o.billRequestedAt)) {
+          setBillRequested(true);
+        }
       } else {
         console.warn("No unpaid orders found in sessionStorage");
         setError("No orders to pay for");
@@ -59,6 +69,37 @@ function PaymentContent() {
     setLoading(false);
   }, [isAuthenticated, currentToken, router]);
 
+  const handleRequestBill = async () => {
+    if (!orders || orders.length === 0) return;
+
+    setProcessing(true);
+    try {
+      await Promise.all(
+        orders.map((order) => {
+          const orderId = order.orderId || String(order.id);
+          return orderApi.requestBill(orderId);
+        }),
+      );
+      setBillRequested(true);
+
+      // Update local storage
+      orders.forEach((order) => {
+        const key = order.orderId
+          ? `order-${order.orderId}`
+          : `order-${order.id}`;
+        const updated = { ...order, billRequestedAt: new Date().toISOString() };
+        sessionStorage.setItem(key, JSON.stringify(updated));
+      });
+
+      console.log("Bill requested for all orders");
+    } catch (err) {
+      console.error("Failed to request bill:", err);
+      setError("Failed to request bill");
+    } finally {
+      setProcessing(false);
+    }
+  };
+
   const handlePayment = async () => {
     if (!orders || orders.length === 0) return;
 
@@ -66,31 +107,41 @@ function PaymentContent() {
     setError("");
     try {
       // Simulate payment processing
-      await new Promise((resolve) => setTimeout(resolve, 2000));
+      await new Promise((resolve) => setTimeout(resolve, 1500));
 
       // Mark all orders as paid
-      const paidOrders = orders.map((order) => ({
-        ...order,
-        isPaid: true,
-        paidAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      }));
-
-      // Save all orders to session storage
-      paidOrders.forEach((order) => {
-        const orderKey = order.orderId
-          ? `order-${order.orderId}`
-          : `order-${order.id}`;
-        sessionStorage.setItem(orderKey, JSON.stringify(order));
-        console.log("Order saved to sessionStorage:", orderKey);
-      });
-
-      // Save to database for each order
       try {
         await Promise.all(
           orders.map((order) => {
             const orderId = order.orderId || String(order.id);
-            return orderApi.markAsPaid(orderId);
+
+            // Calculate per-order discount if total > 100
+            const perOrderDiscountAmount = isAutoDiscount
+              ? order.total * 0.1
+              : 0;
+            const perOrderFinalTotal = order.total - perOrderDiscountAmount;
+
+            const perOrderPaymentData = {
+              paymentMethod,
+              discountPercentage: isAutoDiscount ? 10 : 0,
+              discountAmount: perOrderDiscountAmount,
+              finalTotal: perOrderFinalTotal,
+            };
+
+            // Update session storage
+            const orderKey = order.orderId
+              ? `order-${order.orderId}`
+              : `order-${order.id}`;
+            const updatedOrder = {
+              ...order,
+              isPaid: true,
+              paidAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString(),
+              ...perOrderPaymentData,
+            };
+            sessionStorage.setItem(orderKey, JSON.stringify(updatedOrder));
+
+            return orderApi.markAsPaid(orderId, perOrderPaymentData);
           }),
         );
         console.log("All orders marked as paid in database");
@@ -182,12 +233,49 @@ function PaymentContent() {
 
           {/* Price Breakdown */}
           <div className="space-y-2">
+            <div className="flex justify-between text-gray-600">
+              <span>Subtotal:</span>
+              <span>${baseTotal.toFixed(2)}</span>
+            </div>
+            {discountAmount > 0 && (
+              <div className="flex justify-between text-green-600">
+                <span>Discount (10% Off):</span>
+                <span>-${discountAmount.toFixed(2)}</span>
+              </div>
+            )}
             <div className="flex justify-between text-lg font-bold text-gray-900 pt-2 border-t border-gray-200">
-              <span>Total Amount:</span>
-              <span className="text-orange-600">${totalAmount.toFixed(2)}</span>
+              <span>Final Total:</span>
+              <span className="text-orange-600">${finalTotal.toFixed(2)}</span>
             </div>
           </div>
         </div>
+
+        {/* Bill Request Section */}
+        {!billRequested ? (
+          <div className="mb-6 p-6 bg-orange-50 rounded-3xl border border-orange-200 shadow-sm text-center">
+            <p className="text-sm font-semibold text-orange-800 mb-3">
+              Need a physical bill ?
+            </p>
+            <button
+              onClick={handleRequestBill}
+              disabled={processing}
+              className="w-full py-3 bg-white border-2 border-orange-500 text-orange-600 rounded-2xl font-bold hover:bg-orange-500 hover:text-white transition-all disabled:opacity-50"
+            >
+              {processing ? "Processing..." : "Request Bill"}
+            </button>
+          </div>
+        ) : (
+          <div className="mb-6 p-6 bg-green-50 rounded-3xl border border-green-200 shadow-sm text-center">
+            <div className="flex items-center justify-center gap-2 mb-2">
+              <span className="text-xl">✅</span>
+              <p className="font-bold text-green-800">Bill Requested</p>
+            </div>
+            <p className="text-xs text-green-700">
+              Our staff is coming with your bill. You can still complete payment
+              online below.
+            </p>
+          </div>
+        )}
 
         {/* Payment Method Selection */}
         <div className="mb-6 p-6 bg-white rounded-3xl border border-orange-100/50 shadow-sm">
@@ -256,7 +344,7 @@ function PaymentContent() {
         >
           {processing
             ? "Processing..."
-            : `Complete Payment - $${totalAmount.toFixed(2)}`}
+            : `Complete Payment - $${finalTotal.toFixed(2)}`}
         </button>
 
         {/* Back Button */}

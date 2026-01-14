@@ -8,6 +8,8 @@ import {
   Check,
   X,
   RefreshCw,
+  Trash2,
+  Receipt,
 } from "lucide-react";
 import type { Order } from "../../types/order";
 import { Button } from "../ui/Button";
@@ -18,9 +20,12 @@ interface OrderCardProps {
   onAccept?: (order: Order) => void;
   onReject?: (orderId: string) => void;
   onServe?: (orderId: string) => void;
+  onDelete?: (orderId: string) => void;
+  onPrintBill?: (order: Order) => void;
   isAccepting?: boolean;
   isRejecting?: boolean;
   isServing?: boolean;
+  isDeleting?: boolean;
 }
 
 export function OrderCard({
@@ -29,9 +34,12 @@ export function OrderCard({
   onAccept,
   onReject,
   onServe,
+  onDelete,
+  onPrintBill,
   isAccepting = false,
   isRejecting = false,
   isServing = false,
+  isDeleting = false,
 }: OrderCardProps) {
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [referenceTime] = useState(() => {
@@ -103,15 +111,34 @@ export function OrderCard({
                       ? "bg-green-100 text-green-700 animate-pulse"
                       : order.status === "preparing"
                         ? "bg-orange-100 text-orange-700"
-                        : "bg-blue-100 text-blue-700"
+                        : order.status === "served"
+                          ? "bg-slate-100 text-slate-700"
+                          : "bg-blue-100 text-blue-700"
                   }`}
                 >
                   {order.status}
                 </span>
               )}
+              {order.isPaid && (
+                <span className="text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider bg-green-500 text-white shadow-sm">
+                  PAID
+                </span>
+              )}
             </div>
           </div>
         </div>
+        {order.billRequestedAt && !order.isPaid && (
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onPrintBill && onPrintBill(order);
+            }}
+            className="bg-red-50 text-red-600 p-1.5 rounded-lg flex items-center gap-1 animate-bounce shadow-sm border border-red-100 hover:bg-red-100 transition-colors"
+          >
+            <Receipt className="w-4 h-4" />
+            <span className="text-[10px] font-black uppercase">BILL!</span>
+          </button>
+        )}
       </div>
 
       {/* Items list preview */}
@@ -147,12 +174,37 @@ export function OrderCard({
 
       {/* Price */}
       <div className="mb-3">
-        <p className="text-lg font-bold text-gray-900">
-          $
-          {typeof order.total === "number"
-            ? order.total.toFixed(2)
-            : (parseFloat(String(order.total)) || 0).toFixed(2)}
-        </p>
+        {(() => {
+          const baseTotal =
+            typeof order.total === "number"
+              ? order.total
+              : parseFloat(String(order.total)) || 0;
+
+          // Check for auto-discount (10% if > 100) or if backend already provides finalTotal
+          const hasDiscount =
+            baseTotal > 100 ||
+            (order.finalTotal && order.finalTotal < baseTotal);
+          const displayTotal =
+            order.finalTotal ?? (baseTotal > 100 ? baseTotal * 0.9 : baseTotal);
+
+          return (
+            <div className="flex items-baseline gap-2">
+              <p className="text-xl font-black text-gray-900">
+                ${displayTotal.toFixed(2)}
+              </p>
+              {hasDiscount && (
+                <p className="text-xs text-gray-400 line-through">
+                  ${baseTotal.toFixed(2)}
+                </p>
+              )}
+              {hasDiscount && (
+                <span className="text-[10px] bg-green-100 text-green-700 px-1.5 py-0.5 rounded font-bold uppercase">
+                  10% OFF
+                </span>
+              )}
+            </div>
+          );
+        })()}
       </div>
 
       {/* Elapsed time */}
@@ -219,6 +271,36 @@ export function OrderCard({
             <Check className="w-5 h-5 mr-2" />
             {isServing ? "Delivering..." : "MARK AS DELIVERED"}
           </Button>
+        ) : order.status === "served" ? (
+          <div className="flex gap-2 w-full">
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onPrintBill && onPrintBill(order);
+              }}
+              className="flex-1 py-3 bg-green-50 rounded-xl border border-green-200 flex items-center justify-center gap-2 hover:bg-green-100 transition-colors"
+            >
+              <Receipt className="w-4 h-4 text-green-600" />
+              <span className="text-sm font-bold text-green-700 uppercase tracking-widest">
+                Print Bill
+              </span>
+            </button>
+            <Button
+              variant="ghost"
+              className="px-3 border-red-200 text-red-500 hover:bg-red-50 hover:text-red-600"
+              onClick={(e) => {
+                e.stopPropagation();
+                onDelete && onDelete(order.orderId);
+              }}
+              disabled={isDeleting}
+            >
+              {isDeleting ? (
+                <RefreshCw className="w-5 h-5 animate-spin" />
+              ) : (
+                <Trash2 className="w-5 h-5" />
+              )}
+            </Button>
+          </div>
         ) : (
           <div className="w-full py-3 bg-slate-50 rounded-xl border border-slate-200 flex items-center justify-center gap-2">
             <RefreshCw className="w-4 h-4 text-slate-400 animate-spin" />

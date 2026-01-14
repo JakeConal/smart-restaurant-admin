@@ -9,7 +9,6 @@ import BottomNav from "@/components/BottomNav";
 interface OrderTrackingPageProps {
   orders: Order[];
   onAddMoreItems: () => void;
-  onRequestBill: () => void;
   onContinue?: (unpaidOrders: Order[], totalAmount: number) => void;
   tableId?: string;
   currentToken?: string;
@@ -19,14 +18,11 @@ interface OrderTrackingPageProps {
 export default function OrderTrackingPage({
   orders,
   onAddMoreItems,
-  onRequestBill,
   onContinue,
   currentToken,
   restaurantId,
 }: OrderTrackingPageProps) {
   const [displayOrders, setDisplayOrders] = useState(orders);
-  const [requestingBill, setRequestingBill] = useState(false);
-  const [billRequested, setBillRequested] = useState(false);
   const [wsConnected, setWsConnected] = useState(false);
   const unsubscribeRefs = useRef<Map<string, () => void>>(new Map());
 
@@ -38,19 +34,6 @@ export default function OrderTrackingPage({
   // Get unpaid orders for bill/payment
   const unpaidOrders = displayOrders.filter((order) => !order.isPaid);
   const totalAmount = unpaidOrders.reduce((sum, order) => sum + order.total, 0);
-
-  // Handle request bill for all unpaid orders
-  const handleRequestBill = () => {
-    setRequestingBill(true);
-    setTimeout(() => {
-      setBillRequested(true);
-      // Call onRequestBill for each unpaid order
-      unpaidOrders.forEach((order) => {
-        onRequestBill();
-      });
-      setRequestingBill(false);
-    }, 1000);
-  };
 
   // Handle continue to payment for all unpaid orders
   const handleContinuePayment = () => {
@@ -398,23 +381,12 @@ export default function OrderTrackingPage({
         </div>
 
         {/* Action Buttons (for all orders) */}
-        <div className="grid grid-cols-2 gap-3 mt-6">
+        <div className="grid grid-cols-1 gap-3 mt-6">
           <button
             onClick={onAddMoreItems}
-            className="py-3 bg-white border-2 border-orange-500 text-orange-600 font-semibold rounded-2xl hover:bg-orange-50 transition-all"
+            className="w-full py-4 bg-white border-2 border-orange-500 text-orange-600 font-semibold rounded-2xl hover:bg-orange-50 transition-all text-lg"
           >
             + Add Items
-          </button>
-          <button
-            onClick={handleRequestBill}
-            disabled={requestingBill || billRequested}
-            className={`py-3 font-semibold rounded-2xl transition-all ${
-              billRequested
-                ? "bg-green-100 text-green-700"
-                : "bg-gradient-to-r from-orange-500 to-orange-600 text-white hover:shadow-lg"
-            } disabled:opacity-50`}
-          >
-            {billRequested ? "✓ Bill Requested" : "Request Bill"}
           </button>
         </div>
 
@@ -426,15 +398,6 @@ export default function OrderTrackingPage({
           >
             Continue to Payment - ${totalAmount.toFixed(2)}
           </button>
-        )}
-
-        {/* Bill Requested Message */}
-        {billRequested && (
-          <div className="p-4 bg-green-50 rounded-2xl border border-green-200 mt-4">
-            <p className="text-sm text-green-800">
-              ✓ Bill request sent! A server will bring your bill shortly.
-            </p>
-          </div>
         )}
       </div>
 

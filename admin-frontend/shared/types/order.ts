@@ -42,6 +42,13 @@ export interface Order {
   subtotal: number;
   tax: number;
   total: number;
+  discountPercentage?: number;
+  discountAmount?: number;
+  finalTotal?: number;
+  paymentMethod?: string;
+  isPaid?: boolean;
+  billRequestedAt?: string | null;
+  paidAt?: string | null;
   specialRequests?: string;
   specialInstructions?: string; // Kept for backward compatibility, but use specialRequests
   customer_id?: string;

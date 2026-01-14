@@ -346,9 +346,10 @@ export const orderApi = {
       body: JSON.stringify(data),
     }),
 
-  markAsPaid: (orderId: string) =>
+  markAsPaid: (orderId: string, paymentData: any) =>
     apiRequest(`/api/orders/by-orderId/${orderId}/mark-paid`, {
       method: "PUT",
+      body: JSON.stringify(paymentData),
     }),
 
   requestBill: (orderId: string) =>
