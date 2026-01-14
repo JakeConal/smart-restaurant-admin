@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
+import { useRouter } from "next/navigation";
 import { ClipboardList, RefreshCw, WifiOff, Wifi } from "lucide-react";
 import { DashboardLayout } from "../../../shared/components/layout";
 import { OrderCard } from "../../../shared/components/waiter/OrderCard";
@@ -8,6 +9,7 @@ import { OrderDetailModal } from "../../../shared/components/waiter/OrderDetailM
 import { RejectOrderModal } from "../../../shared/components/waiter/RejectOrderModal";
 import { Button } from "../../../shared/components/ui/Button";
 import { useToast } from "../../../shared/components/ui/Toast";
+import { useAuth } from "../../../shared/components/auth/AuthContext";
 import { useOrderPolling } from "../../../shared/lib/hooks/useOrderPolling";
 import {
   getMyPendingOrders,
@@ -18,6 +20,8 @@ import { getOrderWebSocketClient } from "../../../shared/lib/orderWebSocket";
 import type { Order } from "../../../shared/types/order";
 
 export default function WaiterOrdersPage() {
+  const router = useRouter();
+  const { user, isLoading: authLoading } = useAuth();
   const toast = useToast();
   const [orders, setOrders] = useState<Order[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -26,6 +30,20 @@ export default function WaiterOrdersPage() {
   const [acceptingOrderId, setAcceptingOrderId] = useState<string | null>(null);
   const [wsConnected, setWsConnected] = useState(false);
   const unsubscribesRef = useRef<Map<string, () => void>>(new Map());
+
+  // Auth check - only allow WAITER and ADMIN roles
+  useEffect(() => {
+    if (!authLoading && !user) {
+      router.push("/login");
+    } else if (
+      !authLoading &&
+      user?.role?.toUpperCase() !== "ADMIN" &&
+      user?.role?.toUpperCase() !== "WAITER"
+    ) {
+      router.push("/");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, authLoading]);
 
   // Use polling hook for notifications
   const { count, isOnline, refetch } = useOrderPolling({
