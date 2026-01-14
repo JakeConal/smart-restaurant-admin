@@ -5,8 +5,13 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Button, Input, Card, useToast } from "@/shared/components/ui";
 import { useAuth } from "@/shared/components/auth/AuthContext";
-import { Eye, EyeOff, ChefHat, Mail } from "lucide-react";
+import { Eye, EyeOff, ChefHat, Mail, CheckCircle2, Circle } from "lucide-react";
 import toast from "react-hot-toast";
+import { 
+  validatePasswordComplexity, 
+  getPasswordStrengthBarColor, 
+  getPasswordStrengthLabel 
+} from "@/shared/lib/password-validator";
 
 function LoginForm() {
   const [email, setEmail] = useState("");
@@ -15,6 +20,7 @@ function LoginForm() {
   const [isLogin, setIsLogin] = useState(true);
   const [restaurantName, setRestaurantName] = useState("");
   const [showEmailSentMessage, setShowEmailSentMessage] = useState(false);
+  const [passwordStrength, setPasswordStrength] = useState<any>(null);
   const { login, signup, googleLogin, loadUser, isLoading } = useAuth();
   const { success, error: showError } = useToast();
   const router = useRouter();
@@ -63,6 +69,12 @@ function LoginForm() {
           router.push("/");
         }
       } else {
+        // Validate password strength before signup
+        const strength = validatePasswordComplexity(password);
+        if (!strength.isValid) {
+          showError("Please ensure your password meets all complexity requirements.");
+          return;
+        }
         await signup({ email, password, restaurantName });
         // Show email verification message instead of redirecting
         setShowEmailSentMessage(true);
@@ -204,7 +216,13 @@ function LoginForm() {
                 id="password"
                 type={showPassword ? "text" : "password"}
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setPassword(val);
+                  if (!isLogin) {
+                    setPasswordStrength(validatePasswordComplexity(val));
+                  }
+                }}
                 required
                 className="pr-10"
                 placeholder="Enter your password"
@@ -221,6 +239,75 @@ function LoginForm() {
                 )}
               </button>
             </div>
+            {!isLogin && password && passwordStrength && (
+              <div className="mt-3 space-y-2">
+                <div className="flex justify-between items-center mb-1">
+                  <span className="text-xs font-medium text-gray-500 dark:text-gray-400">
+                    Password strength:{" "}
+                    <span className={getPasswordStrengthBarColor(passwordStrength.score).replace('bg-', 'text-')}>
+                      {getPasswordStrengthLabel(passwordStrength.score)}
+                    </span>
+                  </span>
+                  <span className="text-xs font-medium text-gray-500 dark:text-gray-400">
+                    {passwordStrength.score}/5
+                  </span>
+                </div>
+                <div className="flex gap-1 h-1.5">
+                  {[1, 2, 3, 4, 5].map((item) => (
+                    <div
+                      key={item}
+                      className={`h-full flex-1 rounded-full transition-all duration-300 ${
+                        item <= passwordStrength.score
+                          ? getPasswordStrengthBarColor(passwordStrength.score)
+                          : "bg-gray-200 dark:bg-gray-700"
+                      }`}
+                    />
+                  ))}
+                </div>
+                <div className="grid grid-cols-2 gap-x-4 gap-y-1 mt-2">
+                  <div className="flex items-center gap-2">
+                    {passwordStrength.requirements.minLength ? (
+                      <CheckCircle2 className="h-3 w-3 text-green-500" />
+                    ) : (
+                      <Circle className="h-3 w-3 text-gray-300" />
+                    )}
+                    <span className={`text-[10px] ${passwordStrength.requirements.minLength ? 'text-green-600 dark:text-green-500' : 'text-gray-500'}`}>8+ characters</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {passwordStrength.requirements.hasUpperCase ? (
+                      <CheckCircle2 className="h-3 w-3 text-green-500" />
+                    ) : (
+                      <Circle className="h-3 w-3 text-gray-300" />
+                    )}
+                    <span className={`text-[10px] ${passwordStrength.requirements.hasUpperCase ? 'text-green-600 dark:text-green-500' : 'text-gray-500'}`}>Uppercase</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {passwordStrength.requirements.hasLowerCase ? (
+                      <CheckCircle2 className="h-3 w-3 text-green-500" />
+                    ) : (
+                      <Circle className="h-3 w-3 text-gray-300" />
+                    )}
+                    <span className={`text-[10px] ${passwordStrength.requirements.hasLowerCase ? 'text-green-600 dark:text-green-500' : 'text-gray-500'}`}>Lowercase</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {passwordStrength.requirements.hasNumber ? (
+                      <CheckCircle2 className="h-3 w-3 text-green-500" />
+                    ) : (
+                      <Circle className="h-3 w-3 text-gray-300" />
+                    )}
+                    <span className={`text-[10px] ${passwordStrength.requirements.hasNumber ? 'text-green-600 dark:text-green-500' : 'text-gray-500'}`}>Number</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {passwordStrength.requirements.hasSpecialChar ? (
+                      <CheckCircle2 className="h-3 w-3 text-green-500" />
+                    ) : (
+                      <Circle className="h-3 w-3 text-gray-300" />
+                    )}
+                    <span className={`text-[10px] ${passwordStrength.requirements.hasSpecialChar ? 'text-green-600 dark:text-green-500' : 'text-gray-500'}`}>Special character</span>
+                  </div>
+                </div>
+              </div>
+            )}
             {isLogin && (
               <div className="text-right mt-2">
                 <Link
