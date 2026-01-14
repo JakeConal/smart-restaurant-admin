@@ -10,7 +10,6 @@ import { menuApi, reviewApi } from "@/lib/api";
 import { MenuItem, MenuResponse, Review } from "@/lib/types";
 
 function ItemDetailContent({ itemId }: { itemId: string }) {
-  // NEW MODERN DESIGN
   const router = useRouter();
   const searchParams = useSearchParams();
   const { token, isAuthenticated, authToken, customer } = useApp();
@@ -49,19 +48,16 @@ function ItemDetailContent({ itemId }: { itemId: string }) {
 
   const currentToken = searchParams.get("token") || token;
 
-  // Set mounted flag to prevent hydration mismatch
   useEffect(() => {
     setMounted(true);
   }, []);
 
-  // Redirect if not authenticated
   useEffect(() => {
     if (mounted && !isAuthenticated) {
       router.replace(`/login?token=${currentToken}`);
     }
   }, [isAuthenticated, currentToken, router, mounted]);
 
-  // Fetch item details
   useEffect(() => {
     const fetchItemDetails = async () => {
       if (!currentToken) return;
@@ -75,7 +71,6 @@ function ItemDetailContent({ itemId }: { itemId: string }) {
           if (foundItem) {
             setItem(foundItem);
 
-            // Get related items from same category
             const related = response.menu.items
               .filter(
                 (i) => i.id !== itemId && i.categoryId === foundItem.categoryId,
@@ -83,7 +78,6 @@ function ItemDetailContent({ itemId }: { itemId: string }) {
               .slice(0, 4);
             setRelatedItems(related);
 
-            // Initialize modifiers
             const initialModifiers: Record<string, string[]> = {};
             foundItem.modifierGroups.forEach((group) => {
               initialModifiers[group.id] = [];
@@ -103,14 +97,12 @@ function ItemDetailContent({ itemId }: { itemId: string }) {
     fetchItemDetails();
   }, [currentToken, itemId]);
 
-  // Reset reviews when itemId changes
   useEffect(() => {
     setReviews([]);
     setAverageRating(0);
     setTotalReviews(0);
   }, [itemId]);
 
-  // Fetch reviews
   useEffect(() => {
     const fetchReviews = async () => {
       if (!currentToken) return;
@@ -207,7 +199,6 @@ function ItemDetailContent({ itemId }: { itemId: string }) {
   const handleAddToCart = () => {
     if (!item || !item.canOrder) return;
 
-    // Check required modifiers
     const missingRequired = item.modifierGroups
       .filter((g) => g.isRequired)
       .find((g) => !selectedModifiers[g.id]?.length);
@@ -217,7 +208,6 @@ function ItemDetailContent({ itemId }: { itemId: string }) {
       return;
     }
 
-    // Build modifiers array
     const modifiers: Array<{
       groupId: string;
       groupName: string;
@@ -276,47 +266,7 @@ function ItemDetailContent({ itemId }: { itemId: string }) {
       setReviewComment("");
       setReviewRating(5);
       setShowReviewForm(false);
-
-      // Trigger reviews refresh
       setReviewsRefreshKey((prev) => prev + 1);
-
-      // Refresh reviews
-      try {
-        const response = (await menuApi.getMenu(currentToken)) as MenuResponse;
-        const menuItem = response.menu.items.find((item) => item.id === itemId);
-        const restaurantId = menuItem?.restaurantId || "";
-
-        if (restaurantId) {
-          const reviewsData = await reviewApi.getItemReviews(
-            itemId,
-            restaurantId,
-            { limit: 5 },
-          );
-          const reviewsResponse = reviewsData as {
-            reviews?: Review[];
-            pagination?: unknown;
-          };
-          if (reviewsResponse?.reviews) {
-            setReviews(reviewsResponse.reviews);
-          }
-
-          const ratingData = await reviewApi.getAverageRating(
-            itemId,
-            restaurantId,
-          );
-          const ratingResponse = ratingData as {
-            averageRating?: number;
-            totalReviews?: number;
-          };
-          if (ratingResponse?.averageRating !== undefined) {
-            setAverageRating(ratingResponse.averageRating);
-            setTotalReviews(ratingResponse.totalReviews || 0);
-          }
-        }
-      } catch (err) {
-        console.error("Failed to refresh reviews:", err);
-      }
-
       setTimeout(() => setReviewSuccess(false), 3000);
     } catch (err) {
       setReviewError(
@@ -332,11 +282,7 @@ function ItemDetailContent({ itemId }: { itemId: string }) {
       setReviewError("Please provide a valid rating");
       return;
     }
-
-    if (!currentToken) {
-      setReviewError("No valid session token found.");
-      return;
-    }
+    if (!authToken) return;
 
     setSubmittingReview(true);
     setReviewError("");
@@ -349,43 +295,6 @@ function ItemDetailContent({ itemId }: { itemId: string }) {
 
       setEditingReviewId(null);
       setReviewsRefreshKey((prev) => prev + 1);
-
-      // Refresh reviews
-      try {
-        const response = (await menuApi.getMenu(currentToken)) as MenuResponse;
-        const menuItem = response.menu.items.find((item) => item.id === itemId);
-        const restaurantId = menuItem?.restaurantId || "";
-
-        if (restaurantId) {
-          const reviewsData = await reviewApi.getItemReviews(
-            itemId,
-            restaurantId,
-            { limit: 5 },
-          );
-          const reviewsResponse = reviewsData as {
-            reviews?: Review[];
-            pagination?: unknown;
-          };
-          if (reviewsResponse?.reviews) {
-            setReviews(reviewsResponse.reviews);
-          }
-
-          const ratingData = await reviewApi.getAverageRating(
-            itemId,
-            restaurantId,
-          );
-          const ratingResponse = ratingData as {
-            averageRating?: number;
-            totalReviews?: number;
-          };
-          if (ratingResponse?.averageRating !== undefined) {
-            setAverageRating(ratingResponse.averageRating);
-            setTotalReviews(ratingResponse.totalReviews || 0);
-          }
-        }
-      } catch (err) {
-        console.error("Failed to refresh reviews:", err);
-      }
     } catch (err) {
       setReviewError(
         err instanceof Error ? err.message : "Failed to update review",
@@ -396,60 +305,14 @@ function ItemDetailContent({ itemId }: { itemId: string }) {
   };
 
   const handleDeleteReview = async (reviewId: string) => {
-    if (!authToken) {
-      setReviewError("Not authenticated");
-      return;
-    }
-
-    if (!currentToken) {
-      setReviewError("No valid session token found.");
-      return;
-    }
+    if (!authToken) return;
 
     setSubmittingReview(true);
 
     try {
       await reviewApi.deleteReview(reviewId, authToken);
-
       setDeletingReviewId(null);
       setReviewsRefreshKey((prev) => prev + 1);
-
-      // Refresh reviews
-      try {
-        const response = (await menuApi.getMenu(currentToken)) as MenuResponse;
-        const menuItem = response.menu.items.find((item) => item.id === itemId);
-        const restaurantId = menuItem?.restaurantId || "";
-
-        if (restaurantId) {
-          const reviewsData = await reviewApi.getItemReviews(
-            itemId,
-            restaurantId,
-            { limit: 5 },
-          );
-          const reviewsResponse = reviewsData as {
-            reviews?: Review[];
-            pagination?: unknown;
-          };
-          if (reviewsResponse?.reviews) {
-            setReviews(reviewsResponse.reviews);
-          }
-
-          const ratingData = await reviewApi.getAverageRating(
-            itemId,
-            restaurantId,
-          );
-          const ratingResponse = ratingData as {
-            averageRating?: number;
-            totalReviews?: number;
-          };
-          if (ratingResponse?.averageRating !== undefined) {
-            setAverageRating(ratingResponse.averageRating);
-            setTotalReviews(ratingResponse.totalReviews || 0);
-          }
-        }
-      } catch (err) {
-        console.error("Failed to refresh reviews:", err);
-      }
     } catch (err) {
       setReviewError(
         err instanceof Error ? err.message : "Failed to delete review",
@@ -508,11 +371,10 @@ function ItemDetailContent({ itemId }: { itemId: string }) {
 
   const statusInfo = getStatusInfo();
 
-  // Prevent hydration mismatch by checking mounted
   if (!mounted) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="w-12 h-12 border-4 border-[#fa4a0c] border-t-transparent rounded-full spinner"></div>
+      <div className="min-h-screen bg-ivory-50 flex items-center justify-center">
+        <div className="w-12 h-12 border-4 border-slate-100 border-t-slate-800 rounded-full animate-spin"></div>
       </div>
     );
   }
@@ -521,8 +383,8 @@ function ItemDetailContent({ itemId }: { itemId: string }) {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="w-12 h-12 border-4 border-[#fa4a0c] border-t-transparent rounded-full spinner"></div>
+      <div className="min-h-screen bg-ivory-50 flex items-center justify-center">
+        <div className="w-12 h-12 border-4 border-slate-100 border-t-slate-800 rounded-full animate-spin"></div>
       </div>
     );
   }
@@ -544,50 +406,30 @@ function ItemDetailContent({ itemId }: { itemId: string }) {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-orange-25">
-      {/* Enhanced Header with Glass Effect */}
-      <div className="sticky top-0 z-20 backdrop-blur-xl bg-white/80 border-b border-orange-100/50 shadow-sm">
-        <div className="flex justify-between items-center p-6">
+    <div className="min-h-screen bg-ivory-50 pb-40">
+      {/* Dynamic Header */}
+      <div className="sticky top-0 z-30 bg-ivory-50/80 backdrop-blur-xl border-b border-slate-200/50">
+        <div className="px-6 py-4 flex justify-between items-center">
           <button
             onClick={() => router.back()}
-            className="group w-12 h-12 bg-white/90 hover:bg-white rounded-2xl flex items-center justify-center shadow-lg hover:shadow-xl transition-all duration-300 border border-orange-100/50"
+            className="w-10 h-10 rounded-full bg-white border border-slate-200 flex items-center justify-center shadow-sm active:scale-90 transition-all hover:border-slate-900"
           >
-            <svg
-              className="w-6 h-6 text-gray-700 group-hover:text-orange-600 transition-colors duration-300"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2.5}
-                d="M15 19l-7-7 7-7"
-              />
+            <svg className="w-5 h-5 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" />
             </svg>
           </button>
 
           <div className="flex items-center gap-3">
             <Link
               href={`/cart?token=${currentToken}`}
-              className="group relative w-12 h-12 bg-white/90 hover:bg-white rounded-2xl flex items-center justify-center shadow-lg hover:shadow-xl transition-all duration-300 border border-orange-100/50"
+              className="group relative w-10 h-10 bg-white border border-slate-200 rounded-full flex items-center justify-center shadow-sm active:scale-95 transition-all hover:border-slate-900"
             >
-              <svg
-                className="w-6 h-6 text-gray-700 group-hover:text-orange-600 transition-colors duration-300"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2.5}
-                  d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"
-                />
+              <svg className="w-5 h-5 text-slate-600 group-hover:text-slate-900 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
               </svg>
               {getTotalItems() > 0 && (
-                <div className="absolute -top-1 -right-1 w-5 h-5 bg-orange-500 text-white text-xs font-bold rounded-full flex items-center justify-center shadow-lg animate-pulse">
-                  {getTotalItems() > 99 ? "99+" : getTotalItems()}
+                <div className="absolute -top-1 -right-1 w-4 h-4 bg-slate-900 text-white text-[8px] font-black rounded-full flex items-center justify-center shadow-lg">
+                  {getTotalItems() > 99 ? "99" : getTotalItems()}
                 </div>
               )}
             </Link>
@@ -595,654 +437,292 @@ function ItemDetailContent({ itemId }: { itemId: string }) {
         </div>
       </div>
 
-      {/* Hero Image Section with Enhanced Design */}
-      <div className="relative">
-        <div className="h-80 bg-gradient-to-br from-orange-100 via-orange-50 to-white relative overflow-hidden">
-          {/* Background Pattern */}
-          <div className="absolute inset-0 opacity-5">
-            <div className="absolute top-10 left-10 w-32 h-32 bg-orange-200 rounded-full blur-3xl"></div>
-            <div className="absolute bottom-10 right-10 w-40 h-40 bg-orange-300 rounded-full blur-3xl"></div>
+      {/* Hero Image Section */}
+      <section className="relative h-[45vh] bg-white overflow-hidden">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-slate-50 via-white to-white" />
+
+        <div className="absolute inset-0 flex items-center justify-center">
+          <div
+            className="w-[85vw] max-w-[320px] aspect-square rounded-[40px] overflow-hidden bg-slate-50 shadow-2xl relative cursor-grab active:cursor-grabbing group"
+            onTouchStart={handleTouchStart}
+            onTouchEnd={handleTouchEnd}
+          >
+            {item.photos && item.photos.length > 0 && item.photos[selectedPhotoIndex]?.data ? (
+              <Image
+                src={item.photos[selectedPhotoIndex].data}
+                alt={`${item.name} - Photo ${selectedPhotoIndex + 1}`}
+                fill
+                className="object-cover group-hover:scale-105 transition-transform duration-700"
+                priority
+                unoptimized
+              />
+            ) : item.primaryPhotoUrl ? (
+              <Image
+                src={item.primaryPhotoUrl}
+                alt={item.name}
+                fill
+                className="object-cover group-hover:scale-105 transition-transform duration-700"
+                priority
+                unoptimized
+              />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center text-8xl bg-slate-50">🍽️</div>
+            )}
           </div>
         </div>
 
-        {/* Main Product Image with Enhanced Styling */}
-        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/4">
-          <div className="relative">
-            <div
-              className="w-72 h-72 rounded-full overflow-hidden bg-white shadow-2xl ring-8 ring-white/50 backdrop-blur-sm cursor-grab active:cursor-grabbing"
-              onTouchStart={handleTouchStart}
-              onTouchEnd={handleTouchEnd}
-            >
-              {item.photos &&
-              item.photos.length > 0 &&
-              item.photos[selectedPhotoIndex]?.data ? (
-                <Image
-                  src={item.photos[selectedPhotoIndex].data}
-                  alt={`${item.name} - Photo ${selectedPhotoIndex + 1}`}
-                  fill
-                  className="object-cover hover:scale-105 transition-transform duration-700"
-                  priority
-                />
-              ) : item.primaryPhotoUrl ? (
-                <Image
-                  src={item.primaryPhotoUrl}
-                  alt={item.name}
-                  fill
-                  className="object-cover hover:scale-105 transition-transform duration-700"
-                  priority
-                />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center text-9xl bg-gradient-to-br from-orange-50 to-orange-100">
-                  🍽️
+        {item.photos && item.photos.length > 1 && (
+          <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-1.5">
+            {item.photos.map((_, index) => (
+              <button
+                key={index}
+                onClick={() => setSelectedPhotoIndex(index)}
+                className={`h-1 rounded-full transition-all duration-300 ${index === selectedPhotoIndex ? "bg-slate-900 w-6" : "bg-slate-200 w-2"
+                  }`}
+              />
+            ))}
+          </div>
+        )}
+      </section>
+
+      <div className="px-6 py-8 space-y-8">
+        {/* Core Info */}
+        <section className="space-y-4">
+          <div className="flex justify-between items-start gap-4 text-left">
+            <h1 className="text-h1 flex-1">{item.name}</h1>
+            <div className="text-right">
+              <span className="text-2xl font-black text-slate-900">${item.price.toFixed(2)}</span>
+              {item.prepTimeMinutes > 0 && (
+                <div className="flex items-center justify-end gap-1 mt-1 text-slate-400">
+                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                  <span className="text-[10px] font-bold uppercase tracking-widest">{item.prepTimeMinutes}m wait</span>
                 </div>
               )}
             </div>
-
-            {/* Image Glow Effect */}
-            <div className="absolute inset-0 rounded-full bg-gradient-to-r from-orange-400/20 to-orange-600/20 blur-xl scale-110 -z-10"></div>
-
-            {/* Photo Gallery Indicators */}
-            {item.photos && item.photos.length > 1 && (
-              <div className="absolute -bottom-16 left-1/2 -translate-x-1/2 flex gap-2">
-                {item.photos.map((photo, index) => (
-                  <button
-                    key={photo.id}
-                    onClick={() => setSelectedPhotoIndex(index)}
-                    className={`w-3 h-3 rounded-full transition-all duration-300 ${
-                      index === selectedPhotoIndex
-                        ? "bg-orange-500 w-8"
-                        : "bg-gray-300 hover:bg-gray-400"
-                    }`}
-                    aria-label={`View photo ${index + 1}`}
-                  />
-                ))}
-              </div>
-            )}
           </div>
-        </div>
-      </div>
 
-      {/* Content Container with Enhanced Spacing */}
-      <div className="mt-48 px-6 pb-32">
-        {/* Status Badges with Premium Design */}
-        <div className="flex items-center gap-3 mb-4">
-          {statusInfo && (
-            <div
-              className={`px-4 py-2 text-sm font-medium rounded-full shadow-sm border backdrop-blur-sm ${statusInfo.class}`}
-            >
-              <span className="flex items-center gap-2">
-                <div
-                  className={`w-2 h-2 rounded-full ${
-                    statusInfo.canOrder
-                      ? "bg-green-500 animate-pulse"
-                      : "bg-red-500"
-                  }`}
-                ></div>
+          <div className="flex flex-wrap gap-2">
+            {statusInfo && (
+              <div className={`px-3 py-1 rounded-full border text-[10px] font-black uppercase tracking-widest flex items-center gap-1.5 ${statusInfo.canOrder ? "bg-emerald-50 text-emerald-600 border-emerald-100" : "bg-red-50 text-red-600 border-red-100"
+                }`}>
+                <div className={`w-1.5 h-1.5 rounded-full ${statusInfo.canOrder ? "bg-emerald-400 animate-pulse" : "bg-red-400"}`} />
                 {statusInfo.text}
-              </span>
-            </div>
-          )}
-          {item.isChefRecommended && (
-            <div className="px-4 py-2 text-sm font-medium bg-gradient-to-r from-amber-100 to-orange-100 text-amber-800 rounded-full shadow-sm border border-amber-200/50 backdrop-blur-sm">
-              <span className="flex items-center gap-2">
-                👨‍🍳 Chef&apos;s Recommendation
-              </span>
-            </div>
-          )}
-        </div>
-
-        {/* Product Title and Price with Enhanced Typography */}
-        <div className="mb-6">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2 leading-tight">
-            {item.name}
-          </h1>
-          <div className="flex items-center gap-3">
-            <span className="text-3xl font-bold text-orange-600">
-              ${item.price.toFixed(2)}
-            </span>
-            {item.prepTimeMinutes > 0 && (
-              <div className="flex items-center gap-2 px-3 py-1 bg-orange-50 text-orange-700 rounded-full text-sm font-medium">
-                <svg
-                  className="w-4 h-4"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <circle cx="12" cy="12" r="10"></circle>
-                  <polyline points="12,6 12,12 16,14"></polyline>
-                </svg>
-                {item.prepTimeMinutes} min
+              </div>
+            )}
+            {item.isChefRecommended && (
+              <div className="px-3 py-1 rounded-full bg-slate-900 text-white text-[10px] font-black uppercase tracking-widest flex items-center gap-1.5">
+                <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path d="M5 4a2 2 0 012-2h6a2 2 0 012 2v14l-5-2.5L5 18V4z" /></svg>
+                Chef Recommended
               </div>
             )}
           </div>
-        </div>
+        </section>
 
-        {/* Description with Better Formatting */}
+        {/* Description */}
         {item.description && (
-          <div className="mb-8 p-6 bg-white/70 backdrop-blur-sm rounded-3xl shadow-sm border border-white/50">
-            <h2 className="font-bold text-lg mb-3 text-gray-900">
-              About this dish
-            </h2>
-            <p className="text-gray-700 leading-relaxed">{item.description}</p>
-          </div>
+          <section className="bento-card p-8 bg-white space-y-3 text-left">
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 font-bold">About</span>
+              <h2 className="text-h2">The Dish Profile</h2>
+            </div>
+            <p className="text-body text-slate-600 leading-relaxed font-medium">{item.description}</p>
+          </section>
         )}
 
-        {/* Enhanced Modifiers Section */}
+        {/* Customization */}
         {item.modifierGroups.length > 0 && (
-          <div className="mb-8">
-            <h2 className="font-bold text-xl mb-6 text-gray-900">
-              Customize your order
-            </h2>
-            <div className="space-y-6">
+          <section className="space-y-6 text-left">
+            <div className="flex items-center gap-2 px-2">
+              <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Personalize</span>
+              <h2 className="text-h2">Customize Recipe</h2>
+            </div>
+            <div className="space-y-4">
               {item.modifierGroups.map((group) => (
-                <div
-                  key={group.id}
-                  className="p-6 bg-white/70 backdrop-blur-sm rounded-3xl shadow-sm border border-white/50"
-                >
-                  <div className="flex justify-between items-center mb-4">
-                    <span className="font-bold text-lg text-gray-900">
-                      {group.name}
-                    </span>
-                    {group.isRequired && (
-                      <span className="px-3 py-1 bg-red-50 text-red-600 rounded-full text-sm font-medium border border-red-200">
-                        Required
-                      </span>
-                    )}
+                <div key={group.id} className="bento-card bg-white p-6 space-y-4">
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <h3 className="font-black text-slate-900 uppercase tracking-widest text-xs">{group.name}</h3>
+                      <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
+                        {group.isRequired ? "Required" : `Limit: ${group.maxSelections || '∞'}`}
+                      </p>
+                    </div>
+                    {group.isRequired && <span className="w-2 h-2 rounded-full bg-red-400" />}
                   </div>
-
-                  <div className="space-y-3">
+                  <div className="space-y-2">
                     {group.options.map((option) => (
-                      <label
-                        key={option.id}
-                        className="group flex items-center justify-between p-4 bg-gray-50/50 hover:bg-white rounded-2xl cursor-pointer transition-all duration-300 border border-transparent hover:border-orange-200 hover:shadow-sm"
-                        onClick={() =>
-                          handleModifierChange(
-                            group.id,
-                            option.id,
-                            group.selectionType,
-                          )
-                        }
-                      >
+                      <label key={option.id} className="flex items-center justify-between p-4 rounded-2xl border border-slate-100 bg-slate-50/50 hover:bg-slate-900 group transition-all cursor-pointer">
                         <div className="flex items-center gap-4">
-                          <div
-                            className={`relative w-6 h-6 rounded-full border-2 transition-all duration-300 ${
-                              selectedModifiers[group.id]?.includes(option.id)
-                                ? "border-orange-500 bg-orange-500"
-                                : "border-gray-300 group-hover:border-orange-300"
-                            }`}
-                          >
-                            {selectedModifiers[group.id]?.includes(
-                              option.id,
-                            ) && (
-                              <div className="absolute inset-0 flex items-center justify-center">
-                                <div className="w-2 h-2 bg-white rounded-full"></div>
-                              </div>
-                            )}
+                          <input
+                            type={group.selectionType === "single" ? "radio" : "checkbox"}
+                            className="hidden"
+                            checked={selectedModifiers[group.id]?.includes(option.id)}
+                            onChange={() => handleModifierChange(group.id, option.id, group.selectionType)}
+                          />
+                          <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${selectedModifiers[group.id]?.includes(option.id) ? "bg-slate-900 border-slate-900" : "bg-white border-slate-200"
+                            }`}>
+                            {selectedModifiers[group.id]?.includes(option.id) && <div className="w-2 h-2 bg-white rounded-full" />}
                           </div>
-                          <span className="font-medium text-gray-900">
-                            {option.name}
-                          </span>
+                          <span className="font-bold text-sm text-slate-900 group-hover:text-white transition-colors">{option.name}</span>
                         </div>
-                        {option.priceAdjustment > 0 && (
-                          <span className="text-orange-600 font-bold">
-                            +${option.priceAdjustment.toFixed(2)}
-                          </span>
-                        )}
+                        {option.priceAdjustment > 0 && <span className="text-xs font-black text-slate-400 group-hover:text-white/60">+${option.priceAdjustment.toFixed(2)}</span>}
                       </label>
                     ))}
                   </div>
                 </div>
               ))}
             </div>
-          </div>
+          </section>
         )}
 
-        {/* Enhanced Special Instructions */}
-        <div className="mb-8 p-6 bg-white/70 backdrop-blur-sm rounded-3xl shadow-sm border border-white/50">
-          <h2 className="font-bold text-lg mb-4 text-gray-900">
-            Special instructions
-          </h2>
+        {/* Special Request */}
+        <section className="bento-card p-6 bg-white space-y-4 text-left">
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Notes</span>
+            <h2 className="text-h2">Chef Special Request</h2>
+          </div>
           <textarea
             value={specialInstructions}
             onChange={(e) => setSpecialInstructions(e.target.value)}
-            placeholder="Any allergies, dietary restrictions, or special requests?"
-            className="w-full p-4 bg-gray-50/50 rounded-2xl border-none resize-none h-24 focus:ring-2 focus:ring-orange-500/50 focus:bg-white transition-all duration-300 placeholder:text-gray-400"
+            placeholder="Dietary requests or allergies..."
+            className="w-full p-5 bg-slate-50 rounded-[28px] border border-slate-100 text-sm font-medium focus:ring-2 focus:ring-slate-900/5 focus:bg-white h-32 resize-none transition-all placeholder:text-slate-300"
           />
-        </div>
+        </section>
 
-        {/* Enhanced Quantity Selector */}
-        <div className="mb-8 p-6 bg-white/70 backdrop-blur-sm rounded-3xl shadow-sm border border-white/50">
+        {/* Quantity */}
+        <section className="bento-card p-6 bg-slate-900 text-white text-left">
           <div className="flex items-center justify-between">
-            <span className="font-bold text-lg text-gray-900">Quantity</span>
-            <div className="flex items-center gap-4">
-              <button
-                onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                className="w-12 h-12 bg-gray-100 hover:bg-gray-200 rounded-2xl flex items-center justify-center shadow-sm hover:shadow-md transition-all duration-300 font-bold text-gray-700"
-              >
-                −
+            <div className="space-y-1">
+              <span className="text-[10px] font-black uppercase tracking-widest text-white/50">Servings</span>
+              <p className="font-black text-lg">Portion Count</p>
+            </div>
+            <div className="flex items-center gap-2 bg-white/10 p-1.5 rounded-full">
+              <button onClick={() => setQuantity(Math.max(1, quantity - 1))} className="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center active:scale-95 transition-all">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M20 12H4" /></svg>
               </button>
-              <div className="w-16 h-12 bg-orange-50 rounded-2xl flex items-center justify-center">
-                <span className="text-xl font-bold text-orange-600">
-                  {quantity}
-                </span>
-              </div>
-              <button
-                onClick={() => setQuantity(quantity + 1)}
-                className="w-12 h-12 bg-orange-500 hover:bg-orange-600 rounded-2xl flex items-center justify-center shadow-sm hover:shadow-md transition-all duration-300 font-bold text-white"
-              >
-                +
+              <div className="w-10 text-center text-xl font-black">{quantity}</div>
+              <button onClick={() => setQuantity(quantity + 1)} className="w-12 h-12 rounded-full bg-white text-slate-900 flex items-center justify-center shadow-lg active:scale-95 transition-all">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M12 4v16m8-8H4" /></svg>
               </button>
             </div>
           </div>
-        </div>
+        </section>
 
-        {/* Enhanced Reviews Section */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <h2 className="font-bold text-xl text-gray-900">
-                Customer reviews
-              </h2>
-              <div className="flex items-center gap-3 mt-2">
-                {totalReviews > 0 && (
-                  <>
-                    <div className="flex gap-1">
-                      {[...Array(5)].map((_, i) => (
-                        <svg
-                          key={i}
-                          className={`w-5 h-5 ${
-                            i < Math.round(averageRating)
-                              ? "text-yellow-400 fill-current"
-                              : "text-gray-300"
-                          }`}
-                          viewBox="0 0 24 24"
-                        >
-                          <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-                        </svg>
-                      ))}
-                    </div>
-                    <span className="text-sm font-semibold text-gray-700">
-                      {averageRating.toFixed(1)} ({totalReviews} reviews)
-                    </span>
-                  </>
-                )}
-              </div>
+        {/* Reviews Section */}
+        <section className="space-y-6 text-left">
+          <div className="flex items-end justify-between px-2">
+            <div className="space-y-1">
+              <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Feedback</span>
+              <h2 className="text-h2">Guest Reviews</h2>
+              {totalReviews > 0 && (
+                <div className="flex items-center gap-2 pt-1">
+                  <span className="text-slate-900 text-sm">★</span>
+                  <span className="text-[10px] font-black text-slate-900 uppercase tracking-widest">{averageRating.toFixed(1)} ({totalReviews})</span>
+                </div>
+              )}
             </div>
             <button
-              onClick={() => {
-                setShowReviewForm(!showReviewForm);
-                setReviewError("");
-              }}
-              className="px-4 py-2 bg-orange-50 text-orange-700 rounded-full text-sm font-medium hover:bg-orange-100 transition-colors duration-300 border border-orange-200"
+              onClick={() => { setShowReviewForm(!showReviewForm); setReviewError(""); }}
+              className="px-5 py-3 bg-white border border-slate-200 rounded-full text-[10px] font-black uppercase tracking-widest hover:border-slate-900 transition-all font-bold"
             >
-              {showReviewForm ? "Cancel" : "Write Review"}
+              {showReviewForm ? "Discard" : "Add Review"}
             </button>
           </div>
 
-          {/* Review Form */}
           {showReviewForm && (
-            <div className="p-6 bg-white/70 backdrop-blur-sm rounded-3xl shadow-sm border border-white/50 mb-6">
-              <h3 className="font-bold text-lg mb-4 text-gray-900">
-                Share your experience
-              </h3>
-
-              {/* Rating Selection */}
-              <div className="mb-6">
-                <label className="block text-sm font-medium text-gray-900 mb-3">
-                  Rating
-                </label>
+            <div className="bento-card bg-ivory-100 p-8 space-y-6 animate-fade-in">
+              <div className="space-y-4">
+                <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Overall Rating</label>
                 <div className="flex gap-3">
                   {[1, 2, 3, 4, 5].map((star) => (
-                    <button
-                      key={star}
-                      onClick={() => setReviewRating(star)}
-                      className="transition-transform duration-300 hover:scale-110"
-                    >
-                      <svg
-                        className={`w-8 h-8 ${
-                          star <= reviewRating
-                            ? "text-yellow-400 fill-current"
-                            : "text-gray-300"
-                        } cursor-pointer`}
-                        viewBox="0 0 24 24"
-                      >
-                        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-                      </svg>
-                    </button>
+                    <button key={star} onClick={() => setReviewRating(star)} className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${star <= reviewRating ? "bg-slate-900 text-white shadow-lg" : "bg-white border border-slate-200 text-slate-300"}`}>★</button>
                   ))}
                 </div>
               </div>
-
-              {/* Comment */}
-              <div className="mb-6">
-                <label className="block text-sm font-medium text-gray-900 mb-3">
-                  Comment (optional)
-                </label>
+              <div className="space-y-2">
+                <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Your Review</label>
                 <textarea
                   value={reviewComment}
                   onChange={(e) => setReviewComment(e.target.value)}
-                  placeholder="Share your thoughts about this dish..."
-                  maxLength={500}
-                  className="w-full p-4 bg-gray-50/50 rounded-2xl border-none resize-none h-24 focus:ring-2 focus:ring-orange-500/50 focus:bg-white transition-all duration-300 placeholder:text-gray-400"
+                  placeholder="Share your experience..."
+                  className="w-full p-4 bg-white rounded-2xl border border-slate-100 text-sm h-32 resize-none placeholder:text-slate-200"
                 />
-                <p className="text-xs text-gray-500 mt-2">
-                  {reviewComment.length}/500 characters
-                </p>
               </div>
-
-              {/* Error message */}
-              {reviewError && (
-                <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm mb-4">
-                  {reviewError}
-                </div>
-              )}
-
-              {/* Submit Button */}
-              <button
-                onClick={handleSubmitReview}
-                disabled={submittingReview}
-                className={`w-full py-3 rounded-2xl font-bold text-white transition-all duration-300 ${
-                  submittingReview
-                    ? "bg-gray-400 cursor-not-allowed"
-                    : "bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700"
-                }`}
-              >
-                {submittingReview ? "Submitting..." : "Submit Review"}
-              </button>
+              {reviewError && <p className="text-[10px] font-bold text-red-500 uppercase tracking-widest">{reviewError}</p>}
+              <button onClick={handleSubmitReview} disabled={submittingReview} className="btn-primary w-full h-14">{submittingReview ? "Submitting..." : "Post Review"}</button>
             </div>
           )}
 
-          {/* Success message */}
-          {reviewSuccess && (
-            <div className="p-4 bg-green-50 border border-green-200 rounded-xl text-green-700 text-sm mb-6 flex items-center gap-2">
-              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                <path
-                  fillRule="evenodd"
-                  d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                  clipRule="evenodd"
-                />
-              </svg>
-              Thank you! Your review has been posted successfully.
-            </div>
-          )}
-
-          {/* Reviews List */}
-          {reviews.length > 0 && (
-            <div className="space-y-4">
-              {reviews.map((review) => (
-                <div
-                  key={review.id}
-                  className="p-6 bg-white/70 backdrop-blur-sm rounded-3xl shadow-sm border border-white/50"
-                >
-                  {editingReviewId === review.id ? (
-                    // Edit Mode
-                    <div className="space-y-4">
-                      <div className="flex gap-1">
-                        {[...Array(5)].map((_, i) => (
-                          <button
-                            key={i}
-                            onClick={() => setEditingRating(i + 1)}
-                            className="transition-all duration-300"
-                          >
-                            <svg
-                              className={`w-6 h-6 ${
-                                i < editingRating
-                                  ? "text-yellow-400 fill-current"
-                                  : "text-gray-300"
-                              }`}
-                              viewBox="0 0 24 24"
-                            >
-                              <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-                            </svg>
-                          </button>
-                        ))}
-                      </div>
-                      <textarea
-                        value={editingComment}
-                        onChange={(e) => setEditingComment(e.target.value)}
-                        placeholder="Update your review..."
-                        className="w-full p-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500"
-                        rows={3}
-                      />
-                      <div className="flex gap-2 justify-end">
-                        <button
-                          onClick={() => setEditingReviewId(null)}
-                          className="px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors"
-                          disabled={submittingReview}
-                        >
-                          Cancel
-                        </button>
-                        <button
-                          onClick={() => handleEditReview(review.id)}
-                          disabled={submittingReview}
-                          className="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors disabled:opacity-50"
-                        >
-                          {submittingReview ? "Saving..." : "Save Changes"}
-                        </button>
-                      </div>
+          <div className="space-y-4">
+            {reviews.map((review) => (
+              <div key={review.id} className="bento-card bg-white p-6 space-y-4">
+                <div className="flex justify-between items-start">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-slate-50 border border-slate-100 flex items-center justify-center font-black text-slate-400 text-xs">{review.customerName?.[0] || 'G'}</div>
+                    <div>
+                      <h4 className="font-bold text-slate-900 text-sm leading-none">{review.customerName}</h4>
+                      <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">{new Date(review.createdAt).toLocaleDateString()}</p>
                     </div>
-                  ) : deletingReviewId === review.id ? (
-                    // Delete Confirmation
-                    <div className="space-y-4">
-                      <p className="text-gray-700">
-                        Are you sure you want to delete this review?
-                      </p>
-                      <div className="flex gap-2 justify-end">
-                        <button
-                          onClick={() => setDeletingReviewId(null)}
-                          className="px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors"
-                          disabled={submittingReview}
-                        >
-                          Cancel
-                        </button>
-                        <button
-                          onClick={() => handleDeleteReview(review.id)}
-                          disabled={submittingReview}
-                          className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors disabled:opacity-50"
-                        >
-                          {submittingReview ? "Deleting..." : "Delete"}
-                        </button>
-                      </div>
-                    </div>
-                  ) : (
-                    // Review Display
-                    <>
-                      <div className="flex justify-between items-start mb-3">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 bg-gradient-to-br from-orange-400 to-orange-600 rounded-full flex items-center justify-center text-white font-bold">
-                            {review.customerName.charAt(0)}
-                          </div>
-                          <span className="font-bold text-gray-900">
-                            {review.customerName}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <div className="flex gap-1">
-                            {[...Array(5)].map((_, i) => (
-                              <svg
-                                key={i}
-                                className={`w-5 h-5 ${
-                                  i < review.rating
-                                    ? "text-yellow-400 fill-current"
-                                    : "text-gray-300"
-                                }`}
-                                viewBox="0 0 24 24"
-                              >
-                                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-                              </svg>
-                            ))}
-                          </div>
-                          {customer?.id === review.customerId && (
-                            <div className="flex gap-2 ml-2">
-                              <button
-                                onClick={() => {
-                                  setEditingReviewId(review.id);
-                                  setEditingRating(review.rating);
-                                  setEditingComment(review.comment || "");
-                                }}
-                                className="text-blue-500 hover:text-blue-700 transition-colors"
-                              >
-                                <svg
-                                  className="w-4 h-4"
-                                  fill="currentColor"
-                                  viewBox="0 0 24 24"
-                                >
-                                  <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25z" />
-                                  <path d="M20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z" />
-                                </svg>
-                              </button>
-                              <button
-                                onClick={() => setDeletingReviewId(review.id)}
-                                className="text-red-500 hover:text-red-700 transition-colors"
-                              >
-                                <svg
-                                  className="w-4 h-4"
-                                  fill="currentColor"
-                                  viewBox="0 0 24 24"
-                                >
-                                  <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-9l-1 1H5v2h14V4z" />
-                                </svg>
-                              </button>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                      {review.comment && (
-                        <p className="text-gray-700 leading-relaxed">
-                          {review.comment}
-                        </p>
-                      )}
-                      <p className="text-xs text-gray-500 mt-3">
-                        {new Date(review.createdAt).toLocaleDateString()}
-                      </p>
-                    </>
-                  )}
+                  </div>
+                  <div className="flex gap-0.5 text-[8px] text-slate-900">
+                    {[...Array(5)].map((_, i) => (
+                      <span key={i} className={i < review.rating ? "opacity-100" : "opacity-20"}>★</span>
+                    ))}
+                  </div>
                 </div>
-              ))}
-            </div>
-          )}
+                {review.comment && <p className="text-sm text-slate-600 leading-relaxed font-medium">{review.comment}</p>}
+              </div>
+            ))}
+            {reviews.length === 0 && !showReviewForm && (
+              <div className="bento-card bg-white/50 border-dashed border border-slate-200 p-12 text-center text-slate-400 text-xs font-bold uppercase tracking-widest">No reviews yet</div>
+            )}
+          </div>
+        </section>
 
-          {reviews.length === 0 && !showReviewForm && (
-            <div className="text-center py-8 text-gray-500">
-              <p className="mb-3">No reviews yet. Be the first to review!</p>
-              <button
-                onClick={() => setShowReviewForm(true)}
-                className="px-6 py-2 bg-orange-100 text-orange-700 rounded-full font-medium hover:bg-orange-200 transition-colors duration-300"
-              >
-                Write a Review
-              </button>
-            </div>
-          )}
-        </div>
-
-        {/* Enhanced Related Items */}
+        {/* Related Items */}
         {relatedItems.length > 0 && (
-          <div className="mb-8">
-            <h2 className="font-bold text-xl mb-6 text-gray-900">
-              You might also like
-            </h2>
-            <div className="flex gap-4 overflow-x-auto hide-scrollbar pb-4">
-              {relatedItems.map((relatedItem) => (
-                <Link
-                  key={relatedItem.id}
-                  href={`/menu/${relatedItem.id}?token=${currentToken}`}
-                  className="flex-shrink-0 w-40 group"
-                >
-                  <div className="bg-white/70 backdrop-blur-sm rounded-3xl shadow-sm border border-white/50 p-4 text-center hover:shadow-xl hover:scale-105 transition-all duration-300">
-                    <div className="w-24 h-24 mx-auto rounded-2xl overflow-hidden bg-gradient-to-br from-gray-100 to-gray-200 mb-3 group-hover:shadow-lg transition-shadow">
-                      {relatedItem.primaryPhotoUrl ? (
-                        <Image
-                          src={relatedItem.primaryPhotoUrl}
-                          alt={relatedItem.name}
-                          width={96}
-                          height={96}
-                          className="object-cover w-full h-full group-hover:scale-110 transition-transform duration-300"
-                        />
+          <section className="space-y-6 text-left">
+            <div className="flex items-center gap-2 px-2">
+              <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Explore</span>
+              <h2 className="text-h2">Similar Flavors</h2>
+            </div>
+            <div className="flex gap-4 overflow-x-auto hide-scrollbar -mx-6 px-6 pb-4">
+              {relatedItems.map((relItem) => (
+                <Link key={relItem.id} href={`/menu/${relItem.id}?token=${currentToken}`} className="flex-shrink-0 w-40 group">
+                  <div className="bento-card bg-white p-3 space-y-3 group-hover:bg-slate-900 transition-colors">
+                    <div className="aspect-square rounded-xl overflow-hidden bg-slate-50 relative">
+                      {relItem.primaryPhotoUrl ? (
+                        <Image src={relItem.primaryPhotoUrl} alt={relItem.name} fill className="object-cover group-hover:scale-110 transition-transform" unoptimized />
                       ) : (
-                        <div className="w-full h-full flex items-center justify-center text-3xl">
-                          🍽️
-                        </div>
+                        <div className="w-full h-full flex items-center justify-center text-2xl">🍽️</div>
                       )}
                     </div>
-                    <p className="text-sm font-bold text-gray-900 line-clamp-2 mb-2 leading-tight">
-                      {relatedItem.name}
-                    </p>
-                    <p className="text-orange-600 font-bold text-lg">
-                      ${relatedItem.price.toFixed(2)}
-                    </p>
+                    <div className="space-y-0.5">
+                      <h4 className="text-[10px] font-black text-slate-900 group-hover:text-white uppercase truncate tracking-widest">{relItem.name}</h4>
+                      <p className="text-[10px] font-black text-slate-400 group-hover:text-white/60">${relItem.price.toFixed(2)}</p>
+                    </div>
                   </div>
                 </Link>
               ))}
             </div>
-          </div>
+          </section>
         )}
       </div>
 
-      {/* Enhanced Bottom CTA with Premium Design */}
-      <div className="fixed bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-white via-white/95 to-transparent backdrop-blur-xl border-t border-white/50">
-        <div className="max-w-md mx-auto">
-          <div className="flex gap-4">
-            {/* Quantity Preview */}
-            <div className="flex-1 bg-white/70 backdrop-blur-sm rounded-2xl p-4 shadow-sm border border-white/50">
-              <div className="text-center">
-                <div className="text-sm text-gray-600 mb-1">Total</div>
-                <div className="text-2xl font-bold text-orange-600">
-                  ${calculateTotalPrice().toFixed(2)}
-                </div>
-              </div>
-            </div>
-
-            {/* Add to Cart Button */}
-            <button
-              onClick={handleAddToCart}
-              disabled={!item.canOrder || addedToCart}
-              className={`flex-1 h-16 rounded-2xl font-bold text-lg shadow-lg transition-all duration-300 ${
-                addedToCart
-                  ? "bg-green-500 text-white shadow-green-200"
-                  : item.canOrder
-                    ? "bg-gradient-to-r from-orange-500 to-orange-600 text-white hover:from-orange-600 hover:to-orange-700 shadow-orange-200 hover:shadow-xl hover:scale-105"
-                    : "bg-gray-300 text-gray-500 cursor-not-allowed"
-              }`}
-            >
-              {addedToCart ? (
-                <span className="flex items-center justify-center gap-2">
-                  <svg
-                    className="w-6 h-6"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M5 13l4 4L19 7"
-                    />
-                  </svg>
-                  Added!
-                </span>
-              ) : item.canOrder ? (
-                <span className="flex items-center justify-center gap-2">
-                  <svg
-                    className="w-6 h-6"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"
-                    />
-                  </svg>
-                  Add to Cart
-                </span>
-              ) : (
-                "Unavailable"
-              )}
-            </button>
+      {/* Bottom Bar */}
+      <div className="fixed bottom-0 left-0 right-0 p-6 bg-white/80 backdrop-blur-xl border-t border-slate-200/50 z-40">
+        <div className="max-w-md mx-auto flex items-center gap-4">
+          <div className="flex-1">
+            <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-400">Total</h4>
+            <p className="text-2xl font-black text-slate-900 tracking-tighter">${calculateTotalPrice().toFixed(2)}</p>
           </div>
+          <button
+            onClick={handleAddToCart}
+            disabled={!item.canOrder || addedToCart}
+            className={`flex-[2] h-16 rounded-[24px] font-black uppercase tracking-widest text-[11px] shadow-2xl transition-all active:scale-95 ${addedToCart ? "bg-emerald-500 text-white" : item.canOrder ? "bg-slate-900 text-white" : "bg-slate-100 text-slate-400"
+              }`}
+          >
+            {addedToCart ? "Added to Cart" : item.canOrder ? "Add to Order" : "Sold Out"}
+          </button>
         </div>
       </div>
     </div>
@@ -1259,8 +739,8 @@ export default function ItemDetailPage({
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen flex items-center justify-center">
-          <div className="w-12 h-12 border-4 border-[#fa4a0c] border-t-transparent rounded-full spinner"></div>
+        <div className="min-h-screen bg-ivory-50 flex items-center justify-center">
+          <div className="w-12 h-12 border-4 border-slate-100 border-t-slate-800 rounded-full animate-spin"></div>
         </div>
       }
     >

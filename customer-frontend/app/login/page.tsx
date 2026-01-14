@@ -35,10 +35,8 @@ function LoginContent() {
   const [resendLoading, setResendLoading] = useState(false);
   const [resendSuccess, setResendSuccess] = useState(false);
 
-  // Get token from URL params (available during SSR)
   const urlToken = searchParams.get("token");
 
-  // Handle token and auth from URL
   useEffect(() => {
     const authToken = searchParams.get("auth_token");
     const authUser = searchParams.get("auth_user");
@@ -47,7 +45,6 @@ function LoginContent() {
       setToken(urlToken);
     }
 
-    // Handle Google OAuth callback
     if (authToken && authUser) {
       try {
         const user = JSON.parse(decodeURIComponent(authUser));
@@ -59,7 +56,6 @@ function LoginContent() {
     }
   }, [searchParams, token, setToken, login, urlToken]);
 
-  // Show welcome message and redirect after login
   useEffect(() => {
     if (showWelcome && isAuthenticated) {
       const timer = setTimeout(() => {
@@ -91,17 +87,12 @@ function LoginContent() {
           password,
           firstName,
           lastName,
-          tableToken: urlToken || undefined, // Pass the original table token
+          tableToken: urlToken || undefined,
         })) as AuthResponse;
 
-        // Check if email verification is required
         if ((response as any).requiresEmailVerification) {
           setVerificationEmail(email);
           setShowEmailVerification(true);
-          setEmail("");
-          setPassword("");
-          setFirstName("");
-          setLastName("");
           return;
         }
       }
@@ -109,41 +100,7 @@ function LoginContent() {
       login(response);
       setShowWelcome(true);
     } catch (err) {
-      let errorMessage = "Authentication failed";
-
-      if (err instanceof Error) {
-        const message = err.message.toLowerCase();
-
-        // For signup validation errors
-        if (message.includes("password does not meet complexity")) {
-          errorMessage =
-            "Password does not meet complexity requirements. Please check the requirements below.";
-        }
-        // For signup duplicate email
-        else if (message.includes("email already exists")) {
-          errorMessage =
-            "An account with this email already exists. Please try logging in instead.";
-        }
-        // For login/signup invalid credentials or wrong password
-        else if (
-          message.includes("invalid") &&
-          message.includes("credentials")
-        ) {
-          errorMessage =
-            "Invalid email or password. Please check your credentials.";
-        }
-        // For user not found during signup
-        else if (message.includes("user not found")) {
-          errorMessage =
-            "No account found with this email. Please sign up first.";
-        }
-        // Default: show the API error message as-is
-        else {
-          errorMessage = err.message;
-        }
-      }
-
-      setError(errorMessage);
+      setError(err instanceof Error ? err.message : "Authentication failed");
     } finally {
       setLoading(false);
     }
@@ -168,173 +125,125 @@ function LoginContent() {
 
   const handleResendVerificationEmail = async () => {
     setResendLoading(true);
-    setResendSuccess(false);
-
     try {
       await authApi.resendVerificationEmail(verificationEmail);
       setResendSuccess(true);
-      // Reset success message after 3 seconds
       setTimeout(() => setResendSuccess(false), 3000);
     } catch (err) {
-      let errorMessage = "Failed to resend verification email";
-
-      if (err instanceof Error) {
-        const message = err.message.toLowerCase();
-
-        if (message.includes("email already verified")) {
-          errorMessage = "This email is already verified. You can log in now.";
-        } else if (message.includes("not found")) {
-          errorMessage = "Account not found. Please sign up again.";
-        } else {
-          errorMessage = err.message;
-        }
-      }
-
-      setError(errorMessage);
+      setError(err instanceof Error ? err.message : "Failed to resend");
     } finally {
       setResendLoading(false);
     }
   };
 
-  // Show welcome message if authenticated
   if (showWelcome && isAuthenticated) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-amber-400 via-amber-300 to-yellow-300 flex items-center justify-center px-4 py-8">
-        <div className="w-full max-w-md">
-          <div className="bg-white rounded-3xl shadow-2xl p-8 text-center">
-            <div className="w-20 h-20 bg-gradient-to-br from-green-400 to-emerald-500 rounded-2xl flex items-center justify-center mx-auto mb-6">
-              <svg
-                className="w-10 h-10 text-white"
-                fill="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z" />
-              </svg>
-            </div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">Welcome!</h1>
-            {customer && (
-              <p className="text-gray-600 mb-2">
-                {customer.firstName || customer.email}
-              </p>
-            )}
-            <p className="text-gray-600 mb-8">Taking you to the menu...</p>
-            <div className="w-10 h-10 border-3 border-yellow-200 border-t-orange-500 rounded-full animate-spin mx-auto"></div>
+      <div className="min-h-screen bg-ivory-100 flex items-center justify-center p-6 text-center">
+        <div className="bento-card max-w-sm w-full py-12">
+          <div className="w-20 h-20 bg-green-100 rounded-[24px] flex items-center justify-center mx-auto mb-6">
+            <svg className="w-10 h-10 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+            </svg>
+          </div>
+          <h1 className="text-h2 mb-2">Welcome Back!</h1>
+          <p className="text-body mb-8 text-slate-500">
+            {customer?.firstName || customer?.email}
+          </p>
+          <div className="flex justify-center">
+            <div className="w-8 h-8 border-4 border-slate-200 border-t-slate-700 rounded-full animate-spin"></div>
           </div>
         </div>
       </div>
     );
   }
 
-  // No token error
   if (!token && !searchParams.get("token") && !searchParams.get("auth_token")) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-amber-400 via-amber-300 to-yellow-300 flex items-center justify-center px-4 py-8">
-        <div className="w-full max-w-md">
-          <div className="bg-white rounded-3xl shadow-2xl p-8 text-center">
-            <div className="w-20 h-20 bg-red-100 rounded-2xl flex items-center justify-center mx-auto mb-6">
-              <svg
-                className="w-10 h-10 text-red-500"
-                fill="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z" />
-              </svg>
-            </div>
-            <h1 className="text-2xl font-bold text-gray-900 mb-2">
-              Invalid Access
-            </h1>
-            <p className="text-gray-600">
-              Please scan a valid QR code at your table to access the menu.
-            </p>
+      <div className="min-h-screen bg-ivory-100 flex items-center justify-center p-6 text-center">
+        <div className="bento-card max-w-sm w-full">
+          <div className="w-16 h-16 bg-red-100 rounded-[20px] flex items-center justify-center mx-auto mb-6">
+            <svg className="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
           </div>
+          <h1 className="text-h3 mb-2">Access Restricted</h1>
+          <p className="text-body text-slate-500 mb-6">
+            Please scan the QR code on your table to browse our menu.
+          </p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-amber-400 via-amber-300 to-yellow-300 flex items-center justify-center px-4 py-6 sm:py-12">
-      <div className="w-full max-w-md">
-        {/* Main Card */}
-        <div className="bg-white rounded-3xl shadow-2xl overflow-hidden">
-          {/* Header */}
-          <div className="px-8 pt-10 pb-8 text-center border-b border-gray-100">
-            <h1 className="text-4xl font-bold text-gray-900">Log In</h1>
+    <div className="min-h-screen bg-ivory-100 flex flex-col items-center justify-center p-6">
+      <div className="w-full max-w-md space-y-6">
+        {/* Brand Header */}
+        <div className="flex flex-col items-center space-y-4 mb-4">
+          <div className="bento-card p-0 !rounded-[24px] flex items-center justify-center w-20 h-20 bg-slate-800 shadow-xl overflow-hidden group">
+            <div className="absolute inset-0 bg-gradient-to-br from-slate-700 to-slate-900 opacity-50"></div>
+            <svg className="w-10 h-10 text-white relative z-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+            </svg>
           </div>
+          <p className="text-caption tracking-widest text-slate-400 font-bold">Premium Ordering</p>
+        </div>
 
-          {/* Tabs */}
-          <div className="px-8 py-8 border-b border-gray-200">
-            <div className="flex gap-12 justify-center">
+        <div className="bento-card">
+          <div className="mb-8 flex justify-between items-center">
+            <h1 className="text-h2">{activeTab === "login" ? "Sign In" : "Register"}</h1>
+            <div className="flex bg-slate-100 p-1 rounded-2xl">
               <button
+                type="button"
                 onClick={() => setActiveTab("login")}
-                className={`text-base font-semibold pb-4 transition-all ${
-                  activeTab === "login"
-                    ? "text-amber-600 border-b-2 border-amber-600"
-                    : "text-gray-400 border-b-2 border-transparent hover:text-gray-600"
-                }`}
+                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${activeTab === "login" ? "bg-white shadow-sm text-slate-900" : "text-slate-500 hover:text-slate-700"
+                  }`}
               >
-                Log In
+                Login
               </button>
               <button
+                type="button"
                 onClick={() => setActiveTab("signup")}
-                className={`text-base font-semibold pb-4 transition-all ${
-                  activeTab === "signup"
-                    ? "text-gray-900 border-b-2 border-gray-400"
-                    : "text-gray-400 border-b-2 border-transparent hover:text-gray-600"
-                }`}
+                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${activeTab === "signup" ? "bg-white shadow-sm text-slate-900" : "text-slate-500 hover:text-slate-700"
+                  }`}
               >
-                Sign Up
+                Join
               </button>
             </div>
           </div>
 
-          {/* Form */}
-          <form onSubmit={handleSubmit} className="px-8 py-10 space-y-8">
-            {/* Welcome text */}
-            {activeTab === "login" && (
-              <div>
-                <h2 className="text-2xl font-bold text-gray-900 mb-3">
-                  Welcome
-                </h2>
-                <p className="text-gray-600 text-sm leading-relaxed">
-                  Please enter your account details to access your personalized
-                  experience and manage your preferences.
-                </p>
-              </div>
-            )}
-
-            {/* Error */}
+          <form onSubmit={handleSubmit} className="space-y-5">
             {error && (
-              <div className="bg-red-50 border border-red-200 rounded-xl p-4">
-                <p className="text-red-800 text-sm font-medium">{error}</p>
+              <div className="p-4 bg-red-50 border border-red-100 rounded-2xl text-red-700 text-xs font-semibold flex items-center gap-3 animate-fade-in">
+                <div className="w-5 h-5 bg-red-100 rounded-full flex items-center justify-center flex-shrink-0">
+                  <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                  </svg>
+                </div>
+                {error}
               </div>
             )}
 
-            {/* First and Last Name (Sign Up) */}
             {activeTab === "signup" && (
               <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    First Name
-                  </label>
+                <div className="space-y-2">
+                  <label className="text-caption !text-[10px]">First Name</label>
                   <input
                     type="text"
                     value={firstName}
                     onChange={(e) => setFirstName(e.target.value)}
-                    className="w-full px-4 py-3 bg-yellow-100 rounded-xl text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                    className="input-field"
                     placeholder="John"
                     required
                   />
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Last Name
-                  </label>
+                <div className="space-y-2">
+                  <label className="text-caption !text-[10px]">Last Name</label>
                   <input
                     type="text"
                     value={lastName}
                     onChange={(e) => setLastName(e.target.value)}
-                    className="w-full px-4 py-3 bg-yellow-100 rounded-xl text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                    className="input-field"
                     placeholder="Doe"
                     required
                   />
@@ -342,361 +251,150 @@ function LoginContent() {
               </div>
             )}
 
-            {/* Email */}
-            <div>
-              <label className="block text-sm font-semibold text-gray-900 mb-3">
-                Email
-              </label>
+            <div className="space-y-2">
+              <label className="text-caption !text-[10px]">Email Address</label>
               <input
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full px-4 py-3 bg-yellow-100 rounded-xl text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-amber-500"
-                placeholder="example@example.com"
+                className="input-field"
+                placeholder="name@email.com"
                 required
               />
             </div>
 
-            {/* Password */}
-            <div>
-              <div className="flex justify-between items-center mb-3">
-                <label className="block text-sm font-semibold text-gray-900">
-                  Password
-                </label>
+            <div className="space-y-2">
+              <div className="flex justify-between items-center transition-all">
+                <label className="text-caption !text-[10px]">Password</label>
                 {activeTab === "login" && (
                   <Link
                     href={`/forgot-password${urlToken ? `?token=${urlToken}` : ""}`}
-                    className="text-xs text-amber-600 hover:text-amber-700 font-medium transition-colors"
+                    className="text-[10px] font-bold text-slate-400 hover:text-slate-900 transition-colors uppercase tracking-wider"
                   >
-                    Forgot Password?
+                    Forgot?
                   </Link>
                 )}
               </div>
-              <div className="relative">
-                <input
-                  type="password"
-                  value={password}
-                  onChange={(e) => {
-                    setPassword(e.target.value);
-                    if (activeTab === "signup") {
-                      setPasswordStrength(
-                        validatePasswordComplexity(e.target.value),
-                      );
-                    }
-                  }}
-                  className="w-full px-4 py-3 bg-yellow-100 rounded-xl text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-amber-500"
-                  placeholder="••••••••••"
-                  required
-                  minLength={activeTab === "signup" ? 8 : 1}
-                />
-              </div>
-
-              {/* Password Strength Indicator (Sign Up Only) */}
-              {activeTab === "signup" && password.length > 0 && (
-                <div className="mt-4 space-y-3">
-                  {/* Strength Bar */}
-                  <div className="space-y-1">
-                    <div className="flex justify-between items-center">
-                      <span className="text-xs font-medium text-gray-700">
-                        Password Strength
-                      </span>
-                      <span
-                        className={`text-xs font-bold ${getPasswordStrengthColor(
-                          passwordStrength.score,
-                        )}`}
-                      >
-                        {getPasswordStrengthLabel(passwordStrength.score)}
-                      </span>
-                    </div>
-                    <div className="w-full bg-gray-300 rounded-full h-2">
-                      <div
-                        className={`h-full rounded-full transition-all duration-300 ${getPasswordStrengthBarColor(
-                          passwordStrength.score,
-                        )}`}
-                        style={{
-                          width: `${(passwordStrength.score / 5) * 100}%`,
-                        }}
-                      />
-                    </div>
-                  </div>
-
-                  {/* Requirements List */}
-                  <div className="space-y-2">
-                    <p className="text-xs font-medium text-gray-700">
-                      Password must include:
-                    </p>
-                    <div className="space-y-1 text-xs">
-                      <div
-                        className={
-                          passwordStrength.requirements.minLength
-                            ? "text-green-600 flex items-center gap-2"
-                            : "text-gray-500 flex items-center gap-2"
-                        }
-                      >
-                        <span
-                          className={
-                            passwordStrength.requirements.minLength
-                              ? "text-green-500"
-                              : "text-gray-400"
-                          }
-                        >
-                          ✓
-                        </span>
-                        At least 8 characters
-                      </div>
-                      <div
-                        className={
-                          passwordStrength.requirements.hasUpperCase
-                            ? "text-green-600 flex items-center gap-2"
-                            : "text-gray-500 flex items-center gap-2"
-                        }
-                      >
-                        <span
-                          className={
-                            passwordStrength.requirements.hasUpperCase
-                              ? "text-green-500"
-                              : "text-gray-400"
-                          }
-                        >
-                          ✓
-                        </span>
-                        One uppercase letter (A-Z)
-                      </div>
-                      <div
-                        className={
-                          passwordStrength.requirements.hasLowerCase
-                            ? "text-green-600 flex items-center gap-2"
-                            : "text-gray-500 flex items-center gap-2"
-                        }
-                      >
-                        <span
-                          className={
-                            passwordStrength.requirements.hasLowerCase
-                              ? "text-green-500"
-                              : "text-gray-400"
-                          }
-                        >
-                          ✓
-                        </span>
-                        One lowercase letter (a-z)
-                      </div>
-                      <div
-                        className={
-                          passwordStrength.requirements.hasNumber
-                            ? "text-green-600 flex items-center gap-2"
-                            : "text-gray-500 flex items-center gap-2"
-                        }
-                      >
-                        <span
-                          className={
-                            passwordStrength.requirements.hasNumber
-                              ? "text-green-500"
-                              : "text-gray-400"
-                          }
-                        >
-                          ✓
-                        </span>
-                        One number (0-9)
-                      </div>
-                      <div
-                        className={
-                          passwordStrength.requirements.hasSpecialChar
-                            ? "text-green-600 flex items-center gap-2"
-                            : "text-gray-500 flex items-center gap-2"
-                        }
-                      >
-                        <span
-                          className={
-                            passwordStrength.requirements.hasSpecialChar
-                              ? "text-green-500"
-                              : "text-gray-400"
-                          }
-                        >
-                          ✓
-                        </span>
-                        One special character (!@#$%...)
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => {
+                  setPassword(e.target.value);
+                  if (activeTab === "signup") {
+                    setPasswordStrength(validatePasswordComplexity(e.target.value));
+                  }
+                }}
+                className="input-field"
+                placeholder="••••••••"
+                required
+                minLength={8}
+              />
             </div>
 
-            {/* Submit Button */}
+            {activeTab === "signup" && password.length > 0 && (
+              <div className="p-4 bg-slate-50/50 rounded-2xl space-y-3 border border-slate-100">
+                <div className="flex justify-between items-center text-[9px] font-black uppercase text-slate-400 tracking-widest">
+                  <span>Security Status</span>
+                  <span className={getPasswordStrengthColor(passwordStrength.score)}>
+                    {getPasswordStrengthLabel(passwordStrength.score)}
+                  </span>
+                </div>
+                <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden border border-slate-200/50">
+                  <div
+                    className={`h-full transition-all duration-700 cubic-bezier(0.4, 0, 0.2, 1) ${getPasswordStrengthBarColor(passwordStrength.score)}`}
+                    style={{ width: `${(passwordStrength.score / 5) * 100}%` }}
+                  />
+                </div>
+              </div>
+            )}
+
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold py-3 rounded-2xl transition-all duration-200 shadow-lg hover:shadow-xl"
+              className="btn-primary w-full mt-4"
             >
               {loading ? (
                 <div className="flex items-center justify-center gap-2">
-                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                   <span>Processing...</span>
                 </div>
-              ) : activeTab === "login" ? (
-                "Log In"
-              ) : (
-                "Sign Up"
-              )}
+              ) : activeTab === "login" ? "Sign In Now" : "Create Account"}
             </button>
-
-            {/* Or sign in with */}
-            <div className="text-center">
-              <p className="text-gray-600 text-sm">or sign in with</p>
-            </div>
-
-            {/* Social Buttons */}
-            <div className="flex gap-4">
-              <button
-                type="button"
-                onClick={handleGoogleLogin}
-                className="flex-1 w-12 h-12 bg-red-100 hover:bg-red-200 rounded-full flex items-center justify-center transition-colors"
-              >
-                <svg className="w-6 h-6" viewBox="0 0 24 24">
-                  <text
-                    x="12"
-                    y="16"
-                    textAnchor="middle"
-                    fontSize="12"
-                    fontWeight="bold"
-                    fill="#dc2626"
-                  >
-                    G
-                  </text>
-                </svg>
-              </button>
-              <button
-                type="button"
-                onClick={handleGuestLogin}
-                className="flex-1 w-12 h-12 bg-red-100 hover:bg-red-200 rounded-full flex items-center justify-center transition-colors"
-              >
-                <svg
-                  className="w-6 h-6 text-red-600"
-                  fill="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
-                </svg>
-              </button>
-            </div>
-
-            {/* Sign Up Link */}
-            <div className="text-center pt-4 border-t border-gray-100">
-              <p className="text-gray-700 text-sm">
-                {activeTab === "login" ? (
-                  <>
-                    Don't have an account?{" "}
-                    <button
-                      type="button"
-                      onClick={() => setActiveTab("signup")}
-                      className="text-orange-500 font-bold hover:text-orange-600 transition-colors"
-                    >
-                      Sign Up
-                    </button>
-                  </>
-                ) : (
-                  <>
-                    Already have an account?{" "}
-                    <button
-                      type="button"
-                      onClick={() => setActiveTab("login")}
-                      className="text-orange-500 font-bold hover:text-orange-600 transition-colors"
-                    >
-                      Log In
-                    </button>
-                  </>
-                )}
-              </p>
-            </div>
           </form>
+
+          <div className="relative my-8">
+            <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-slate-100"></div></div>
+            <div className="relative flex justify-center text-[9px] uppercase font-black text-slate-400 tracking-widest">
+              <span className="bg-white px-4">Social Access</span>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <button
+              type="button"
+              onClick={handleGoogleLogin}
+              className="flex items-center justify-center gap-3 py-3.5 border border-slate-200 rounded-2xl hover:bg-slate-50 hover:border-slate-300 transition-all font-bold text-sm text-slate-700 group active:scale-95"
+            >
+              <svg className="w-5 h-5 group-hover:scale-110 transition-transform" viewBox="0 0 24 24">
+                <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
+                <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" />
+                <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05" />
+                <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" />
+              </svg>
+              Google
+            </button>
+            <button
+              type="button"
+              onClick={handleGuestLogin}
+              className="flex items-center justify-center gap-3 py-3.5 border border-slate-200 rounded-2xl hover:bg-slate-50 hover:border-slate-300 transition-all font-bold text-sm text-slate-700 group active:scale-95"
+            >
+              <svg className="w-5 h-5 group-hover:scale-110 transition-transform text-slate-400 group-hover:text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7-7h14a7 7 0 00-7-7z" />
+              </svg>
+              Quick Guest
+            </button>
+          </div>
+        </div>
+
+        <div className="flex flex-col items-center space-y-2 opacity-50 hover:opacity-100 transition-opacity">
+          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Powered by</p>
+          <div className="flex items-center gap-2">
+            <div className="w-5 h-5 bg-slate-900 rounded-md"></div>
+            <span className="text-xs font-black text-slate-900 tracking-tight">SMART RESTAURANT</span>
+          </div>
         </div>
       </div>
 
-      {/* Email Verification Modal */}
       {showEmailVerification && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-6 z-50">
-          <div className="bg-white rounded-2xl p-8 w-full max-w-md text-center">
-            <div className="mb-6">
-              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg
-                  className="w-8 h-8 text-green-600"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
-                  />
-                </svg>
-              </div>
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">
-                Verify Your Email
-              </h2>
-              <p className="text-gray-600 mb-4">
-                We've sent a verification link to:
-              </p>
-              <p className="text-lg font-semibold text-amber-600 mb-4">
-                {verificationEmail}
-              </p>
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md flex items-center justify-center p-6 z-50 animate-fade-in">
+          <div className="bento-card max-w-sm w-full text-center space-y-8 py-10">
+            <div className="w-20 h-20 bg-blue-100 rounded-[32px] flex items-center justify-center mx-auto shadow-inner">
+              <svg className="w-10 h-10 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+              </svg>
             </div>
-
-            <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-6 text-left">
-              <p className="text-sm text-blue-800 font-medium mb-2">
-                ✓ Check your email inbox (and spam folder)
-              </p>
-              <p className="text-sm text-blue-800 mb-2">
-                ✓ Click the verification link to confirm your email
-              </p>
-              <p className="text-sm text-blue-800">
-                ✓ Link expires in 24 hours
-              </p>
+            <div className="space-y-2">
+              <h2 className="text-h2">Check Inbox</h2>
+              <p className="text-body text-slate-500">We've dispatched a secure link to <br /><span className="font-bold text-slate-900">{verificationEmail}</span></p>
             </div>
-
-            <div className="space-y-3">
+            <div className="space-y-4 pt-4">
               <button
-                onClick={() => {
-                  setShowEmailVerification(false);
-                  setActiveTab("login");
-                }}
-                className="w-full bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white font-bold py-3 rounded-xl transition-all duration-200"
+                type="button"
+                onClick={() => { setShowEmailVerification(false); setActiveTab("login"); }}
+                className="btn-primary w-full shadow-slate-300"
               >
-                Continue to Login
+                Back to Sign In
               </button>
               <button
+                type="button"
                 onClick={handleResendVerificationEmail}
                 disabled={resendLoading}
-                className="w-full border border-gray-300 text-gray-700 font-medium py-3 rounded-xl hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                className="btn-secondary w-full"
               >
-                {resendLoading ? (
-                  <>
-                    <div className="w-4 h-4 border-2 border-gray-300 border-t-gray-700 rounded-full animate-spin"></div>
-                    Sending...
-                  </>
-                ) : resendSuccess ? (
-                  <>
-                    <svg
-                      className="w-5 h-5 text-green-600"
-                      fill="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z" />
-                    </svg>
-                    <span className="text-green-600">
-                      Resent! Check your email
-                    </span>
-                  </>
-                ) : (
-                  "Resend Verification Link"
-                )}
+                {resendLoading ? "Sending..." : resendSuccess ? "Verification Resent" : "Resend Link"}
               </button>
             </div>
-
-            <p className="text-xs text-gray-500 mt-4">
-              Once verified, you can log in to your account.
-            </p>
+            <p className="text-[10px] font-bold text-slate-400 uppercase">Valid for 24 hours</p>
           </div>
         </div>
       )}
@@ -706,19 +404,9 @@ function LoginContent() {
 
 export default function LoginPage() {
   return (
-    <Suspense
-      fallback={
-        <div className="min-h-screen bg-gradient-to-br from-amber-400 via-amber-300 to-yellow-300 flex items-center justify-center px-4 py-8">
-          <div className="w-full max-w-md">
-            <div className="bg-white rounded-3xl shadow-2xl p-8 text-center">
-              <div className="w-12 h-12 border-4 border-yellow-200 border-t-orange-500 rounded-full animate-spin mx-auto mb-4"></div>
-              <p className="text-gray-600 font-medium">Loading...</p>
-            </div>
-          </div>
-        </div>
-      }
-    >
+    <Suspense fallback={<div className="min-h-screen bg-ivory-100 flex items-center justify-center p-6"><div className="w-12 h-12 border-4 border-slate-100 border-t-slate-800 rounded-full animate-spin"></div></div>}>
       <LoginContent />
     </Suspense>
   );
 }
+

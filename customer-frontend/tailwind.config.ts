@@ -10,6 +10,23 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
+        ivory: {
+          50: "#FEFEFE",
+          100: "#FDFCFA",
+          200: "#F8F7F4",
+        },
+        slate: {
+          50: "#F8F9FA",
+          100: "#F1F3F5",
+          200: "#E9ECEF",
+          300: "#DEE2E6",
+          400: "#CED4DA",
+          500: "#ADB5BD",
+          600: "#868E96",
+          700: "#495057",
+          800: "#343A40",
+          900: "#212529",
+        },
         primary: {
           50: "#fef2f2",
           100: "#fee2e2",
@@ -36,7 +53,7 @@ const config: Config = {
         },
       },
       fontFamily: {
-        sans: ["var(--font-inter)", "system-ui", "sans-serif"],
+        sans: ["var(--font-plus-jakarta)", "system-ui", "sans-serif"],
       },
       animation: {
         "fade-in": "fadeIn 0.3s ease-out",

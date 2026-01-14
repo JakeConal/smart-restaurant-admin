@@ -33,116 +33,104 @@ function ForgotPasswordContent() {
 
   if (submitted) {
     return (
-      <div className="min-h-screen flex items-center justify-center px-6">
-        <div className="text-center fade-in">
-          <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
-            <svg
-              className="w-10 h-10 text-green-600"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
-              />
+      <div className="min-h-screen bg-ivory-100 flex items-center justify-center p-6 text-center">
+        <div className="bento-card max-w-sm w-full py-12 space-y-8">
+          <div className="w-20 h-20 bg-blue-100 rounded-[32px] flex items-center justify-center mx-auto shadow-inner">
+            <svg className="w-10 h-10 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
             </svg>
           </div>
-          <h1 className="text-2xl font-bold mb-2">Check Your Email</h1>
-          <p className="text-gray-600 mb-6">
-            We&apos;ve sent a password reset link to <strong>{email}</strong>
-          </p>
+          <div className="space-y-2">
+            <h1 className="text-h2">Email Sent</h1>
+            <p className="text-body text-slate-500">
+              We've dispatched a recovery link to <br /><span className="font-bold text-slate-900">{email}</span>
+            </p>
+          </div>
           <Link
             href={`/login${token ? `?token=${token}` : ""}`}
-            className="inline-block px-8 py-3 bg-[#fa4a0c] text-white font-semibold rounded-full hover:bg-[#e04009] transition-colors"
+            className="btn-primary block w-full"
           >
-            Back to Login
+            Return to Sign In
           </Link>
+          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+            Didn't receive? Check your spam folder
+          </p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen pt-12 px-6">
-      {/* Back button */}
-      <Link
-        href={`/login${token ? `?token=${token}` : ""}`}
-        className="inline-flex items-center text-gray-600 hover:text-black transition-colors mb-8"
-      >
-        <svg
-          className="w-6 h-6 mr-2"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
+    <div className="min-h-screen bg-ivory-100 flex flex-col items-center justify-center p-6">
+      <div className="w-full max-w-sm space-y-6">
+        <Link
+          href={`/login${token ? `?token=${token}` : ""}`}
+          className="inline-flex items-center gap-2 text-slate-400 hover:text-slate-900 transition-colors group mb-4"
         >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M15 19l-7-7 7-7"
-          />
-        </svg>
-        Back
-      </Link>
-
-      <h1 className="text-3xl font-bold mb-2">Forgot Password?</h1>
-      <p className="text-gray-600 mb-8">
-        Enter your email address and we&apos;ll send you a link to reset your
-        password.
-      </p>
-
-      <form onSubmit={handleSubmit}>
-        {error && (
-          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl text-red-600 text-sm">
-            {error}
+          <div className="w-8 h-8 rounded-full border border-slate-200 flex items-center justify-center group-hover:border-slate-900 transition-all">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" />
+            </svg>
           </div>
-        )}
+          <span className="text-xs font-black uppercase tracking-widest">Back</span>
+        </Link>
 
-        <div className="mb-6">
-          <label className="block text-sm text-gray-500 font-semibold mb-2">
-            Email address
-          </label>
-          <input
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="w-full py-3 px-4 border border-gray-200 rounded-xl bg-white focus:border-[#fa4a0c] transition-colors"
-            placeholder="example@email.com"
-            required
-          />
+        <div className="bento-card">
+          <div className="mb-8 space-y-2">
+            <h1 className="text-h2">Reset Access</h1>
+            <p className="text-body text-slate-500">
+              Locked out? Provide your email to receive a secure recovery link.
+            </p>
+          </div>
+
+          <form onSubmit={handleSubmit} className="space-y-6">
+            {error && (
+              <div className="p-4 bg-red-50 border border-red-100 rounded-2xl text-red-700 text-[10px] font-bold uppercase tracking-wider flex items-center gap-3 animate-fade-in">
+                <svg className="w-4 h-4 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                </svg>
+                {error}
+              </div>
+            )}
+
+            <div className="space-y-2">
+              <label className="text-caption !text-[10px]">Email Address</label>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="input-field"
+                placeholder="name@email.com"
+                required
+              />
+            </div>
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="btn-primary w-full shadow-slate-200"
+            >
+              {loading ? (
+                <div className="flex items-center justify-center gap-2">
+                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  <span>Processing...</span>
+                </div>
+              ) : "Send Recovery Link"}
+            </button>
+          </form>
         </div>
 
-        <button
-          type="submit"
-          disabled={loading}
-          className="w-full h-14 bg-[#fa4a0c] text-white font-semibold rounded-full btn-press hover:bg-[#e04009] transition-colors disabled:opacity-50"
-        >
-          {loading ? (
-            <span className="flex items-center justify-center gap-2">
-              <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full spinner"></div>
-              Sending...
-            </span>
-          ) : (
-            "Send Reset Link"
-          )}
-        </button>
-      </form>
+        <div className="flex flex-col items-center space-y-2 opacity-50">
+          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Secure Recovery System</p>
+        </div>
+      </div>
     </div>
   );
 }
 
 export default function ForgotPasswordPage() {
   return (
-    <Suspense
-      fallback={
-        <div className="min-h-screen flex items-center justify-center">
-          <div className="w-12 h-12 border-4 border-[#fa4a0c] border-t-transparent rounded-full spinner"></div>
-        </div>
-      }
-    >
+    <Suspense fallback={<div className="min-h-screen bg-ivory-100 flex items-center justify-center p-6"><div className="w-12 h-12 border-4 border-slate-100 border-t-slate-800 rounded-full animate-spin"></div></div>}>
       <ForgotPasswordContent />
     </Suspense>
   );

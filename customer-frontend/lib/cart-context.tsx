@@ -30,6 +30,7 @@ interface MinimalCartItem {
   menuItemId: string;
   menuItemName: string;
   menuItemPrice: number;
+  menuItemPhotoUrl?: string;
   quantity: number;
   modifiers: CartItemModifier[];
   specialInstructions?: string;
@@ -47,6 +48,7 @@ function toMinimalCartItem(item: CartItem): MinimalCartItem {
     menuItemId: item.menuItem.id,
     menuItemName: item.menuItem.name,
     menuItemPrice: item.menuItem.price,
+    menuItemPhotoUrl: item.menuItem.primaryPhotoUrl,
     quantity: item.quantity,
     modifiers: item.modifiers,
     specialInstructions: item.specialInstructions,
@@ -62,6 +64,7 @@ function fromMinimalCartItem(minimal: MinimalCartItem): CartItem {
       id: minimal.menuItemId,
       name: minimal.menuItemName,
       price: minimal.menuItemPrice,
+      primaryPhotoUrl: minimal.menuItemPhotoUrl,
       // Other required fields will be filled from menu cache or UI doesn't need them
     } as MenuItem,
     quantity: minimal.quantity,

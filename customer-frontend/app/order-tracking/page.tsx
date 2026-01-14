@@ -12,6 +12,7 @@ function OrderTrackingContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { token, isAuthenticated, tableId, restaurantId } = useApp();
+  const [mounted, setMounted] = useState(false);
 
   const currentToken = searchParams.get("token") || token;
 
@@ -40,6 +41,7 @@ function OrderTrackingContent() {
   });
 
   useEffect(() => {
+    setMounted(true);
     if (!isAuthenticated) {
       router.replace(`/login?token=${currentToken}`);
     }
@@ -63,45 +65,42 @@ function OrderTrackingContent() {
     router.push(`/payment?token=${currentToken}`);
   };
 
+  if (!mounted) {
+    return (
+      <div className="min-h-screen bg-ivory-50 flex items-center justify-center">
+        <div className="w-12 h-12 border-4 border-slate-100 border-t-slate-800 rounded-full animate-spin" />
+      </div>
+    );
+  }
+
   if (!isAuthenticated) return null;
 
   if (!orders || orders.length === 0) {
     return (
-      <div className="min-h-screen pb-24 safe-bottom flex flex-col">
-        {/* Header */}
-        <div className="pt-8 px-6">
-          <button onClick={() => router.back()} className="mb-4">
-            <svg
-              className="w-6 h-6"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M15 19l-7-7 7-7"
-              />
-            </svg>
-          </button>
-          <h1 className="text-2xl font-bold text-center">Orders</h1>
-        </div>
+      <div className="min-h-screen bg-ivory-100 flex flex-col items-center justify-center p-6 text-center">
+        <div className="w-full max-w-sm space-y-8 animate-fade-in">
+          <div className="w-32 h-32 bg-white rounded-[48px] flex items-center justify-center mx-auto shadow-sm border border-slate-100">
+            <div className="text-5xl">📦</div>
+          </div>
 
-        <div className="flex-1 flex flex-col items-center justify-center px-6">
-          <div className="text-6xl mb-4">📦</div>
-          <h2 className="text-xl font-semibold mb-2">No active orders</h2>
-          <p className="text-gray-500 text-center mb-6">
-            Start placing an order from the menu
-          </p>
+          <div className="space-y-4">
+            <h1 className="text-h1">No Active Orders</h1>
+            <p className="text-body text-slate-500">
+              Your kitchen is quiet. Time to add <br />some flavors to your table?
+            </p>
+          </div>
+
           <Link
             href={`/menu?token=${currentToken}`}
-            className="px-8 py-3 bg-[#fa4a0c] text-white rounded-full font-semibold hover:bg-[#e04009] transition-colors"
+            className="btn-primary block w-full shadow-slate-200"
           >
-            Browse Menu
+            Explore Menu
           </Link>
-        </div>
 
+          <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-300">
+            Smart Restaurant Experience
+          </p>
+        </div>
         <BottomNav token={currentToken || ""} />
       </div>
     );
@@ -121,7 +120,13 @@ function OrderTrackingContent() {
 
 export default function OrderTrackingPageWrapper() {
   return (
-    <Suspense fallback={<div>Loading...</div>}>
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-ivory-50 flex items-center justify-center">
+          <div className="w-12 h-12 border-4 border-slate-100 border-t-slate-800 rounded-full animate-spin"></div>
+        </div>
+      }
+    >
       <OrderTrackingContent />
     </Suspense>
   );

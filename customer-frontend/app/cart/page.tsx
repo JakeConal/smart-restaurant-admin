@@ -23,12 +23,14 @@ function CartContent() {
   const [placingOrder, setPlacingOrder] = useState(false);
   const [error, setError] = useState("");
   const [showOrderModal, setShowOrderModal] = useState(false);
+  const [mounted, setMounted] = useState(false);
 
   const currentToken = searchParams.get("token") || token;
   const orderId = searchParams.get("orderId");
 
   // Load active order from sessionStorage on mount
   useEffect(() => {
+    setMounted(true);
     // Try to load order from orderId in URL first
     if (orderId) {
       try {
@@ -227,46 +229,43 @@ function CartContent() {
     }
   };
 
+  if (!mounted) {
+    return (
+      <div className="min-h-screen bg-ivory-50 flex items-center justify-center">
+        <div className="w-12 h-12 border-4 border-slate-100 border-t-slate-800 rounded-full animate-spin" />
+      </div>
+    );
+  }
+
   if (!isAuthenticated) return null;
 
   // Empty cart view
   if (items.length === 0) {
     return (
-      <div className="min-h-screen pb-24 safe-bottom flex flex-col bg-white">
-        {/* Header */}
-        <div className="pt-6 sm:pt-8 px-4 sm:px-6 border-b border-gray-200">
-          <button
-            onClick={() => router.back()}
-            className="mb-4 p-2 -ml-2 hover:bg-gray-100 rounded-lg transition-colors"
+      <div className="min-h-screen bg-ivory-100 flex flex-col items-center justify-center p-6 text-center">
+        <div className="w-full max-w-sm space-y-8 animate-fade-in">
+          <div className="w-32 h-32 bg-white rounded-[48px] flex items-center justify-center mx-auto shadow-sm border border-slate-100">
+            <div className="text-5xl">🥡</div>
+          </div>
+
+          <div className="space-y-4">
+            <h1 className="text-h1">Hungry?</h1>
+            <p className="text-body text-slate-500">
+              Your cart is waiting to be filled with <br />something delicious.
+            </p>
+          </div>
+
+          <Link
+            href={`/menu?token=${currentToken}`}
+            className="btn-primary block w-full shadow-slate-200"
           >
-            <svg
-              className="w-6 h-6 text-gray-600"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M15 19l-7-7 7-7"
-              />
-            </svg>
-          </button>
-          <h1 className="text-h1 text-center mb-4">Your Cart</h1>
-        </div>
-
-        <div className="flex-1 flex flex-col items-center justify-center px-4 sm:px-6">
-          <div className="text-5xl sm:text-6xl mb-4">🛒</div>
-          <h2 className="text-h2 mb-2">Your cart is empty</h2>
-          <p className="text-gray-500 text-center mb-8 text-base max-w-sm">
-            Add some delicious items from the menu to get started
-          </p>
-          <Link href={`/menu?token=${currentToken}`} className="btn-primary">
-            Browse Menu
+            Explore Menu
           </Link>
-        </div>
 
+          <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-300">
+            Smart Restaurant Experience
+          </p>
+        </div>
         <BottomNav token={currentToken || ""} />
       </div>
     );
@@ -274,229 +273,150 @@ function CartContent() {
 
   // Cart with items view
   return (
-    <div className="min-h-screen bg-white pb-24 safe-bottom">
-      {/* Sticky Header */}
-      <div className="sticky top-0 z-30 bg-white border-b border-gray-200 shadow-sm">
-        <div className="container-safe py-4 sm:py-5">
-          <div className="flex items-center gap-3 sm:gap-4 mb-2">
+    <div className="min-h-screen bg-ivory-100 pb-[240px]">
+      {/* Dynamic Header */}
+      <div className="sticky top-0 z-30 bg-ivory-100/80 backdrop-blur-xl border-b border-slate-200/50">
+        <div className="px-6 py-5 flex items-center justify-between">
+          <div className="flex items-center gap-4">
             <button
               onClick={() => router.back()}
-              className="w-10 h-10 rounded-lg bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-colors flex-shrink-0"
+              className="w-10 h-10 rounded-full bg-white border border-slate-200 flex items-center justify-center shadow-sm hover:border-slate-900 transition-all active:scale-95"
             >
-              <svg
-                className="w-5 h-5 text-gray-600"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M15 19l-7-7 7-7"
-                />
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" />
               </svg>
             </button>
-            <h1 className="text-h1 flex-1 text-center">Your Order</h1>
-            <div className="w-10"></div>
+            <h1 className="text-h2">My Selection</h1>
           </div>
 
           {tableNumber && (
-            <p className="text-center text-caption">🍽️ Table {tableNumber}</p>
+            <div className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-900 text-white rounded-full shadow-lg shadow-slate-900/10">
+              <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+              <span className="text-[10px] font-black uppercase tracking-widest leading-none">Table {tableNumber}</span>
+            </div>
           )}
         </div>
       </div>
 
-      {/* Error message */}
-      {error && (
-        <div className="container-safe mt-4 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm font-medium">
-          ⚠️ {error}
-        </div>
-      )}
+      <main className="px-6 pt-8 space-y-6">
+        {/* Error Feedback */}
+        {error && (
+          <div className="p-4 bg-red-50 border border-red-100 rounded-2xl text-red-700 text-[10px] font-bold uppercase tracking-wider flex items-center gap-3 animate-fade-in">
+            <svg className="w-4 h-4 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+            </svg>
+            {error}
+          </div>
+        )}
 
-      {/* Cart Items */}
-      <div className="container-safe section-spacing space-y-3">
-        {items.map((item) => (
-          <div key={item.id} className="card group">
-            <div className="flex gap-3 sm:gap-4 p-3 sm:p-4">
-              {/* Item Image */}
-              <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-lg overflow-hidden bg-gradient-to-br from-gray-100 to-gray-200 flex-shrink-0 relative">
-                {item.menuItem.primaryPhotoUrl ? (
-                  <Image
-                    src={item.menuItem.primaryPhotoUrl}
-                    alt={item.menuItem.name}
-                    width={96}
-                    height={96}
-                    className="object-cover w-full h-full group-hover:scale-110 transition-transform duration-300"
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center text-3xl sm:text-4xl">
-                    🍽️
+        {/* Categories Breakdown (Grouped items if needed, but for now simple list) */}
+        <div className="space-y-4">
+          <div className="flex items-end justify-between px-1">
+            <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Order Items</span>
+            <button onClick={clearCart} className="text-[10px] font-bold uppercase tracking-widest text-red-500 hover:text-red-600 transition-colors">Clear All</button>
+          </div>
+
+          <div className="space-y-4">
+            {items.map((item) => (
+              <div key={item.id} className="bento-card p-4 group transition-all">
+                <div className="flex gap-4">
+                  {/* Item Image */}
+                  <div className="w-24 h-24 rounded-[20px] overflow-hidden bg-slate-50 border border-slate-100 relative shadow-inner flex-shrink-0">
+                    {item.menuItem.primaryPhotoUrl ? (
+                      <Image
+                        src={item.menuItem.primaryPhotoUrl}
+                        alt={item.menuItem.name}
+                        fill
+                        className="object-cover transition-transform duration-500 group-hover:scale-110"
+                        unoptimized
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-3xl">🍽️</div>
+                    )}
                   </div>
-                )}
-              </div>
 
-              {/* Item Details */}
-              <div className="flex-1 min-w-0 flex flex-col justify-between">
-                <div>
-                  <h3 className="font-bold text-gray-900 text-sm sm:text-base line-clamp-2">
-                    {item.menuItem.name}
-                  </h3>
-
-                  {/* Modifiers */}
-                  {item.modifiers.length > 0 && (
-                    <div className="mt-2 space-y-1">
-                      {item.modifiers.map((modifier) => (
-                        <div
-                          key={`${item.id}-${modifier.optionId}`}
-                          className="flex items-center gap-2 text-xs text-gray-600"
+                  {/* Item Details */}
+                  <div className="flex-1 min-w-0 flex flex-col justify-between py-1">
+                    <div>
+                      <div className="flex justify-between items-start">
+                        <h3 className="text-sm font-bold text-slate-900 line-clamp-1 group-hover:text-slate-600 transition-colors">
+                          {item.menuItem.name}
+                        </h3>
+                        <button
+                          onClick={() => removeItem(item.id)}
+                          className="w-6 h-6 rounded-full flex items-center justify-center text-slate-300 hover:text-red-500 hover:bg-red-50 transition-all"
                         >
-                          <span className="w-1 h-1 bg-red-500 rounded-full"></span>
-                          <span className="line-clamp-1">
-                            {modifier.optionName}
-                            {modifier.priceAdjustment > 0 && (
-                              <span className="text-red-600 font-medium ml-1">
-                                +${modifier.priceAdjustment.toFixed(2)}
-                              </span>
-                            )}
-                          </span>
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" /></svg>
+                        </button>
+                      </div>
+
+                      {/* Modifiers Pill View */}
+                      {item.modifiers.length > 0 && (
+                        <div className="flex flex-wrap gap-1.5 mt-2">
+                          {item.modifiers.map((modifier) => (
+                            <span
+                              key={`${item.id}-${modifier.optionId}`}
+                              className="px-2 py-0.5 bg-slate-100 text-[10px] font-bold text-slate-500 rounded-full border border-slate-200"
+                            >
+                              {modifier.optionName}
+                            </span>
+                          ))}
                         </div>
-                      ))}
+                      )}
+
+                      {/* Special Note */}
+                      {item.specialInstructions && (
+                        <div className="mt-2 flex items-start gap-1.5">
+                          <svg className="w-3 h-3 text-slate-400 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+                          <p className="text-[10px] text-slate-400 italic font-medium truncate">
+                            {item.specialInstructions}
+                          </p>
+                        </div>
+                      )}
                     </div>
-                  )}
 
-                  {/* Special Instructions */}
-                  {item.specialInstructions && (
-                    <div className="mt-2 p-2 bg-blue-50 rounded border border-blue-200">
-                      <p className="text-xs font-medium text-blue-700 mb-1">
-                        📌 Note:
-                      </p>
-                      <p className="text-xs text-blue-600 line-clamp-1">
-                        {item.specialInstructions}
-                      </p>
+                    <div className="flex items-center justify-between mt-3">
+                      <span className="text-sm font-black text-slate-900">${item.totalPrice.toFixed(2)}</span>
+
+                      {/* Compact Quantity Controls */}
+                      <div className="flex items-center bg-slate-50 rounded-full p-1 border border-slate-100">
+                        <button
+                          onClick={() => updateItemQuantity(item.id, Math.max(1, item.quantity - 1))}
+                          className="w-7 h-7 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-900 hover:bg-white transition-all shadow-sm active:scale-90"
+                        >
+                          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M20 12H4" /></svg>
+                        </button>
+                        <span className="w-8 text-center text-xs font-black text-slate-900">{item.quantity}</span>
+                        <button
+                          onClick={() => updateItemQuantity(item.id, item.quantity + 1)}
+                          className="w-7 h-7 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-900 hover:bg-white transition-all shadow-sm active:scale-90"
+                        >
+                          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M12 4v16m8-8H4" /></svg>
+                        </button>
+                      </div>
                     </div>
-                  )}
-                </div>
-
-                {/* Price and Quantity Controls */}
-                <div className="flex items-center justify-between mt-2 sm:mt-3">
-                  <div className="text-right">
-                    <p className="text-xs text-gray-500">
-                      ${item.menuItem.price.toFixed(2)} × {item.quantity}
-                    </p>
-                    <p className="text-base sm:text-lg font-bold text-red-600">
-                      ${item.totalPrice.toFixed(2)}
-                    </p>
-                  </div>
-
-                  {/* Quantity Controls */}
-                  <div className="flex items-center gap-2 ml-4">
-                    <button
-                      onClick={() =>
-                        updateItemQuantity(
-                          item.id,
-                          Math.max(1, item.quantity - 1),
-                        )
-                      }
-                      className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-gray-100 hover:bg-gray-200 flex items-center justify-center hover:scale-110 transition-all text-gray-700 font-bold text-sm"
-                    >
-                      −
-                    </button>
-                    <span className="w-6 text-center font-bold text-gray-900 text-sm">
-                      {item.quantity}
-                    </span>
-                    <button
-                      onClick={() =>
-                        updateItemQuantity(item.id, item.quantity + 1)
-                      }
-                      className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-red-600 hover:bg-red-700 text-white flex items-center justify-center hover:scale-110 transition-all font-bold text-sm"
-                    >
-                      +
-                    </button>
-                    <button
-                      onClick={() => removeItem(item.id)}
-                      className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-red-50 hover:bg-red-100 flex items-center justify-center text-red-600 hover:scale-110 transition-all ml-1"
-                      title="Remove item"
-                    >
-                      <svg
-                        className="w-4 h-4"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M6 18L18 6M6 6l12 12"
-                        />
-                      </svg>
-                    </button>
                   </div>
                 </div>
               </div>
-            </div>
+            ))}
           </div>
-        ))}
-      </div>
-
-      {/* Order Summary - Below Items */}
-      <div className="px-6 mt-8 mb-8">
-        <div className="bg-white/70 backdrop-blur-sm border border-white/50 rounded-2xl p-6 shadow-lg">
-          {/* Summary Header */}
-          <h2 className="font-bold text-gray-900 text-lg mb-4 flex items-center gap-2">
-            <span>💳</span> Order Summary
-          </h2>
-
-          {/* Summary Items */}
-          <div className="space-y-3 mb-4">
-            <div className="flex justify-between items-center text-sm">
-              <span className="text-gray-600">
-                Subtotal ({items.length} items)
-              </span>
-              <span className="font-semibold text-gray-900">
-                ${getTotalPrice().toFixed(2)}
-              </span>
-            </div>
-            <div className="flex justify-between items-center text-sm">
-              <span className="text-gray-600">Tax (10%)</span>
-              <span className="font-semibold text-gray-900">
-                ${(getTotalPrice() * 0.1).toFixed(2)}
-              </span>
-            </div>
-          </div>
-
-          {/* Divider */}
-          <div className="h-px bg-gradient-to-r from-orange-200/0 via-orange-300 to-orange-200/0 mb-4"></div>
-
-          {/* Total */}
-          <div className="flex justify-between items-center mb-6">
-            <span className="font-bold text-gray-900 text-lg">Total</span>
-            <span className="text-3xl font-bold text-orange-600">
-              ${(getTotalPrice() * 1.1).toFixed(2)}
-            </span>
-          </div>
-
-          <button
-            onClick={handleOpenOrderModal}
-            disabled={placingOrder || !tableId || items.length === 0}
-            className="w-full h-14 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-2xl font-bold text-lg shadow-lg hover:shadow-xl hover:scale-105 transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center justify-center gap-2"
-          >
-            {placingOrder ? (
-              <>
-                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                Placing Order...
-              </>
-            ) : (
-              <>
-                <span>✓</span> Complete Order
-              </>
-            )}
-          </button>
         </div>
-      </div>
 
-      <BottomNav token={currentToken || ""} />
+        {/* Note: Order Summary and Security info integrated into the bottom action bar */}
+      </main>
+
+      <BottomNav
+        token={currentToken || ""}
+        action={{
+          label: "Complete Order",
+          count: items.reduce((acc, i) => acc + i.quantity, 0),
+          amount: getTotalPrice() * 1.1,
+          tax: getTotalPrice() * 0.1,
+          onClick: handleOpenOrderModal,
+          disabled: placingOrder || !tableId || items.length === 0,
+          isLoading: placingOrder
+        }}
+      />
 
       {/* Order Information Modal */}
       <OrderInfoModal
@@ -515,8 +435,8 @@ export default function CartPage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen flex items-center justify-center">
-          <div className="w-12 h-12 border-4 border-[#fa4a0c] border-t-transparent rounded-full spinner"></div>
+        <div className="min-h-screen bg-ivory-50 flex items-center justify-center">
+          <div className="w-12 h-12 border-4 border-slate-100 border-t-slate-800 rounded-full animate-spin"></div>
         </div>
       }
     >
