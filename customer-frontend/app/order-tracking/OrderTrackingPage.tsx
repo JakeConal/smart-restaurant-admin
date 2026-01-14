@@ -13,6 +13,7 @@ interface OrderTrackingPageProps {
   onContinue?: (unpaidOrders: Order[], totalAmount: number) => void;
   tableId?: string;
   currentToken?: string;
+  restaurantId?: string;
 }
 
 export default function OrderTrackingPage({
@@ -21,6 +22,7 @@ export default function OrderTrackingPage({
   onRequestBill,
   onContinue,
   currentToken,
+  restaurantId,
 }: OrderTrackingPageProps) {
   const [displayOrders, setDisplayOrders] = useState(orders);
   const [requestingBill, setRequestingBill] = useState(false);
@@ -89,7 +91,7 @@ export default function OrderTrackingPage({
 
         // Check if already connected, otherwise connect
         if (!client.isConnected()) {
-          await client.connect();
+          await client.connect(restaurantId);
         }
 
         setWsConnected(true);

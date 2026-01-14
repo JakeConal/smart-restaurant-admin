@@ -30,7 +30,7 @@ export class WaiterController {
    */
   @Get('orders/pending')
   async getMyPendingOrders(@CurrentUser() user: AuthUser) {
-    return await this.orderService.getMyPendingOrders();
+    return await this.orderService.getMyPendingOrders(user.restaurantId);
   }
 
   /**
@@ -38,7 +38,7 @@ export class WaiterController {
    */
   @Get('orders/pending/count')
   async getMyPendingOrdersCount(@CurrentUser() user: AuthUser) {
-    return await this.orderService.getMyPendingOrdersCount();
+    return await this.orderService.getMyPendingOrdersCount(user.restaurantId);
   }
 
   /**

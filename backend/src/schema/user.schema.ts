@@ -52,6 +52,9 @@ export class Users {
   @Column({ type: 'timestamp', nullable: true })
   emailVerifiedAt: Date;
 
+  @Column('uuid', { nullable: true })
+  restaurantId: string;
+
   @CreateDateColumn()
   created_at: Date;
 

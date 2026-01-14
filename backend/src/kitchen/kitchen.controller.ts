@@ -10,6 +10,8 @@ import {
 } from '@nestjs/common';
 import { OrderService } from '../order/order.service';
 import { AdminGuard } from '../admin-auth/guards/admin.guard';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import type { AuthUser } from '../auth/interfaces/auth-user.interface';
 
 @Controller('api/kitchen')
 @UseGuards(AdminGuard)
@@ -20,9 +22,11 @@ export class KitchenController {
    * Get all orders for kitchen (RECEIVED, PREPARING, READY statuses)
    */
   @Get('orders')
-  async getKitchenOrders() {
+  async getKitchenOrders(@CurrentUser() user: AuthUser) {
     try {
-      const orders = await this.orderService.getKitchenOrders();
+      const orders = await this.orderService.getKitchenOrders(
+        user.restaurantId,
+      );
       return {
         success: true,
         data: orders,

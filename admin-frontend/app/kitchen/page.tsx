@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { DashboardLayout } from "../../shared/components/layout";
 import { useToast } from "../../shared/components/ui/Toast";
+import { useAuth } from "../../shared/components/auth/AuthContext";
 import {
   getKitchenOrders,
   moveOrderToReceived,
@@ -240,6 +241,7 @@ function KitchenColumnComponent({
 
 export default function KitchenPage() {
   const toast = useToast();
+  const { user } = useAuth();
   const [orders, setOrders] = useState<Order[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [draggedOrderId, setDraggedOrderId] = useState<string | null>(null);
@@ -271,7 +273,9 @@ export default function KitchenPage() {
       const client = getOrderWebSocketClient();
 
       if (!client.isConnected()) {
-        await client.connect();
+        const restaurantId = user?.restaurantId;
+        console.log(`[Kitchen] Connecting with restaurantId: ${restaurantId}`);
+        await client.connect(restaurantId);
         setWsConnected(true);
       }
 
@@ -279,20 +283,28 @@ export default function KitchenPage() {
         return;
       }
 
-      const unsubscribe = client.subscribeToOrder(orderId, (data) => {
-        console.log("[Kitchen] Received WebSocket update:", data);
+      const restaurantId = user?.restaurantId;
+      console.log(
+        `[Kitchen] Subscribing to order ${orderId} with restaurantId: ${restaurantId}`,
+      );
+      const unsubscribe = client.subscribeToOrder(
+        orderId,
+        (data) => {
+          console.log("[Kitchen] Received WebSocket update:", data);
 
-        if (data.type === "order:progress" && data.order) {
-          // Update order in list
-          setOrders((prev) =>
-            prev.map((o) => (o.orderId === orderId ? data.order : o)),
-          );
-        } else if (data.type === "order:updated" && data.order) {
-          setOrders((prev) =>
-            prev.map((o) => (o.orderId === orderId ? data.order : o)),
-          );
-        }
-      });
+          if (data.type === "order:progress" && data.order) {
+            // Update order in list
+            setOrders((prev) =>
+              prev.map((o) => (o.orderId === orderId ? data.order : o)),
+            );
+          } else if (data.type === "order:updated" && data.order) {
+            setOrders((prev) =>
+              prev.map((o) => (o.orderId === orderId ? data.order : o)),
+            );
+          }
+        },
+        user?.restaurantId, // Pass restaurantId to filter socket broadcasts
+      );
 
       unsubscribesRef.current.set(orderId, unsubscribe);
     } catch (error) {

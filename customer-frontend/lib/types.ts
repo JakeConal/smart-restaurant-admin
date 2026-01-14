@@ -71,6 +71,7 @@ export interface MenuResponse {
     tableNumber: string;
     capacity: number;
     location?: string;
+    restaurantId?: string;
   };
   menu: {
     categories: MenuCategory[];

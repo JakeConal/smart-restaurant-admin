@@ -11,7 +11,7 @@ import OrderTrackingPage from "./OrderTrackingPage";
 function OrderTrackingContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { token, isAuthenticated, tableId } = useApp();
+  const { token, isAuthenticated, tableId, restaurantId } = useApp();
 
   const currentToken = searchParams.get("token") || token;
 
@@ -119,6 +119,7 @@ function OrderTrackingContent() {
       onContinue={handleContinuePayment}
       tableId={tableId || undefined}
       currentToken={currentToken || ""}
+      restaurantId={restaurantId || undefined}
     />
   );
 }

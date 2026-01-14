@@ -36,6 +36,33 @@ export class OrderGateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
   /**
+   * Join restaurant room for receiving broadcasts
+   * Event: join-restaurant
+   * Data: { restaurantId: string }
+   */
+  @SubscribeMessage('join-restaurant')
+  handleJoinRestaurant(client: Socket, data: { restaurantId: string }): void {
+    const { restaurantId } = data;
+
+    if (!restaurantId) {
+      console.warn(
+        `[OrderGateway] Client ${client.id} tried to join restaurant without restaurantId`,
+      );
+      client.emit('error', { message: 'restaurantId is required' });
+      return;
+    }
+
+    const restaurantRoomName = `restaurant-${restaurantId}`;
+    void client.join(restaurantRoomName);
+    console.log(
+      `[OrderGateway] ✅ Client ${client.id} joined restaurant room: ${restaurantRoomName}`,
+    );
+
+    // Confirm join
+    client.emit('joined-restaurant', { restaurantId });
+  }
+
+  /**
    * Subscribe to order updates
    * Event: subscribe
    * Data: { orderId: string }
@@ -98,14 +125,18 @@ export class OrderGateway implements OnGatewayConnection, OnGatewayDisconnect {
    * Called from OrderService when order status changes
    */
   broadcastOrderUpdate(orderId: string, order: Order): void {
-    const roomName = `order-${orderId}`;
+    const rooms = [`order-${orderId}`];
+    if (order.restaurantId) {
+      rooms.push(`restaurant-${order.restaurantId}`);
+    }
 
     console.log(`[OrderGateway] Broadcasting order update for ${orderId}:`, {
       status: order.status,
       subscribers: this.orderSubscriptions.get(orderId)?.size || 0,
+      restaurantId: order.restaurantId,
     });
 
-    this.server.to(roomName).emit('order:updated', {
+    this.server.to(rooms).emit('order:updated', {
       orderId,
       order,
       timestamp: new Date().toISOString(),
@@ -116,11 +147,14 @@ export class OrderGateway implements OnGatewayConnection, OnGatewayDisconnect {
    * Emit order accepted event
    */
   broadcastOrderAccepted(orderId: string, order: Order): void {
-    const roomName = `order-${orderId}`;
+    const rooms = [`order-${orderId}`];
+    if (order.restaurantId) {
+      rooms.push(`restaurant-${order.restaurantId}`);
+    }
 
     console.log(`[OrderGateway] Broadcasting order accepted for ${orderId}`);
 
-    this.server.to(roomName).emit('order:accepted', {
+    this.server.to(rooms).emit('order:accepted', {
       orderId,
       order,
       status: 'accepted',
@@ -133,11 +167,14 @@ export class OrderGateway implements OnGatewayConnection, OnGatewayDisconnect {
    * Emit order rejected event
    */
   broadcastOrderRejected(orderId: string, order: Order, reason: string): void {
-    const roomName = `order-${orderId}`;
+    const rooms = [`order-${orderId}`];
+    if (order.restaurantId) {
+      rooms.push(`restaurant-${order.restaurantId}`);
+    }
 
     console.log(`[OrderGateway] Broadcasting order rejected for ${orderId}`);
 
-    this.server.to(roomName).emit('order:rejected', {
+    this.server.to(rooms).emit('order:rejected', {
       orderId,
       order,
       reason,
@@ -155,6 +192,7 @@ export class OrderGateway implements OnGatewayConnection, OnGatewayDisconnect {
     newStatus: string,
   ): void {
     const roomName = `order-${orderId}`;
+    const restaurantRoomName = `restaurant-${order.restaurantId}`;
 
     const progressMap: Record<string, number> = {
       pending_acceptance: 0,
@@ -171,8 +209,14 @@ export class OrderGateway implements OnGatewayConnection, OnGatewayDisconnect {
       `[OrderGateway] Broadcasting status progression for ${orderId}: ${previousStatus} -> ${newStatus} (${progress}%)`,
     );
 
-    // Broadcast to order room (for customer tracking)
-    this.server.to(roomName).emit('order:progress', {
+    // Broadcast to both rooms (order-specific and restaurant-wide)
+    // Using an array of rooms ensures clients in both only get one emission
+    const targetRooms = [roomName];
+    if (order.restaurantId) {
+      targetRooms.push(restaurantRoomName);
+    }
+
+    this.server.to(targetRooms).emit('order:progress', {
       orderId,
       previousStatus,
       newStatus,
@@ -181,19 +225,9 @@ export class OrderGateway implements OnGatewayConnection, OnGatewayDisconnect {
       timestamp: new Date().toISOString(),
     });
 
-    // Also broadcast to all connected clients for kitchen updates
-    this.server.emit('order:progress', {
-      orderId,
-      previousStatus,
-      newStatus,
-      progress,
-      order,
-      timestamp: new Date().toISOString(),
-    });
-
-    // If order just moved to RECEIVED status, notify kitchen
-    if (newStatus === 'received') {
-      this.server.emit('kitchen:neworder', {
+    // If order just moved to RECEIVED status, notify kitchen in this restaurant only
+    if (newStatus === 'received' && order.restaurantId) {
+      this.server.to(restaurantRoomName).emit('kitchen:neworder', {
         orderId,
         order,
         timestamp: new Date().toISOString(),
@@ -202,17 +236,30 @@ export class OrderGateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
   /**
-   * Emit new order created event to all connected waiters
+   * Emit new order created event to waiters in specific restaurant
    */
   broadcastNewOrder(order: Order): void {
     console.log(`[OrderGateway] Broadcasting new order: ${order.orderId}`);
-
-    // Broadcast to all clients in the waiter namespace
-    // This notifies all waiters about the new order
-    this.server.emit('order:created', {
+    console.log(`[OrderGateway] Order details:`, {
       orderId: order.orderId,
-      order,
-      timestamp: new Date().toISOString(),
+      restaurantId: order.restaurantId,
+      tableId: order.table_id,
+      tableNumber: order.tableNumber,
     });
+
+    // Only broadcast to clients in this restaurant's room
+    if (order.restaurantId) {
+      const restaurantRoomName = `restaurant-${order.restaurantId}`;
+      console.log(`[OrderGateway] Broadcasting to room: ${restaurantRoomName}`);
+      this.server.to(restaurantRoomName).emit('order:created', {
+        orderId: order.orderId,
+        order,
+        timestamp: new Date().toISOString(),
+      });
+    } else {
+      console.warn(
+        `[OrderGateway] ⚠️  Order ${order.orderId} has NO restaurantId - broadcast SKIPPED!`,
+      );
+    }
   }
 }

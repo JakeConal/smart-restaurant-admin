@@ -5,13 +5,26 @@ const SOCKET_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
 class OrderWebSocketClient {
   private socket: Socket | null = null;
   private orderListeners = new Map<string, Set<Function>>();
+  private restaurantId: string | null = null;
 
   /**
-   * Connect to WebSocket server
+   * Connect to WebSocket server with optional restaurantId for room joining
    */
-  connect(): Promise<void> {
+  connect(restaurantId?: string): Promise<void> {
     return new Promise((resolve, reject) => {
       try {
+        // Store restaurantId for later use in subscriptions
+        if (restaurantId) {
+          this.restaurantId = restaurantId;
+          console.log(
+            `[AdminOrderWebSocket] Stored restaurantId: ${restaurantId}`,
+          );
+        } else {
+          console.warn(
+            `[AdminOrderWebSocket] ⚠️  No restaurantId provided to connect()`,
+          );
+        }
+
         this.socket = io(`${SOCKET_URL}/orders`, {
           reconnection: true,
           reconnectionDelay: 1000,
@@ -20,8 +33,32 @@ class OrderWebSocketClient {
           transports: ["websocket", "polling"],
         });
 
+        let roomJoined = false;
+
         this.socket.on("connect", () => {
           console.log("[AdminOrderWebSocket] Connected to server");
+          // Join restaurant room immediately on connection
+          if (this.restaurantId && this.socket) {
+            this.socket.emit("join-restaurant", {
+              restaurantId: this.restaurantId,
+            });
+            console.log(
+              `[AdminOrderWebSocket] ✅ Emitted join-restaurant with restaurantId: ${this.restaurantId}`,
+            );
+          } else {
+            console.warn(
+              `[AdminOrderWebSocket] ⚠️  Cannot join restaurant room - restaurantId is ${this.restaurantId}`,
+            );
+            resolve(); // Still resolve even without restaurant
+          }
+        });
+
+        // Listen for join confirmation
+        this.socket.on("joined-restaurant", (data) => {
+          console.log(
+            `[AdminOrderWebSocket] ✅ Confirmed joined restaurant: ${data.restaurantId}`,
+          );
+          roomJoined = true;
           resolve();
         });
 
@@ -32,6 +69,19 @@ class OrderWebSocketClient {
 
         this.socket.on("disconnect", (reason) => {
           console.log("[AdminOrderWebSocket] Disconnected:", reason);
+        });
+
+        // Handle reconnect - rejoin restaurant room
+        this.socket.on("reconnect", () => {
+          console.log("[AdminOrderWebSocket] Reconnected to server");
+          if (this.restaurantId && this.socket) {
+            this.socket.emit("join-restaurant", {
+              restaurantId: this.restaurantId,
+            });
+            console.log(
+              `[AdminOrderWebSocket] Rejoined restaurant room: restaurant-${this.restaurantId}`,
+            );
+          }
         });
 
         // Setup event listeners
@@ -52,8 +102,27 @@ class OrderWebSocketClient {
     // New order created event - broadcast to all waiters
     this.socket.on("order:created", (data) => {
       console.log("[AdminOrderWebSocket] New order created:", data);
+
+      // SECURITY: Validate order belongs to our restaurant
+      const orderRestaurantId = data.order?.restaurantId;
+      if (
+        orderRestaurantId &&
+        this.restaurantId &&
+        orderRestaurantId !== this.restaurantId
+      ) {
+        console.warn(
+          `[AdminOrderWebSocket] ⚠️ SECURITY: Received order from different restaurant! ` +
+            `Order restaurantId: ${orderRestaurantId}, Our restaurantId: ${this.restaurantId} - REJECTING`,
+        );
+        return; // Reject order from other restaurants
+      }
+
       // Notify all listeners with a special marker for new order
-      this.socket?.emit("subscribe", { orderId: data.orderId });
+      // Subscribe to this specific order (with restaurantId for security)
+      this.socket?.emit("subscribe", {
+        orderId: data.orderId,
+        restaurantId: this.restaurantId,
+      });
       // Dispatch event to global listeners
       window.dispatchEvent(
         new CustomEvent("waiter:neworder", {
@@ -127,13 +196,25 @@ class OrderWebSocketClient {
   /**
    * Subscribe to order updates
    */
-  subscribeToOrder(orderId: string, listener: (data: any) => void): () => void {
+  /**
+   * Subscribe to order updates
+   */
+  subscribeToOrder(
+    orderId: string,
+    listener: (data: any) => void,
+    restaurantId?: string,
+  ): () => void {
     if (!this.orderListeners.has(orderId)) {
       this.orderListeners.set(orderId, new Set());
 
       // Emit subscribe event to server
       if (this.socket) {
         this.socket.emit("subscribe", { orderId });
+
+        // If restaurantId is provided and different from ours, join that restaurant room too
+        if (restaurantId && restaurantId !== this.restaurantId) {
+          this.socket.emit("join-restaurant", { restaurantId });
+        }
       }
     }
 

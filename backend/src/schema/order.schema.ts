@@ -44,6 +44,9 @@ export class Order {
   orderId: string; // Custom order ID for frontend (order-{timestamp})
 
   @Column({ type: 'uuid', nullable: true })
+  restaurantId: string | null; // Store restaurant for socket filtering
+
+  @Column({ type: 'uuid', nullable: true })
   @ManyToOne(() => Table, { eager: false, nullable: true })
   @JoinColumn({ name: 'table_id' })
   table_id: string | null;

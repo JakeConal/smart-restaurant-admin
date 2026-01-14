@@ -166,7 +166,7 @@ function MenuContent() {
           if (response.table) {
             setTableInfo({
               tableId: response.table.id,
-              restaurantId: "",
+              restaurantId: response.table.restaurantId || "",
               tableNumber: response.table.tableNumber,
             });
           }

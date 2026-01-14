@@ -63,6 +63,11 @@ export class AdminAuthService {
     await queryRunner.startTransaction();
 
     try {
+      // Generate unique restaurantId based on email and timestamp
+      const timestamp = Date.now().toString(36);
+      const random = Math.random().toString(36).substr(2, 5);
+      const restaurantId = `rest_${timestamp}_${random}`;
+
       // Create user
       const user = this.userRepo.create({
         email: dto.email,
@@ -70,6 +75,7 @@ export class AdminAuthService {
         role_id: role.id,
         status: UserStatus.ACTIVE,
         isEmailVerified: false, // Email not verified yet
+        restaurantId, // Store restaurantId
       });
       await queryRunner.manager.save(user);
 
@@ -118,6 +124,7 @@ export class AdminAuthService {
           email: user.email,
           fullName: user.full_name,
           role: role.code,
+          restaurantId: user.restaurantId,
           isEmailVerified: false,
         },
       };
@@ -210,6 +217,7 @@ export class AdminAuthService {
         email: user.email,
         fullName: user.full_name,
         role: user.role.code,
+        restaurantId: user.restaurantId,
         permissions,
       },
     };
@@ -318,6 +326,7 @@ export class AdminAuthService {
         sub: user.id,
         email: user.email,
         role: role.code,
+        restaurantId: user.restaurantId,
         permissions,
       },
       { expiresIn: (process.env.JWT_ACCESS_EXPIRY || '15m') as any },

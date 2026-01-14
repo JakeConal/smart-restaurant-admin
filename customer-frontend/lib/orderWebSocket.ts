@@ -7,9 +7,9 @@ class OrderWebSocketClient {
   private orderListeners = new Map<string, Set<Function>>();
 
   /**
-   * Connect to WebSocket server
+   * Connect to WebSocket server with optional restaurantId
    */
-  connect(): Promise<void> {
+  connect(restaurantId?: string): Promise<void> {
     return new Promise((resolve, reject) => {
       try {
         this.socket = io(`${SOCKET_URL}/orders`, {

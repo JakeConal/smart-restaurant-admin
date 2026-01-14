@@ -34,7 +34,7 @@ export class ManagerController {
       throw new ForbiddenException('Only managers can access escalated orders');
     }
 
-    return await this.orderService.getEscalatedOrders();
+    return await this.orderService.getEscalatedOrders(user.restaurantId);
   }
 
   /**
@@ -47,7 +47,7 @@ export class ManagerController {
       throw new ForbiddenException('Only managers can access escalated orders');
     }
 
-    return await this.orderService.getEscalatedOrdersCount();
+    return await this.orderService.getEscalatedOrdersCount(user.restaurantId);
   }
 
   /**

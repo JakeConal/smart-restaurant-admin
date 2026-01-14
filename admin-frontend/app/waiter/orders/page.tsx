@@ -80,7 +80,11 @@ export default function WaiterOrdersPage() {
 
       // Check if already connected, otherwise connect
       if (!client.isConnected()) {
-        await client.connect();
+        const restaurantId = user?.restaurantId;
+        console.log(
+          `[WaiterOrders] Connecting with restaurantId: ${restaurantId}`,
+        );
+        await client.connect(restaurantId);
         setWsConnected(true);
       }
 
@@ -89,45 +93,53 @@ export default function WaiterOrdersPage() {
         return;
       }
 
-      // Subscribe to order updates
-      const unsubscribe = client.subscribeToOrder(orderId, (data) => {
-        console.log("[WaiterOrders] Received WebSocket update:", data);
+      // Subscribe to order updates with restaurantId
+      const restaurantId = user?.restaurantId;
+      console.log(
+        `[WaiterOrders] Subscribing to order ${orderId} with restaurantId: ${restaurantId}`,
+      );
+      const unsubscribe = client.subscribeToOrder(
+        orderId,
+        (data) => {
+          console.log("[WaiterOrders] Received WebSocket update:", data);
 
-        if (data.type === "order:rejected") {
-          // Order was rejected - remove from list
-          console.log("[WaiterOrders] Order rejected, removing from list");
-          setOrders((prev) => prev.filter((o) => o.orderId !== orderId));
-
-          if (selectedOrder?.orderId === orderId) {
-            setSelectedOrder(null);
-          }
-        } else if (data.type === "order:progress") {
-          // Order status progressed - check if moved away from pending_acceptance
-          console.log(
-            "[WaiterOrders] Order status progressed:",
-            data.newStatus,
-          );
-          if (data.newStatus === "received") {
-            // Order was accepted and sent to kitchen - remove from waiter orders list
-            console.log(
-              "[WaiterOrders] Order accepted and sent to kitchen, removing from list",
-            );
+          if (data.type === "order:rejected") {
+            // Order was rejected - remove from list
+            console.log("[WaiterOrders] Order rejected, removing from list");
             setOrders((prev) => prev.filter((o) => o.orderId !== orderId));
+
             if (selectedOrder?.orderId === orderId) {
               setSelectedOrder(null);
             }
+          } else if (data.type === "order:progress") {
+            // Order status progressed - check if moved away from pending_acceptance
+            console.log(
+              "[WaiterOrders] Order status progressed:",
+              data.newStatus,
+            );
+            if (data.newStatus === "received") {
+              // Order was accepted and sent to kitchen - remove from waiter orders list
+              console.log(
+                "[WaiterOrders] Order accepted and sent to kitchen, removing from list",
+              );
+              setOrders((prev) => prev.filter((o) => o.orderId !== orderId));
+              if (selectedOrder?.orderId === orderId) {
+                setSelectedOrder(null);
+              }
+            }
+          } else if (data.type === "order:updated" && data.order) {
+            // General order update
+            console.log("[WaiterOrders] Order updated");
+            setOrders((prev) =>
+              prev.map((o) => (o.orderId === orderId ? data.order : o)),
+            );
+            if (selectedOrder?.orderId === orderId) {
+              setSelectedOrder(data.order);
+            }
           }
-        } else if (data.type === "order:updated" && data.order) {
-          // General order update
-          console.log("[WaiterOrders] Order updated");
-          setOrders((prev) =>
-            prev.map((o) => (o.orderId === orderId ? data.order : o)),
-          );
-          if (selectedOrder?.orderId === orderId) {
-            setSelectedOrder(data.order);
-          }
-        }
-      });
+        },
+        user?.restaurantId, // Pass restaurantId to filter socket broadcasts
+      );
 
       unsubscribesRef.current.set(orderId, unsubscribe);
     } catch (error) {

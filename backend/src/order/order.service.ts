@@ -22,19 +22,32 @@ export class OrderService {
   ) {}
 
   async create(createOrderDto: CreateOrderDto): Promise<Order> {
-    // Get table to find assigned waiter
+    // Get table to find assigned waiter and restaurantId
     let assignedWaiterId: string | null = null;
+    let restaurantId: string | null = null;
     if (createOrderDto.table_id) {
       const table = await this.tableRepository.findOne({
         where: { id: createOrderDto.table_id },
       });
       assignedWaiterId = table?.waiter_id || null;
+      restaurantId = table?.restaurantId || null;
+
+      console.log(
+        `[OrderService] Found table: ${JSON.stringify({
+          tableId: createOrderDto.table_id,
+          restaurantId,
+          tableNumber: table?.tableNumber,
+        })}`,
+      );
+    } else {
+      console.log(`[OrderService] No table_id provided in order creation`);
     }
 
     // Create order with ONLY fields we want, explicitly ignore status from DTO
     const order = this.orderRepository.create({
       orderId: createOrderDto.orderId,
       table_id: createOrderDto.table_id,
+      restaurantId, // Store restaurant ID for socket filtering
       tableNumber: createOrderDto.tableNumber,
       guestName: createOrderDto.guestName,
       items: createOrderDto.items,
@@ -52,7 +65,15 @@ export class OrderService {
 
     const savedOrder = await this.orderRepository.save(order);
 
-    // Broadcast new order to all connected waiters
+    console.log(
+      `[OrderService] Order saved: ${JSON.stringify({
+        orderId: savedOrder.orderId,
+        restaurantId: savedOrder.restaurantId,
+        status: savedOrder.status,
+      })}`,
+    );
+
+    // Broadcast new order to all connected waiters (with restaurant filtering)
     void this.orderGateway.broadcastNewOrder(savedOrder);
 
     return savedOrder;
@@ -214,13 +235,14 @@ export class OrderService {
   /**
    * Get pending orders for a waiter (PENDING_ACCEPTANCE orders not yet accepted by anyone)
    */
-  async getMyPendingOrders(): Promise<Order[]> {
+  async getMyPendingOrders(restaurantId: string): Promise<Order[]> {
     return this.orderRepository.find({
       where: {
         status: OrderStatus.PENDING_ACCEPTANCE,
         isEscalated: false,
         isDeleted: false,
         waiter_id: null, // Only show orders not yet accepted by anyone
+        restaurantId: restaurantId,
       },
       order: { createdAt: 'ASC' },
     });
@@ -229,11 +251,11 @@ export class OrderService {
   /**
    * Get count of pending orders for a waiter
    */
-  async getMyPendingOrdersCount(): Promise<{
+  async getMyPendingOrdersCount(restaurantId: string): Promise<{
     count: number;
     oldestOrderMinutes: number | null;
   }> {
-    const orders = await this.getMyPendingOrders();
+    const orders = await this.getMyPendingOrders(restaurantId);
     const count = orders.length;
 
     let oldestOrderMinutes: number | null = null;
@@ -253,12 +275,13 @@ export class OrderService {
   /**
    * Get all escalated orders (for manager)
    */
-  async getEscalatedOrders(): Promise<Order[]> {
+  async getEscalatedOrders(restaurantId: string): Promise<Order[]> {
     return this.orderRepository.find({
       where: {
         isEscalated: true,
         status: OrderStatus.PENDING_ACCEPTANCE,
         isDeleted: false,
+        restaurantId: restaurantId,
       },
       relations: ['waiter'],
       order: { escalatedAt: 'ASC' },
@@ -268,12 +291,15 @@ export class OrderService {
   /**
    * Get count of escalated orders
    */
-  async getEscalatedOrdersCount(): Promise<{ count: number }> {
+  async getEscalatedOrdersCount(
+    restaurantId: string,
+  ): Promise<{ count: number }> {
     const count = await this.orderRepository.count({
       where: {
         isEscalated: true,
         status: OrderStatus.PENDING_ACCEPTANCE,
         isDeleted: false,
+        restaurantId: restaurantId,
       },
     });
 
@@ -415,7 +441,7 @@ export class OrderService {
   /**
    * Get all orders for kitchen display (RECEIVED, PREPARING, READY statuses)
    */
-  async getKitchenOrders(): Promise<Order[]> {
+  async getKitchenOrders(restaurantId: string): Promise<Order[]> {
     return this.orderRepository.find({
       where: {
         status: In([
@@ -424,6 +450,7 @@ export class OrderService {
           OrderStatus.READY,
         ]),
         isDeleted: false,
+        restaurantId: restaurantId,
       },
       order: { sentToKitchenAt: 'ASC' },
     });
