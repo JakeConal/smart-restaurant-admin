@@ -14,6 +14,7 @@ import {
   AlertCircle,
   Table2,
   Soup,
+  LogOut,
 } from "lucide-react";
 import { useAuth } from "@/shared/components/auth/AuthContext";
 import { useEscalationPolling } from "../../lib/hooks/useEscalationPolling";
@@ -28,7 +29,7 @@ const menuItems = [
 
 export const Sidebar: React.FC = () => {
   const pathname = usePathname();
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
 
   // Poll for escalated orders count (only for managers)
   const { count: escalatedCount } = useEscalationPolling({
@@ -207,6 +208,15 @@ export const Sidebar: React.FC = () => {
           <Settings2 className="w-6 h-6 group-hover:rotate-90 transition-transform" />
           <span className="font-semibold hidden lg:block">Settings</span>
         </Link>
+
+        {/* Logout Button */}
+        <button
+          onClick={logout}
+          className="flex items-center gap-4 px-4 py-3.5 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-2xl transition-all group mt-2"
+        >
+          <LogOut className="w-6 h-6 group-hover:scale-110 transition-transform" />
+          <span className="font-semibold hidden lg:block">Logout</span>
+        </button>
       </nav>
     </aside>
   );

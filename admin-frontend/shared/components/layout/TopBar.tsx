@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Bell, Plus, LogOut } from "lucide-react";
+import { Bell, Plus } from "lucide-react";
 import { Button } from "@/shared/components/ui";
 import { useAuth } from "@/shared/components/auth/AuthContext";
 
@@ -22,7 +22,7 @@ export const TopBar: React.FC<TopBarProps> = ({
   currentView = "list",
   onViewChange,
 }) => {
-  const { logout, user } = useAuth();
+  const { user } = useAuth();
 
   return (
     <header className="h-20 flex items-center justify-between px-2">
@@ -63,14 +63,6 @@ export const TopBar: React.FC<TopBarProps> = ({
 
         <button className="w-12 h-12 bg-white rounded-2xl border border-slate-100 shadow-sm flex items-center justify-center hover:bg-slate-50 text-slate-800 transition-all">
           <Bell className="w-5 h-5" />
-        </button>
-
-        <button
-          onClick={logout}
-          className="w-12 h-12 bg-red-50 rounded-2xl border border-red-100 shadow-sm flex items-center justify-center hover:bg-red-100 text-red-600 transition-all"
-          title="Logout"
-        >
-          <LogOut className="w-5 h-5" />
         </button>
 
         {onAddClick && (
