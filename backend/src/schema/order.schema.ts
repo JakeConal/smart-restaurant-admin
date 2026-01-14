@@ -31,6 +31,7 @@ export interface OrderItem {
   quantity: number;
   unitPrice: number;
   totalPrice: number;
+  prepTimeMinutes?: number; // Added for kitchen tracking
   modifiers?: any[];
   specialInstructions?: string;
 }
@@ -45,6 +46,9 @@ export class Order {
 
   @Column({ type: 'uuid', nullable: true })
   restaurantId: string | null; // Store restaurant for socket filtering
+
+  @Column({ type: 'int', default: 0 })
+  maxPrepTimeMinutes: number; // Max prep time among all items in this order
 
   @Column({ type: 'uuid', nullable: true })
   @ManyToOne(() => Table, { eager: false, nullable: true })

@@ -11,21 +11,22 @@ export enum OrderStatus {
 }
 
 export interface OrderItem {
-  id: number;
-  menuItemId: number;
+  id: number | string;
+  menuItemId: string;
   menuItemName: string;
   quantity: number;
   price?: number;
   subtotal?: number;
   totalPrice?: number;
   unitPrice?: number;
+  prepTimeMinutes?: number;
   specialInstructions?: string;
   modifiers?: OrderItemModifier[];
 }
 
 export interface OrderItemModifier {
-  id: number;
-  modifierOptionId: number;
+  id: number | string;
+  modifierOptionId: number | string;
   modifierOptionName: string;
   price: number;
 }
@@ -33,7 +34,9 @@ export interface OrderItemModifier {
 export interface Order {
   id: number;
   orderId: string;
-  tableNumber: number;
+  restaurantId?: string;
+  maxPrepTimeMinutes?: number;
+  tableNumber: number | string;
   status: OrderStatus;
   items: OrderItem[];
   subtotal: number;

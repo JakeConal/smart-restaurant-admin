@@ -9,6 +9,8 @@ import {
   Package,
   Flame,
   CheckCircle2,
+  Volume2,
+  VolumeX,
 } from "lucide-react";
 import { DashboardLayout } from "../../shared/components/layout";
 import { useToast } from "../../shared/components/ui/Toast";
@@ -21,6 +23,7 @@ import {
 } from "../../shared/lib/api/kitchen";
 import { getOrderWebSocketClient } from "../../shared/lib/orderWebSocket";
 import type { Order, OrderStatus } from "../../shared/types/order";
+import { Howl, Howler } from "howler";
 
 type KitchenColumn = "received" | "preparing" | "ready";
 
@@ -67,20 +70,34 @@ function KitchenOrderCard({
     }
   }, [order.kitchenReceivedAt, order.sentToKitchenAt, order.createdAt, column]);
 
-  // Color based on elapsed time
+  // Color based on elapsed time and prep time
   const getTimeColor = () => {
     const minutes = elapsedSeconds / 60;
-    if (minutes < 5) return "text-green-600 bg-green-50";
-    if (minutes < 10) return "text-orange-600 bg-orange-50";
-    return "text-red-600 bg-red-50";
+    const maxPrepTime = order.maxPrepTimeMinutes || 10; // Default to 10 mins if not set
+
+    if (minutes >= maxPrepTime) {
+      return "text-white bg-red-600 animate-pulse ring-4 ring-red-200";
+    }
+    if (minutes >= maxPrepTime * 0.75) {
+      return "text-orange-700 bg-orange-100 ring-2 ring-orange-200";
+    }
+    return "text-green-700 bg-green-100";
   };
+
+  const isOverdue =
+    elapsedSeconds / 60 >= (order.maxPrepTimeMinutes || 10) &&
+    column !== "ready";
 
   return (
     <div
       draggable
       onDragStart={(e) => onDragStart(e, order.orderId)}
       onDragEnd={onDragEnd}
-      className="bg-white rounded-2xl border border-slate-200/50 shadow-md p-4 cursor-grab active:cursor-grabbing hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200"
+      className={`bg-white rounded-2xl border shadow-md p-4 cursor-grab active:cursor-grabbing hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 ${
+        isOverdue
+          ? "border-red-500 shadow-red-100 bg-red-50/30"
+          : "border-slate-200/50"
+      }`}
     >
       {/* Header with drag handle */}
       <div className="flex items-center justify-between mb-3">
@@ -89,13 +106,18 @@ function KitchenOrderCard({
           <div>
             <h3 className="font-bold text-gray-900">
               Table {order.tableNumber}
+              {isOverdue && (
+                <span className="ml-2 text-[10px] bg-red-600 text-white px-2 py-0.5 rounded-full uppercase tracking-wider animate-pulse">
+                  Urgent
+                </span>
+              )}
             </h3>
             <p className="text-xs text-gray-500">#{order.orderId.slice(-6)}</p>
           </div>
         </div>
         {/* Timer */}
         <div
-          className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold ${getTimeColor()}`}
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-black transition-colors duration-300 ${getTimeColor()}`}
         >
           <Clock className="w-3.5 h-3.5" />
           {formatTime(elapsedSeconds)}
@@ -109,13 +131,20 @@ function KitchenOrderCard({
             key={idx}
             className="py-3 border-b border-slate-100 last:border-0"
           >
-            <div className="flex items-start gap-2 mb-2">
+            <div className="flex items-start gap-2 mb-1">
               <span className="bg-slate-100 text-slate-700 text-xs font-bold px-2 py-0.5 rounded min-w-fit">
                 {item.quantity}x
               </span>
-              <span className="text-sm font-medium text-gray-800 flex-1">
-                {item.menuItemName}
-              </span>
+              <div className="flex-1">
+                <span className="text-sm font-bold text-gray-800">
+                  {item.menuItemName}
+                </span>
+                {item.prepTimeMinutes && (
+                  <span className="ml-2 text-[10px] text-gray-400 font-medium">
+                    ({item.prepTimeMinutes}m)
+                  </span>
+                )}
+              </div>
             </div>
             {item.modifiers && item.modifiers.length > 0 && (
               <div className="ml-2 space-y-1 mb-2">
@@ -249,7 +278,57 @@ export default function KitchenPage() {
     null,
   );
   const [wsConnected, setWsConnected] = useState(false);
+  const [soundEnabled, setSoundEnabled] = useState(true);
   const unsubscribesRef = useRef<Map<string, () => void>>(new Map());
+  const soundRef = useRef<Howl | null>(null);
+
+  // Initialize sound on mount
+  useEffect(() => {
+    soundRef.current = new Howl({
+      src: [
+        "https://cdn.freesound.org/previews/263/263133_2064400-lq.mp3",
+        "https://www.soundjay.com/buttons/sounds/button-10.mp3",
+      ],
+      volume: 1.0,
+      preload: true,
+      onloaderror: (id, err) =>
+        console.error("[Kitchen] Sound Load Error:", err),
+      onplayerror: (id, err) => {
+        console.error("[Kitchen] Sound Play Error:", err);
+        // Try to resume context if blocked
+        if (err === "Error: AudioContext is suspended.") {
+          Howler.ctx?.resume();
+        }
+      },
+    });
+
+    return () => {
+      if (soundRef.current) {
+        soundRef.current.unload();
+      }
+    };
+  }, []);
+
+  // sound notification helper
+  const playNotificationSound = useCallback(() => {
+    if (soundRef.current && soundEnabled) {
+      let playCount = 0;
+
+      const handleEnd = () => {
+        playCount++;
+        if (playCount < 2) {
+          soundRef.current?.play();
+        } else {
+          soundRef.current?.off("end", handleEnd);
+        }
+      };
+
+      soundRef.current.off("end");
+      soundRef.current.on("end", handleEnd);
+
+      soundRef.current.play();
+    }
+  }, [soundEnabled]);
 
   const loadOrders = useCallback(async () => {
     try {
@@ -315,19 +394,74 @@ export default function KitchenPage() {
   useEffect(() => {
     loadOrders();
 
-    // Listen for new orders sent to kitchen
-    const handleNewKitchenOrder = () => {
-      loadOrders();
+    // Listen for new orders via global custom events dispatched by OrderWebSocketClient
+    const handleNewOrder = (event: any) => {
+      const { order } = event.detail;
+      console.log("[Kitchen] Received new order event:", order);
+
+      // Add to list if not already there
+      setOrders((prev) => {
+        if (prev.find((o) => o.orderId === order.orderId)) return prev;
+        return [...prev, order];
+      });
+
+      // Play sound
+      playNotificationSound();
+
+      // Subscribe to updates for this specific order
+      subscribeToOrder(order.orderId);
+
+      toast.info(`New order from Table ${order.tableNumber}`);
     };
 
-    window.addEventListener("kitchen:neworder", handleNewKitchenOrder);
+    const handleOrderUpdate = (event: any) => {
+      const { orderId, order, newStatus } = event.detail;
+      console.log("[Kitchen] Received order update event:", {
+        orderId,
+        newStatus,
+      });
+
+      if (newStatus === "completed" || newStatus === "cancelled") {
+        // Remove from list
+        setOrders((prev) => prev.filter((o) => o.orderId !== orderId));
+        // Unsubscribe
+        const unsubscribe = unsubscribesRef.current.get(orderId);
+        if (unsubscribe) {
+          unsubscribe();
+          unsubscribesRef.current.delete(orderId);
+        }
+      } else {
+        // Update in list
+        setOrders((prev) => {
+          const exists = prev.find((o) => o.orderId === orderId);
+          if (exists) {
+            return prev.map((o) => (o.orderId === orderId ? order : o));
+          } else if (
+            ["received", "preparing", "ready"].includes(
+              newStatus?.toLowerCase(),
+            )
+          ) {
+            // If it's a kitchen status but not in our list, add it
+            return [...prev, order];
+          }
+          return prev;
+        });
+      }
+    };
+
+    window.addEventListener("kitchen:neworder" as any, handleNewOrder);
+    window.addEventListener("kitchen:orderupdate" as any, handleOrderUpdate);
 
     return () => {
-      window.removeEventListener("kitchen:neworder", handleNewKitchenOrder);
+      window.removeEventListener("kitchen:neworder" as any, handleNewOrder);
+      window.removeEventListener(
+        "kitchen:orderupdate" as any,
+        handleOrderUpdate,
+      );
       unsubscribesRef.current.forEach((unsubscribe) => unsubscribe());
       unsubscribesRef.current.clear();
     };
-  }, [loadOrders]);
+  }, [loadOrders, playNotificationSound, toast]);
 
   // Set up polling for new kitchen orders
   useEffect(() => {
@@ -458,16 +592,59 @@ export default function KitchenPage() {
             </div>
           </div>
 
-          <button
-            onClick={handleRefresh}
-            disabled={isLoading}
-            className="flex items-center gap-2 px-4 py-2.5 bg-slate-200 hover:bg-slate-300 text-slate-800 rounded-xl font-bold text-sm transition-all"
-          >
-            <RefreshCw
-              className={`w-4 h-4 ${isLoading ? "animate-spin" : ""}`}
-            />
-            <span className="hidden sm:inline">Refresh</span>
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => {
+                const newState = !soundEnabled;
+
+                // CRITICAL: Resume AudioContext on user interaction
+                if (Howler.ctx && Howler.ctx.state === "suspended") {
+                  Howler.ctx.resume();
+                }
+
+                setSoundEnabled(newState);
+
+                if (newState) {
+                  // Test/Unlock immediately
+                  if (soundRef.current) {
+                    soundRef.current.stop();
+                    soundRef.current.play();
+                  }
+                  toast.success("Sound notifications enabled");
+                } else {
+                  // Stop any currently playing sounds/loops
+                  if (soundRef.current) {
+                    soundRef.current.stop();
+                    soundRef.current.off("end");
+                  }
+                  toast.info("Sound notifications disabled");
+                }
+              }}
+              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-sm transition-all ${
+                soundEnabled
+                  ? "bg-green-100 text-green-700 hover:bg-green-200"
+                  : "bg-red-100 text-red-700 hover:bg-red-200"
+              }`}
+            >
+              {soundEnabled ? (
+                <Volume2 className="w-4 h-4" />
+              ) : (
+                <VolumeX className="w-4 h-4" />
+              )}
+              <span>{soundEnabled ? "Sound On" : "Sound Off"}</span>
+            </button>
+
+            <button
+              onClick={handleRefresh}
+              disabled={isLoading}
+              className="flex items-center gap-2 px-4 py-2.5 bg-slate-200 hover:bg-slate-300 text-slate-800 rounded-xl font-bold text-sm transition-all"
+            >
+              <RefreshCw
+                className={`w-4 h-4 ${isLoading ? "animate-spin" : ""}`}
+              />
+              <span className="hidden sm:inline">Refresh</span>
+            </button>
+          </div>
         </div>
       </div>
 

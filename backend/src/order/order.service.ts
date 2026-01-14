@@ -7,6 +7,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, In } from 'typeorm';
 import { Order, OrderStatus } from '../schema/order.schema';
 import { Table } from '../schema/table.schema';
+import { MenuItem } from '../schema/menu-item.schema';
 import { CreateOrderDto } from '../dto/create-order.dto';
 import { UpdateOrderDto } from '../dto/update-order.dto';
 import { OrderGateway } from './order.gateway';
@@ -18,6 +19,8 @@ export class OrderService {
     private readonly orderRepository: Repository<Order>,
     @InjectRepository(Table)
     private readonly tableRepository: Repository<Table>,
+    @InjectRepository(MenuItem)
+    private readonly menuItemRepository: Repository<MenuItem>,
     private readonly orderGateway: OrderGateway,
   ) {}
 
@@ -43,14 +46,33 @@ export class OrderService {
       console.log(`[OrderService] No table_id provided in order creation`);
     }
 
+    // Enrich items with prep time and calculate max prep time
+    let maxPrepTimeMinutes = 0;
+    const enrichedItems = await Promise.all(
+      createOrderDto.items.map(async (item) => {
+        const menuItem = await this.menuItemRepository.findOne({
+          where: { id: item.menuItemId },
+        });
+        const prepTime = menuItem?.prepTimeMinutes || 0;
+        if (prepTime > maxPrepTimeMinutes) {
+          maxPrepTimeMinutes = prepTime;
+        }
+        return {
+          ...item,
+          prepTimeMinutes: prepTime,
+        };
+      }),
+    );
+
     // Create order with ONLY fields we want, explicitly ignore status from DTO
     const order = this.orderRepository.create({
       orderId: createOrderDto.orderId,
       table_id: createOrderDto.table_id,
       restaurantId, // Store restaurant ID for socket filtering
+      maxPrepTimeMinutes, // Store max prep time for kitchen highlighting
       tableNumber: createOrderDto.tableNumber,
       guestName: createOrderDto.guestName,
-      items: createOrderDto.items,
+      items: enrichedItems,
       specialRequests: createOrderDto.specialRequests,
       subtotal: createOrderDto.subtotal,
       tax: createOrderDto.tax,
