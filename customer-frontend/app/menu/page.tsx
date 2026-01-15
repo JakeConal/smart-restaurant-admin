@@ -37,13 +37,29 @@ function MenuContent() {
   const [hasMore, setHasMore] = useState(true);
   const [totalItems, setTotalItems] = useState(0);
   const [urlInitialized, setUrlInitialized] = useState(false);
-  const [fuzzyResults, setFuzzyResults] = useState<MenuItem[]>([]);
-  const [fuseInstance, setFuseInstance] = useState<Fuse<MenuItem> | null>(null);
-  const [useFuzzySearch, setUseFuzzySearch] = useState(false);
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
   const [mounted, setMounted] = useState(false);
 
   const observerRef = useRef<HTMLDivElement>(null);
+  const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const currentToken = searchParams.get("token") || token;
+
+  // Debounce search query
+  useEffect(() => {
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+    }
+
+    searchTimeoutRef.current = setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery);
+    }, 400);
+
+    return () => {
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
+    };
+  }, [searchQuery]);
 
   // Initialize state from URL params on mount
   useEffect(() => {
@@ -120,14 +136,17 @@ function MenuContent() {
       try {
         if (pageNum === 1) {
           setLoading(true);
+          if (!append) setItems([]); // Clear items for new search
         } else {
           setLoadingMore(true);
         }
 
+        const currentSearch = debouncedSearchQuery || undefined;
+
         // Check cache first
         const cachedData = getMenuFromCache({
           token: currentToken,
-          q: searchQuery || undefined,
+          q: currentSearch,
           categoryId: selectedCategory || undefined,
           sort: sortBy,
           chefRecommended: showChefRecommended || undefined,
@@ -140,7 +159,7 @@ function MenuContent() {
           response = cachedData;
         } else {
           response = (await menuApi.getMenu(currentToken, {
-            q: searchQuery || undefined,
+            q: currentSearch,
             categoryId: selectedCategory || undefined,
             sort: sortBy,
             chefRecommended: showChefRecommended || undefined,
@@ -153,7 +172,7 @@ function MenuContent() {
             setMenuInCache(
               {
                 token: currentToken,
-                q: searchQuery || undefined,
+                q: currentSearch,
                 categoryId: selectedCategory || undefined,
                 sort: sortBy,
                 chefRecommended: showChefRecommended || undefined,
@@ -175,12 +194,9 @@ function MenuContent() {
 
           if (pageNum === 1) {
             setCategories(response.menu.categories);
-          }
-
-          if (append) {
-            setItems((prev) => [...prev, ...response.menu.items]);
-          } else {
             setItems(response.menu.items);
+          } else if (append) {
+            setItems((prev) => [...prev, ...response.menu.items]);
           }
 
           setTotalItems(response.menu.pagination.total);
@@ -196,7 +212,7 @@ function MenuContent() {
     },
     [
       currentToken,
-      searchQuery,
+      debouncedSearchQuery,
       selectedCategory,
       sortBy,
       showChefRecommended,
@@ -209,7 +225,7 @@ function MenuContent() {
     if (currentToken && urlInitialized) {
       clearPaginationCache(
         currentToken,
-        searchQuery || undefined,
+        debouncedSearchQuery || undefined,
         selectedCategory || undefined,
         sortBy,
         showChefRecommended || undefined,
@@ -217,7 +233,7 @@ function MenuContent() {
     }
   }, [
     currentToken,
-    searchQuery,
+    debouncedSearchQuery,
     selectedCategory,
     sortBy,
     showChefRecommended,
@@ -234,7 +250,7 @@ function MenuContent() {
     currentToken,
     isAuthenticated,
     urlInitialized,
-    searchQuery,
+    debouncedSearchQuery,
     selectedCategory,
     sortBy,
     showChefRecommended,
@@ -257,32 +273,6 @@ function MenuContent() {
     observer.observe(observerRef.current);
     return () => observer.disconnect();
   }, [hasMore, loadingMore, page, fetchMenu]);
-
-  // Initialize Fuse.js for fuzzy search
-  useEffect(() => {
-    if (items.length > 0) {
-      const fuse = new Fuse(items, {
-        keys: ["name", "description"],
-        threshold: 0.3,
-        minMatchCharLength: 1,
-        includeScore: true,
-        findAllMatches: true,
-      });
-      setFuseInstance(fuse);
-    }
-  }, [items]);
-
-  // Perform fuzzy search when search query changes
-  useEffect(() => {
-    if (searchQuery.trim() === "") {
-      setFuzzyResults([]);
-      setUseFuzzySearch(false);
-    } else if (fuseInstance) {
-      const results = fuseInstance.search(searchQuery);
-      setFuzzyResults(results.map((result) => result.item));
-      setUseFuzzySearch(true);
-    }
-  }, [searchQuery, fuseInstance]);
 
   // Get chef recommended items
   const chefRecommendedItems = items.filter((item) => item.isChefRecommended);
@@ -342,22 +332,132 @@ function MenuContent() {
               {tableNumber && (
                 <div className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-slate-900 text-white rounded-full mt-1 shadow-sm">
                   <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                  <span className="text-[10px] font-black uppercase tracking-widest leading-none">Table {tableNumber}</span>
+                  <span className="text-[10px] font-black uppercase tracking-widest leading-none">
+                    Table {tableNumber}
+                  </span>
                 </div>
               )}
             </div>
-            <div className="flex items-center gap-3">
-              <button className="w-10 h-10 rounded-full bg-white border border-slate-200 flex items-center justify-center shadow-sm hover:border-slate-900 transition-all">
-                <svg className="w-5 h-5 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
+            <div className="flex items-center gap-3 relative sort-dropdown">
+              <button
+                onClick={() => setShowSortDropdown(!showSortDropdown)}
+                className={`w-10 h-10 rounded-full border flex items-center justify-center shadow-sm transition-all ${showSortDropdown ? "bg-slate-900 border-slate-900 ring-4 ring-slate-900/10" : "bg-white border-slate-200 hover:border-slate-900"}`}
+              >
+                <svg
+                  className={`w-5 h-5 transition-colors ${showSortDropdown ? "text-white" : "text-slate-600"}`}
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"
+                  />
                 </svg>
               </button>
+
+              {showSortDropdown && (
+                <div className="absolute top-12 right-0 w-64 bg-white/95 backdrop-blur-xl rounded-[32px] shadow-2xl border border-slate-100 p-6 z-50 animate-scale-in">
+                  <div className="space-y-6">
+                    <div>
+                      <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-4 px-1">
+                        Sort by
+                      </h4>
+                      <div className="space-y-2">
+                        {[
+                          { id: "name", label: "Alphabetical", icon: "A-Z" },
+                          {
+                            id: "popularity",
+                            label: "Most Popular",
+                            icon: "🔥",
+                          },
+                          { id: "asc", label: "Price: Low to High", icon: "↓" },
+                          {
+                            id: "desc",
+                            label: "Price: High to Low",
+                            icon: "↑",
+                          },
+                        ].map((option) => (
+                          <button
+                            key={option.id}
+                            onClick={() => {
+                              setSortBy(option.id);
+                              updateUrl(
+                                searchQuery,
+                                selectedCategory,
+                                option.id,
+                                showChefRecommended,
+                              );
+                              setShowSortDropdown(false);
+                            }}
+                            className={`w-full flex items-center justify-between px-4 py-3 rounded-2xl transition-all ${sortBy === option.id ? "bg-slate-900 text-white shadow-lg" : "hover:bg-slate-50 text-slate-600"}`}
+                          >
+                            <span className="text-sm font-bold">
+                              {option.label}
+                            </span>
+                            <span
+                              className={`text-xs font-black ${sortBy === option.id ? "text-white/40" : "text-slate-300"}`}
+                            >
+                              {option.icon}
+                            </span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="pt-4 border-t border-slate-100">
+                      <button
+                        onClick={() => {
+                          const next = !showChefRecommended;
+                          setShowChefRecommended(next);
+                          updateUrl(
+                            searchQuery,
+                            selectedCategory,
+                            sortBy,
+                            next,
+                          );
+                          setShowSortDropdown(false);
+                        }}
+                        className={`w-full flex items-center justify-between px-4 py-3 rounded-2xl transition-all ${showChefRecommended ? "bg-emerald-50 text-emerald-700 border border-emerald-100" : "bg-slate-50 text-slate-600 border border-transparent"}`}
+                      >
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-bold">
+                            Chef's Picks
+                          </span>
+                          {showChefRecommended && (
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                          )}
+                        </div>
+                        <div
+                          className={`w-9 h-5 rounded-full transition-colors relative flex items-center ${showChefRecommended ? "bg-emerald-500" : "bg-slate-200"}`}
+                        >
+                          <div
+                            className={`w-3.5 h-3.5 rounded-full bg-white transition-all transform ${showChefRecommended ? "translate-x-4.5" : "translate-x-1"}`}
+                          />
+                        </div>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 
           <div className="relative group">
-            <svg className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 group-focus-within:text-slate-900 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            <svg
+              className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 group-focus-within:text-slate-900 transition-colors"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2.5}
+                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+              />
             </svg>
             <input
               type="text"
@@ -366,7 +466,12 @@ function MenuContent() {
               onChange={(e) => {
                 const newQuery = e.target.value;
                 setSearchQuery(newQuery);
-                updateUrl(newQuery, selectedCategory, sortBy, showChefRecommended);
+                updateUrl(
+                  newQuery,
+                  selectedCategory,
+                  sortBy,
+                  showChefRecommended,
+                );
               }}
               className="w-full bg-white border border-slate-200 rounded-[28px] py-4 pl-12 pr-4 text-sm font-medium focus:border-slate-900 focus:ring-1 focus:ring-slate-900 transition-all shadow-sm"
             />
@@ -381,10 +486,11 @@ function MenuContent() {
               setShowChefRecommended(false);
               updateUrl(searchQuery, null, sortBy, false);
             }}
-            className={`px-6 py-2.5 rounded-full text-xs font-black uppercase tracking-widest transition-all whitespace-nowrap ${!selectedCategory && !showChefRecommended
-              ? "bg-slate-900 text-white shadow-lg shadow-slate-200 scale-105"
-              : "bg-white text-slate-400 border border-slate-200 hover:border-slate-400"
-              }`}
+            className={`px-6 py-2.5 rounded-full text-xs font-black uppercase tracking-widest transition-all whitespace-nowrap ${
+              !selectedCategory && !showChefRecommended
+                ? "bg-slate-900 text-white shadow-lg shadow-slate-200 scale-105"
+                : "bg-white text-slate-400 border border-slate-200 hover:border-slate-400"
+            }`}
           >
             All
           </button>
@@ -396,10 +502,11 @@ function MenuContent() {
                 setShowChefRecommended(false);
                 updateUrl(searchQuery, category.id, sortBy, false);
               }}
-              className={`px-6 py-2.5 rounded-full text-xs font-black uppercase tracking-widest transition-all whitespace-nowrap ${selectedCategory === category.id
-                ? "bg-slate-900 text-white shadow-lg shadow-slate-200 scale-105"
-                : "bg-white text-slate-400 border border-slate-200 hover:border-slate-400"
-                }`}
+              className={`px-6 py-2.5 rounded-full text-xs font-black uppercase tracking-widest transition-all whitespace-nowrap ${
+                selectedCategory === category.id
+                  ? "bg-slate-900 text-white shadow-lg shadow-slate-200 scale-105"
+                  : "bg-white text-slate-400 border border-slate-200 hover:border-slate-400"
+              }`}
             >
               {category.name}
             </button>
@@ -409,101 +516,221 @@ function MenuContent() {
 
       <main className="px-6 pt-8 space-y-12">
         {/* Featured Section */}
-        {!loading && !selectedCategory && !searchQuery && chefRecommendedItems.length > 0 && (
-          <section className="space-y-6">
-            <div className="flex items-end justify-between">
-              <div>
-                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Curated</span>
-                <h2 className="text-h2 mt-1">Chef's Selection</h2>
-              </div>
-              <button
-                onClick={() => setShowChefRecommended(true)}
-                className="text-[10px] font-black uppercase tracking-widest text-slate-900 border-b-2 border-slate-900 pb-0.5"
-              >
-                Explore All
-              </button>
-            </div>
-
-            <div className="grid grid-cols-6 gap-4">
-              {chefRecommendedItems[0] && (
-                <Link
-                  href={`/menu/${chefRecommendedItems[0].id}?token=${currentToken}`}
-                  className="col-span-6 h-[280px] bento-card p-0 overflow-hidden relative group active:scale-[0.98] transition-all"
+        {!loading &&
+          !selectedCategory &&
+          !searchQuery &&
+          chefRecommendedItems.length > 0 && (
+            <section className="space-y-6">
+              <div className="flex items-end justify-between">
+                <div>
+                  <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
+                    Curated
+                  </span>
+                  <h2 className="text-h2 mt-1">Chef's Selection</h2>
+                </div>
+                <button
+                  onClick={() => {
+                    setShowChefRecommended(true);
+                    updateUrl(searchQuery, selectedCategory, sortBy, true);
+                  }}
+                  className="text-[10px] font-black uppercase tracking-widest text-slate-900 border-b-2 border-slate-900 pb-0.5"
                 >
-                  {chefRecommendedItems[0].primaryPhotoUrl ? (
-                    <Image src={chefRecommendedItems[0].primaryPhotoUrl} alt={chefRecommendedItems[0].name} fill className="object-cover transition-transform duration-700 group-hover:scale-110" unoptimized />
-                  ) : (
-                    <div className="w-full h-full bg-slate-100 flex items-center justify-center text-slate-400">
-                      <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
-                    </div>
-                  )}
-                  <div className="absolute inset-0 bg-gradient-to-t from-slate-900/80 via-transparent to-transparent" />
-                  <div className="absolute bottom-0 left-0 p-6 text-white w-full text-left">
-                    <span className="inline-block bg-white/20 backdrop-blur-md rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-widest mb-2 border border-white/20">House Special</span>
-                    <h3 className="text-2xl font-bold leading-tight line-clamp-1">{chefRecommendedItems[0].name}</h3>
-                    <div className="flex justify-between items-center mt-2">
-                      <span className="text-xl font-black">${chefRecommendedItems[0].price.toFixed(2)}</span>
-                      <div className="w-10 h-10 rounded-full bg-white text-slate-900 flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" /></svg>
+                  Explore All
+                </button>
+              </div>
+
+              <div className="grid grid-cols-6 gap-4">
+                {chefRecommendedItems[0] && (
+                  <Link
+                    href={`/menu/${chefRecommendedItems[0].id}?token=${currentToken}`}
+                    className="col-span-6 h-[280px] bento-card p-0 overflow-hidden relative group active:scale-[0.98] transition-all"
+                  >
+                    {chefRecommendedItems[0].primaryPhotoUrl ? (
+                      <Image
+                        src={chefRecommendedItems[0].primaryPhotoUrl}
+                        alt={chefRecommendedItems[0].name}
+                        fill
+                        className="object-cover transition-transform duration-700 group-hover:scale-110"
+                        unoptimized
+                      />
+                    ) : (
+                      <div className="w-full h-full bg-slate-100 flex items-center justify-center text-slate-400">
+                        <svg
+                          className="w-12 h-12"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={1}
+                            d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                          />
+                        </svg>
+                      </div>
+                    )}
+                    <div className="absolute inset-0 bg-gradient-to-t from-slate-900/80 via-transparent to-transparent" />
+                    <div className="absolute bottom-0 left-0 p-6 text-white w-full text-left">
+                      <span className="inline-block bg-white/20 backdrop-blur-md rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-widest mb-2 border border-white/20">
+                        House Special
+                      </span>
+                      <h3 className="text-2xl font-bold leading-tight line-clamp-1">
+                        {chefRecommendedItems[0].name}
+                      </h3>
+                      <div className="flex justify-between items-center mt-2">
+                        <span className="text-xl font-black">
+                          ${chefRecommendedItems[0].price.toFixed(2)}
+                        </span>
+                        <div className="w-10 h-10 rounded-full bg-white text-slate-900 flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
+                          <svg
+                            className="w-5 h-5"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2.5}
+                              d="M12 4v16m8-8H4"
+                            />
+                          </svg>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                </Link>
-              )}
-              {chefRecommendedItems.slice(1, 3).map((item) => (
-                <Link key={item.id} href={`/menu/${item.id}?token=${currentToken}`} className="col-span-3 h-[200px] bento-card p-0 overflow-hidden relative group active:scale-[0.98] transition-all">
-                  {item.primaryPhotoUrl ? (
-                    <Image src={item.primaryPhotoUrl} alt={item.name} fill className="object-cover transition-transform duration-700 group-hover:scale-110" unoptimized />
-                  ) : (
-                    <div className="w-full h-full bg-slate-100 flex items-center justify-center text-slate-400">
-                      <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                  </Link>
+                )}
+                {chefRecommendedItems.slice(1, 3).map((item) => (
+                  <Link
+                    key={item.id}
+                    href={`/menu/${item.id}?token=${currentToken}`}
+                    className="col-span-3 h-[200px] bento-card p-0 overflow-hidden relative group active:scale-[0.98] transition-all"
+                  >
+                    {item.primaryPhotoUrl ? (
+                      <Image
+                        src={item.primaryPhotoUrl}
+                        alt={item.name}
+                        fill
+                        className="object-cover transition-transform duration-700 group-hover:scale-110"
+                        unoptimized
+                      />
+                    ) : (
+                      <div className="w-full h-full bg-slate-100 flex items-center justify-center text-slate-400">
+                        <svg
+                          className="w-8 h-8"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={1}
+                            d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                          />
+                        </svg>
+                      </div>
+                    )}
+                    <div className="absolute inset-x-0 bottom-0 p-4 bg-gradient-to-t from-slate-900/60 to-transparent text-left">
+                      <h3 className="text-sm font-bold text-white line-clamp-1">
+                        {item.name}
+                      </h3>
+                      <span className="text-xs font-black text-white/90">
+                        ${item.price.toFixed(2)}
+                      </span>
                     </div>
-                  )}
-                  <div className="absolute inset-x-0 bottom-0 p-4 bg-gradient-to-t from-slate-900/60 to-transparent text-left">
-                    <h3 className="text-sm font-bold text-white line-clamp-1">{item.name}</h3>
-                    <span className="text-xs font-black text-white/90">${item.price.toFixed(2)}</span>
-                  </div>
-                </Link>
-              ))}
-            </div>
-          </section>
-        )}
+                  </Link>
+                ))}
+              </div>
+            </section>
+          )}
 
         {/* Regular Items */}
         <section className="space-y-6">
           <div className="flex items-end justify-between">
             <h2 className="text-h2">
-              {useFuzzySearch ? "Search Results" : selectedCategory ? categories.find(c => c.id === selectedCategory)?.name : "Our Menu"}
+              {debouncedSearchQuery
+                ? "Search Results"
+                : selectedCategory
+                  ? categories.find((c) => c.id === selectedCategory)?.name
+                  : "Our Menu"}
             </h2>
-            <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">{useFuzzySearch ? fuzzyResults.length : totalItems} items</span>
+            <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">
+              {totalItems} items
+            </span>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
-            {(useFuzzySearch ? fuzzyResults : items).map((item) => (
-              <Link key={item.id} href={`/menu/${item.id}?token=${currentToken}`} className="group">
+            {items.map((item) => (
+              <Link
+                key={item.id}
+                href={`/menu/${item.id}?token=${currentToken}`}
+                className="group"
+              >
                 <div className="bento-card p-0 overflow-hidden h-full flex flex-col">
                   <div className="aspect-square relative overflow-hidden bg-slate-50">
                     {item.primaryPhotoUrl ? (
-                      <Image src={item.primaryPhotoUrl} alt={item.name} fill className="object-cover transition-transform duration-500 group-hover:scale-110" unoptimized />
+                      <Image
+                        src={item.primaryPhotoUrl}
+                        alt={item.name}
+                        fill
+                        className="object-cover transition-transform duration-500 group-hover:scale-110"
+                        unoptimized
+                      />
                     ) : (
                       <div className="w-full h-full bg-slate-100 flex items-center justify-center text-slate-400">
-                        <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                        <svg
+                          className="w-8 h-8"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={1}
+                            d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                          />
+                        </svg>
                       </div>
                     )}
                     {item.isChefRecommended && (
                       <div className="absolute top-3 left-3">
                         <div className="bg-slate-900 text-white rounded-full p-1.5 shadow-lg">
-                          <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg>
+                          <svg
+                            className="w-3 h-3"
+                            fill="currentColor"
+                            viewBox="0 0 20 20"
+                          >
+                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                          </svg>
                         </div>
                       </div>
                     )}
                   </div>
                   <div className="p-4 flex flex-col flex-1 text-left">
-                    <h3 className="text-sm font-bold text-slate-900 line-clamp-2 leading-tight mb-2 group-hover:underline">{item.name}</h3>
+                    <h3 className="text-sm font-bold text-slate-900 line-clamp-2 leading-tight mb-2 group-hover:underline">
+                      {item.name}
+                    </h3>
                     <div className="mt-auto pt-2 flex items-center justify-between">
-                      <span className="text-sm font-black text-slate-900 tracking-tight">${item.price.toFixed(2)}</span>
+                      <span className="text-sm font-black text-slate-900 tracking-tight">
+                        ${item.price.toFixed(2)}
+                      </span>
                       <div className="w-8 h-8 rounded-full border border-slate-200 flex items-center justify-center group-hover:bg-slate-900 group-hover:text-white group-hover:border-slate-900 transition-all">
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" /></svg>
+                        <svg
+                          className="w-4 h-4"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2.5}
+                            d="M12 4v16m8-8H4"
+                          />
+                        </svg>
                       </div>
                     </div>
                   </div>
@@ -531,7 +758,13 @@ function MenuContent() {
 
 export default function MenuPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-ivory-50 flex items-center justify-center"><div className="w-12 h-12 border-4 border-slate-100 border-t-slate-800 rounded-full animate-spin" /></div>}>
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-ivory-50 flex items-center justify-center">
+          <div className="w-12 h-12 border-4 border-slate-100 border-t-slate-800 rounded-full animate-spin" />
+        </div>
+      }
+    >
       <MenuContent />
     </Suspense>
   );

@@ -484,7 +484,8 @@ function ProfileContent() {
           <div className="space-y-4">
             <h1 className="text-h1">Anonymous</h1>
             <p className="text-body text-slate-500">
-              Unlock your flavor history and <br />personalized rewards.
+              Unlock your flavor history and <br />
+              personalized rewards.
             </p>
           </div>
 
@@ -514,8 +515,18 @@ function ProfileContent() {
               onClick={() => router.back()}
               className="w-10 h-10 rounded-full bg-white border border-slate-200 flex items-center justify-center shadow-sm hover:border-slate-900 transition-all active:scale-95"
             >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" />
+              <svg
+                className="w-5 h-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2.5}
+                  d="M15 19l-7-7 7-7"
+                />
               </svg>
             </button>
             <h1 className="text-h2">Identity</h1>
@@ -525,7 +536,19 @@ function ProfileContent() {
             onClick={handleLogout}
             className="w-10 h-10 rounded-full bg-red-50 text-red-500 border border-red-100 flex items-center justify-center hover:bg-red-500 hover:text-white transition-all active:scale-90"
           >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
+            <svg
+              className="w-5 h-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+              />
+            </svg>
           </button>
         </div>
       </div>
@@ -533,9 +556,15 @@ function ProfileContent() {
       <main className="px-6 pt-8 space-y-8">
         {/* Status Feedback */}
         {(success || error) && (
-          <div className={`p-4 rounded-2xl text-[10px] font-bold uppercase tracking-wider flex items-center gap-3 animate-fade-in ${success ? "bg-emerald-50 text-emerald-600 border border-emerald-100" : "bg-red-50 text-red-600 border border-red-100"}`}>
+          <div
+            className={`p-4 rounded-2xl text-[10px] font-bold uppercase tracking-wider flex items-center gap-3 animate-fade-in ${success ? "bg-emerald-50 text-emerald-600 border border-emerald-100" : "bg-red-50 text-red-600 border border-red-100"}`}
+          >
             <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+              <path
+                fillRule="evenodd"
+                d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
+                clipRule="evenodd"
+              />
             </svg>
             {success || error}
           </div>
@@ -562,7 +591,9 @@ function ProfileContent() {
                       unoptimized
                     />
                   ) : (
-                    <div className="w-full h-full flex items-center justify-center text-5xl bg-slate-50">👤</div>
+                    <div className="w-full h-full flex items-center justify-center text-5xl bg-slate-50">
+                      👤
+                    </div>
                   )}
 
                   {uploadingPhoto && (
@@ -578,27 +609,80 @@ function ProfileContent() {
                   onClick={() => fileInputRef.current?.click()}
                   className="absolute -bottom-2 -right-2 w-10 h-10 bg-slate-900 text-white rounded-2xl flex items-center justify-center shadow-lg border-4 border-white active:scale-90"
                 >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                  <svg
+                    className="w-4 h-4"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2.5}
+                      d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"
+                    />
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2.5}
+                      d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"
+                    />
+                  </svg>
                 </button>
-                <input ref={fileInputRef} type="file" accept="image/*" onChange={handlePhotoSelect} className="hidden" />
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handlePhotoSelect}
+                  className="hidden"
+                />
               </div>
 
               <div className="space-y-1">
                 <h2 className="text-2xl font-black text-slate-900 leading-none">
-                  {firstName || lastName ? `${firstName} ${lastName}`.trim() : "Set Your Name"}
+                  {firstName || lastName
+                    ? `${firstName} ${lastName}`.trim()
+                    : "Set Your Name"}
                 </h2>
-                <p className="text-sm font-medium text-slate-400">{customer?.email || "No email linked"}</p>
+                <p className="text-sm font-medium text-slate-400">
+                  {customer?.email || "No email linked"}
+                </p>
               </div>
 
               <div className="flex gap-2">
                 <div className="px-4 py-2 bg-slate-50 rounded-full border border-slate-100 flex items-center gap-2">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-                  <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">Verified Member</span>
+                  <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">
+                    Verified Member
+                  </span>
                 </div>
                 {customer?.isGoogleLogin && (
                   <div className="px-4 py-2 bg-white rounded-full border border-slate-200 flex items-center gap-2 shadow-sm">
-                    <svg className="w-3 h-3" viewBox="0 0 24 24" fill="currentColor"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" /><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" /><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05" /><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" /></svg>
-                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">Google Linked</span>
+                    <svg
+                      className="w-3 h-3"
+                      viewBox="0 0 24 24"
+                      fill="currentColor"
+                    >
+                      <path
+                        d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+                        fill="#4285F4"
+                      />
+                      <path
+                        d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                        fill="#34A853"
+                      />
+                      <path
+                        d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
+                        fill="#FBBC05"
+                      />
+                      <path
+                        d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+                        fill="#EA4335"
+                      />
+                    </svg>
+                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">
+                      Google Linked
+                    </span>
                   </div>
                 )}
               </div>
@@ -614,10 +698,26 @@ function ProfileContent() {
             className="bento-card bg-white p-6 text-left group hover:bg-slate-900 transition-all active:scale-95"
           >
             <div className="w-10 h-10 rounded-xl bg-slate-50 group-hover:bg-white/10 flex items-center justify-center mb-4 transition-colors">
-              <svg className="w-5 h-5 text-slate-400 group-hover:text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+              <svg
+                className="w-5 h-5 text-slate-400 group-hover:text-white"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2.5}
+                  d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
+              </svg>
             </div>
-            <h4 className="text-xs font-black uppercase tracking-widest text-slate-900 group-hover:text-white mb-1">Journal</h4>
-            <p className="text-[10px] text-slate-400 group-hover:text-white/60 font-medium">Order History</p>
+            <h4 className="text-xs font-black uppercase tracking-widest text-slate-900 group-hover:text-white mb-1">
+              Journal
+            </h4>
+            <p className="text-[10px] text-slate-400 group-hover:text-white/60 font-medium">
+              Order History
+            </p>
           </button>
 
           {/* Personal Info Card */}
@@ -627,10 +727,26 @@ function ProfileContent() {
             className="bento-card bg-white p-6 text-left group hover:bg-slate-900 transition-all active:scale-95 disabled:opacity-50"
           >
             <div className="w-10 h-10 rounded-xl bg-slate-50 group-hover:bg-white/10 flex items-center justify-center mb-4 transition-colors">
-              <svg className="w-5 h-5 text-slate-400 group-hover:text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+              <svg
+                className="w-5 h-5 text-slate-400 group-hover:text-white"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2.5}
+                  d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                />
+              </svg>
             </div>
-            <h4 className="text-xs font-black uppercase tracking-widest text-slate-900 group-hover:text-white mb-1">Details</h4>
-            <p className="text-[10px] text-slate-400 group-hover:text-white/60 font-medium">Personal Information</p>
+            <h4 className="text-xs font-black uppercase tracking-widest text-slate-900 group-hover:text-white mb-1">
+              Details
+            </h4>
+            <p className="text-[10px] text-slate-400 group-hover:text-white/60 font-medium">
+              Personal Information
+            </p>
           </button>
 
           {/* Security Card */}
@@ -640,10 +756,26 @@ function ProfileContent() {
               className="bento-card bg-white p-6 text-left group hover:bg-slate-900 transition-all active:scale-95"
             >
               <div className="w-10 h-10 rounded-xl bg-slate-50 group-hover:bg-white/10 flex items-center justify-center mb-4 transition-colors">
-                <svg className="w-5 h-5 text-slate-400 group-hover:text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
+                <svg
+                  className="w-5 h-5 text-slate-400 group-hover:text-white"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2.5}
+                    d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+                  />
+                </svg>
               </div>
-              <h4 className="text-xs font-black uppercase tracking-widest text-slate-900 group-hover:text-white mb-1">Pass</h4>
-              <p className="text-[10px] text-slate-400 group-hover:text-white/60 font-medium">Auth Settings</p>
+              <h4 className="text-xs font-black uppercase tracking-widest text-slate-900 group-hover:text-white mb-1">
+                Pass
+              </h4>
+              <p className="text-[10px] text-slate-400 group-hover:text-white/60 font-medium">
+                Auth Settings
+              </p>
             </button>
           )}
 
@@ -653,56 +785,131 @@ function ProfileContent() {
             className="bento-card bg-white p-6 text-left group hover:bg-slate-900 transition-all active:scale-95"
           >
             <div className="w-10 h-10 rounded-xl bg-slate-50 group-hover:bg-white/10 flex items-center justify-center mb-4 transition-colors">
-              <svg className="w-5 h-5 text-slate-400 group-hover:text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+              <svg
+                className="w-5 h-5 text-slate-400 group-hover:text-white"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2.5}
+                  d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
+              </svg>
             </div>
-            <h4 className="text-xs font-black uppercase tracking-widest text-slate-900 group-hover:text-white mb-1">Inquiry</h4>
-            <p className="text-[10px] text-slate-400 group-hover:text-white/60 font-medium">Help Center</p>
+            <h4 className="text-xs font-black uppercase tracking-widest text-slate-900 group-hover:text-white mb-1">
+              Inquiry
+            </h4>
+            <p className="text-[10px] text-slate-400 group-hover:text-white/60 font-medium">
+              Help Center
+            </p>
           </button>
         </section>
 
         {/* Profile Edit Overlay */}
         {isEditing && (
-          <div className="fixed inset-0 z-50 flex items-end justify-center bg-slate-900/40 backdrop-blur-sm animate-fade-in safe-bottom p-4">
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm animate-fade-in p-4">
             <div className="w-full max-w-lg bg-ivory-100 rounded-[40px] shadow-2xl overflow-hidden animate-slide-up border border-white/50">
               <div className="px-8 py-6 flex justify-between items-center border-b border-slate-200/50 bg-white/50 backdrop-blur-md">
                 <div className="space-y-1">
                   <h2 className="text-h2 leading-none">Edit Profile</h2>
-                  <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Update Personal Details</p>
+                  <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">
+                    Update Personal Details
+                  </p>
                 </div>
-                <button onClick={() => setIsEditing(false)} className="w-10 h-10 rounded-full bg-white border border-slate-200 flex items-center justify-center shadow-sm active:scale-90">
-                  <svg className="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" /></svg>
+                <button
+                  onClick={() => setIsEditing(false)}
+                  className="w-10 h-10 rounded-full bg-white border border-slate-200 flex items-center justify-center shadow-sm active:scale-90"
+                >
+                  <svg
+                    className="w-5 h-5 text-slate-400"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2.5}
+                      d="M6 18L18 6M6 6l12 12"
+                    />
+                  </svg>
                 </button>
               </div>
 
-              <form onSubmit={handleUpdateProfile} className="px-8 py-8 space-y-6">
+              <form
+                onSubmit={handleUpdateProfile}
+                className="px-8 py-8 space-y-6"
+              >
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-1">First Name</label>
-                    <input type="text" value={firstName} onChange={(e) => setFirstName(e.target.value)} className="w-full bg-white border border-slate-200 rounded-[18px] py-4 px-5 text-sm font-medium focus:border-slate-900 transition-all shadow-sm" />
+                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-1">
+                      First Name
+                    </label>
+                    <input
+                      type="text"
+                      value={firstName}
+                      onChange={(e) => setFirstName(e.target.value)}
+                      className="w-full bg-white border border-slate-200 rounded-[18px] py-4 px-5 text-sm font-medium focus:border-slate-900 transition-all shadow-sm"
+                    />
                   </div>
                   <div className="space-y-2">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-1">Last Name</label>
-                    <input type="text" value={lastName} onChange={(e) => setLastName(e.target.value)} className="w-full bg-white border border-slate-200 rounded-[18px] py-4 px-5 text-sm font-medium focus:border-slate-900 transition-all shadow-sm" />
+                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-1">
+                      Last Name
+                    </label>
+                    <input
+                      type="text"
+                      value={lastName}
+                      onChange={(e) => setLastName(e.target.value)}
+                      className="w-full bg-white border border-slate-200 rounded-[18px] py-4 px-5 text-sm font-medium focus:border-slate-900 transition-all shadow-sm"
+                    />
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-1">Phone Number</label>
-                  <input type="tel" value={phoneNumber} onChange={(e) => setPhoneNumber(e.target.value)} className="w-full bg-white border border-slate-200 rounded-[18px] py-4 px-5 text-sm font-medium focus:border-slate-900 transition-all shadow-sm" />
+                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-1">
+                    Phone Number
+                  </label>
+                  <input
+                    type="tel"
+                    value={phoneNumber}
+                    onChange={(e) => setPhoneNumber(e.target.value)}
+                    className="w-full bg-white border border-slate-200 rounded-[18px] py-4 px-5 text-sm font-medium focus:border-slate-900 transition-all shadow-sm"
+                  />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-1">Birth Date</label>
-                  <input type="date" value={dateOfBirth} onChange={(e) => setDateOfBirth(e.target.value)} className="w-full bg-white border border-slate-200 rounded-[18px] py-4 px-5 text-sm font-medium focus:border-slate-900 transition-all shadow-sm" />
+                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-1">
+                    Birth Date
+                  </label>
+                  <input
+                    type="date"
+                    value={dateOfBirth}
+                    onChange={(e) => setDateOfBirth(e.target.value)}
+                    className="w-full bg-white border border-slate-200 rounded-[18px] py-4 px-5 text-sm font-medium focus:border-slate-900 transition-all shadow-sm"
+                  />
                 </div>
 
                 <div className="flex gap-4 pt-4">
-                  <button type="button" onClick={() => setIsEditing(false)} className="flex-1 h-16 rounded-[24px] bg-white border border-slate-200 text-[12px] font-black uppercase tracking-widest text-slate-400 hover:text-slate-900 active:scale-95 transition-all">Discard</button>
-                  <button type="submit" disabled={loading} className="flex-[2] btn-primary h-16 shadow-slate-200">{loading ? "Saving..." : "Save Details"}</button>
+                  <button
+                    type="button"
+                    onClick={() => setIsEditing(false)}
+                    className="flex-1 h-16 rounded-[24px] bg-white border border-slate-200 text-[12px] font-black uppercase tracking-widest text-slate-400 hover:text-slate-900 active:scale-95 transition-all"
+                  >
+                    Discard
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className="flex-[2] btn-primary h-16 shadow-slate-200"
+                  >
+                    {loading ? "Saving..." : "Save Details"}
+                  </button>
                 </div>
               </form>
             </div>
           </div>
         )}
-
 
         {/* Password change modal */}
         {showPasswordModal && (
@@ -725,10 +932,11 @@ function ProfileContent() {
                     type="password"
                     value={currentPassword}
                     onChange={(e) => setCurrentPassword(e.target.value)}
-                    className={`w-full px-4 py-3 border rounded-xl ${passwordValidationErrors.currentPassword
-                      ? "border-red-300 bg-red-50"
-                      : "border-gray-200"
-                      }`}
+                    className={`w-full px-4 py-3 border rounded-xl ${
+                      passwordValidationErrors.currentPassword
+                        ? "border-red-300 bg-red-50"
+                        : "border-gray-200"
+                    }`}
                     required
                   />
                   {passwordValidationErrors.currentPassword && (
@@ -750,10 +958,11 @@ function ProfileContent() {
                         validatePasswordComplexity(e.target.value),
                       );
                     }}
-                    className={`w-full px-4 py-3 border rounded-xl ${passwordValidationErrors.newPassword
-                      ? "border-red-300 bg-red-50"
-                      : "border-gray-200"
-                      }`}
+                    className={`w-full px-4 py-3 border rounded-xl ${
+                      passwordValidationErrors.newPassword
+                        ? "border-red-300 bg-red-50"
+                        : "border-gray-200"
+                    }`}
                     required
                   />
                   {passwordValidationErrors.newPassword && (
@@ -776,7 +985,9 @@ function ProfileContent() {
                               newPasswordStrength.score,
                             )}`}
                           >
-                            {getPasswordStrengthLabel(newPasswordStrength.score)}
+                            {getPasswordStrengthLabel(
+                              newPasswordStrength.score,
+                            )}
                           </span>
                         </div>
                         <div className="w-full bg-gray-300 rounded-full h-1.5">
@@ -910,10 +1121,11 @@ function ProfileContent() {
                     type="password"
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
-                    className={`w-full px-4 py-3 border rounded-xl ${passwordValidationErrors.confirmPassword
-                      ? "border-red-300 bg-red-50"
-                      : "border-gray-200"
-                      }`}
+                    className={`w-full px-4 py-3 border rounded-xl ${
+                      passwordValidationErrors.confirmPassword
+                        ? "border-red-300 bg-red-50"
+                        : "border-gray-200"
+                    }`}
                     required
                   />
                   {passwordValidationErrors.confirmPassword && (
@@ -1034,25 +1246,33 @@ function ProfileContent() {
                             ? `${order.items.length} item${order.items.length !== 1 ? "s" : ""}`
                             : "No items"}
                         </p>
-                        {Array.isArray(order.items) && order.items.length > 0 && (
-                          <div className="text-xs text-gray-500 mt-1 space-y-1">
-                            {order.items
-                              .slice(0, 2)
-                              .map((item: Record<string, any>, idx: number) => (
-                                <div key={idx} className="flex justify-between">
-                                  <span>{item.menuItemName || item.name}</span>
-                                  <span className="text-gray-400">
-                                    x{item.quantity}
-                                  </span>
+                        {Array.isArray(order.items) &&
+                          order.items.length > 0 && (
+                            <div className="text-xs text-gray-500 mt-1 space-y-1">
+                              {order.items
+                                .slice(0, 2)
+                                .map(
+                                  (item: Record<string, any>, idx: number) => (
+                                    <div
+                                      key={idx}
+                                      className="flex justify-between"
+                                    >
+                                      <span>
+                                        {item.menuItemName || item.name}
+                                      </span>
+                                      <span className="text-gray-400">
+                                        x{item.quantity}
+                                      </span>
+                                    </div>
+                                  ),
+                                )}
+                              {order.items.length > 2 && (
+                                <div className="text-gray-400">
+                                  +{order.items.length - 2} more item(s)
                                 </div>
-                              ))}
-                            {order.items.length > 2 && (
-                              <div className="text-gray-400">
-                                +{order.items.length - 2} more item(s)
-                              </div>
-                            )}
-                          </div>
-                        )}
+                              )}
+                            </div>
+                          )}
                       </div>
 
                       <div className="flex gap-2 items-center">
@@ -1076,7 +1296,9 @@ function ProfileContent() {
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-6 z-50">
             <div className="bg-white rounded-2xl p-6 w-full max-w-md fade-in max-h-[80vh] overflow-y-auto">
               <div className="flex justify-between items-center mb-6">
-                <h2 className="text-xl font-bold">Frequently Asked Questions</h2>
+                <h2 className="text-xl font-bold">
+                  Frequently Asked Questions
+                </h2>
                 <button
                   onClick={() => setShowFAQ(false)}
                   className="text-gray-400 hover:text-gray-600"
@@ -1113,8 +1335,9 @@ function ProfileContent() {
                         {faq.question}
                       </span>
                       <svg
-                        className={`w-5 h-5 text-gray-400 transform transition-transform ${expandedFAQ === index ? "rotate-180" : ""
-                          }`}
+                        className={`w-5 h-5 text-gray-400 transform transition-transform ${
+                          expandedFAQ === index ? "rotate-180" : ""
+                        }`}
                         fill="none"
                         stroke="currentColor"
                         viewBox="0 0 24 24"
