@@ -88,6 +88,7 @@ import { ReportsModule } from './reports/reports.module';
           UserCredentials,
           RefreshToken,
         ],
+        timezone: 'Z',
         synchronize: true,
         // Add connection pool and retry settings
         extra: {

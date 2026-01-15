@@ -53,21 +53,39 @@ function KitchenOrderCard({
     const calculateElapsed = () => {
       const now = Date.now();
       // Use kitchenReceivedAt or sentToKitchenAt as reference
-      const referenceTime =
+      const rawReference =
         order.kitchenReceivedAt || order.sentToKitchenAt || order.createdAt;
-      const startTime = new Date(referenceTime).getTime();
+
+      let startTime: number;
+      if (typeof rawReference === "string") {
+        let dateStr = rawReference.trim();
+
+        if (dateStr.includes(" ") && !dateStr.includes("T")) {
+          dateStr = dateStr.replace(" ", "T");
+        }
+
+        if (
+          !dateStr.endsWith("Z") &&
+          !dateStr.includes("+") &&
+          !dateStr.includes("-", 10)
+        ) {
+          dateStr += "Z";
+        }
+
+        startTime = new Date(dateStr).getTime();
+      } else {
+        startTime = new Date(rawReference as any).getTime();
+      }
+
       return Math.floor((now - startTime) / 1000);
     };
 
     setElapsedSeconds(calculateElapsed());
 
-    // Only run timer if not in "ready" column
-    if (column !== "ready") {
-      const interval = setInterval(() => {
-        setElapsedSeconds(calculateElapsed());
-      }, 1000);
-      return () => clearInterval(interval);
-    }
+    const interval = setInterval(() => {
+      setElapsedSeconds(calculateElapsed());
+    }, 1000);
+    return () => clearInterval(interval);
   }, [order.kitchenReceivedAt, order.sentToKitchenAt, order.createdAt, column]);
 
   // Color based on elapsed time and prep time

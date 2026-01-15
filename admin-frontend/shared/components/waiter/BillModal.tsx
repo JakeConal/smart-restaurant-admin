@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { X, Printer, Download } from "lucide-react";
+import { X, Printer, Download, Receipt } from "lucide-react";
 import type { Order } from "../../types/order";
 
 interface BillModalProps {

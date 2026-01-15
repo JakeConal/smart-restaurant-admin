@@ -42,17 +42,42 @@ export function OrderCard({
   isDeleting = false,
 }: OrderCardProps) {
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
-  const [referenceTime] = useState(() => {
-    // Use the current time as reference (when component mounted)
-    // This ensures new orders start from 00:00:00
-    return new Date().getTime();
-  });
 
   useEffect(() => {
     // Initial calculation
     const calculateElapsed = () => {
       const now = new Date().getTime();
-      const elapsed = Math.floor((now - referenceTime) / 1000);
+      let startTime: number;
+
+      const rawDate = order.createdAt;
+
+      if (typeof rawDate === "string") {
+        let dateStr = rawDate.trim();
+
+        // Handle "YYYY-MM-DD HH:mm:ss" -> "YYYY-MM-DDTHH:mm:ss"
+        if (dateStr.includes(" ") && !dateStr.includes("T")) {
+          dateStr = dateStr.replace(" ", "T");
+        }
+
+        // If no timezone is specified, assume it's UTC and append 'Z'
+        if (
+          !dateStr.endsWith("Z") &&
+          !dateStr.includes("+") &&
+          !dateStr.includes("-", 10)
+        ) {
+          dateStr += "Z";
+        }
+
+        startTime = new Date(dateStr).getTime();
+      } else {
+        startTime = new Date(rawDate as any).getTime();
+      }
+
+      // Final safety check: if the calculated difference is suspiciously large (e.g., > 6 hours)
+      // and we suspect a timezone mismatch, we don't automatically fix it here to avoid
+      // hiding real issues, but the backend fix (TZ=UTC) should prevent this.
+
+      const elapsed = Math.floor((now - startTime) / 1000);
       setElapsedSeconds(Math.max(0, elapsed)); // Ensure non-negative
     };
 
@@ -61,7 +86,7 @@ export function OrderCard({
     // Update every second for live countdown
     const interval = setInterval(calculateElapsed, 1000);
     return () => clearInterval(interval);
-  }, [referenceTime]);
+  }, [order.createdAt]);
 
   // Color code based on elapsed time
   const getTimeColor = () => {
