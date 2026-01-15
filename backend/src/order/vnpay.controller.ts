@@ -30,22 +30,49 @@ export class VNPayController {
         @Req() req: express.Request,
     ) {
         try {
-            // Use the first orderId as the transaction reference if multiple, 
-            // or create a combined reference. For simplicity, we use orderIds joined by underscore or just the first one.
-            const txnRef = body.orderIds.join('_');
+            console.log('[VNPay Controller] Creating payment request body:', body);
 
-            const ipAddr =
+            // 1. Clean TxnRef: Must be unique for every request even for the same order
+            // Format: [id1]n[id2]z[timestamp]
+            // 'n' separates IDs, 'z' separates IDs from unique timestamp
+            const baseIds = body.orderIds.join('n');
+            const uniqueSuffix = 'z' + Date.now().toString().slice(-7); // 7 digits of timestamp
+
+            let txnRef = baseIds + uniqueSuffix;
+            if (txnRef.length > 24) {
+                // If too long (many orders), use the first ID and mark as "multiple" with 'm'
+                // We'll have to rely on the fact that these orders are usually processed together
+                // or just truncate IDs until it fits.
+                txnRef = 'm' + body.orderIds[0] + uniqueSuffix;
+                if (txnRef.length > 24) {
+                    txnRef = txnRef.substring(txnRef.length - 24);
+                }
+            }
+
+            // 2. Normalize IP Address: Must be IPv4 format
+            let ipAddr =
                 (req.headers['x-forwarded-for'] as string) ||
-                req.connection.remoteAddress ||
-                req.socket.remoteAddress ||
-                '127.0.0.1';
+                req.ip ||
+                '13.160.92.202'; // Official VNPay doc example IP
+
+            // Handle IPv6 mapped IPv4 or local IPv6
+            if (ipAddr.includes('::ffff:')) {
+                ipAddr = ipAddr.split('::ffff:')[1];
+            } else if (ipAddr === '::1') {
+                ipAddr = '127.0.0.1';
+            }
+
+            console.log(`[VNPay Controller] Client IP: ${ipAddr}, Generated TxnRef: ${txnRef}`);
+            console.log(`[VNPay Controller] Return URL Length: ${body.returnUrl.length} chars`);
 
             const paymentUrl = this.vnpayService.createPaymentUrl({
-                amount: body.totalAmount,
+                amount: Math.floor(body.totalAmount),
                 orderId: txnRef,
                 ipAddr,
                 returnUrl: body.returnUrl,
             });
+
+            console.log('[VNPay Controller] Generated Payment URL:', paymentUrl);
 
             return {
                 success: true,
@@ -83,21 +110,33 @@ export class VNPayController {
             }
 
             // Payment successful, update orders
-            const txnRef = verify.vnp_TxnRef;
-            const orderIds = txnRef.split('_');
+            const fullTxnRef = verify.vnp_TxnRef;
 
-            for (const orderId of orderIds) {
-                await this.orderService.markAsPaidByOrderId(orderId, {
-                    paymentMethod: 'VNPay',
-                    // Note: Specific discount logic can be added here if needed, 
-                    // but orderService already handles auto-discounts.
-                });
+            // Extract the IDs part (before 'z')
+            const idsPart = fullTxnRef.split('z')[0];
+
+            let orderIdsToUpdate: string[] = [];
+
+            if (idsPart.startsWith('m')) {
+                // Only one ID was stored due to length
+                orderIdsToUpdate = [idsPart.substring(1)];
+            } else {
+                // Split by 'n' or '_' separator
+                orderIdsToUpdate = idsPart.includes('n') ? idsPart.split('n') : idsPart.split('_');
+            }
+
+            for (const idStr of orderIdsToUpdate) {
+                const id = parseInt(idStr);
+                if (!isNaN(id)) {
+                    console.log(`[VNPay] Marking order ${id} as paid`);
+                    await this.orderService.markAsPaid(id);
+                }
             }
 
             return {
                 success: true,
                 message: 'Payment verified and orders updated',
-                orderIds,
+                orderIds: orderIdsToUpdate,
             };
         } catch (error) {
             return {

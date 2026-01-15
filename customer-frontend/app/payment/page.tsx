@@ -110,12 +110,20 @@ function PaymentContent() {
     try {
       if (paymentMethod === "vnpay") {
         // VNPay integration
-        const orderIds = orders.map((o) => o.orderId || String(o.id));
+        // 1. Clean order IDs to be strictly alphanumeric for VNPay TxnRef
+        const orderIds = orders.map((o) =>
+          (o.orderId || String(o.id)).replace(/[^a-zA-Z0-9]/g, "")
+        );
 
-        // Convert USD to VND (approximate) for VNPay
+        // 2. Persist token in localStorage because VNPay ReturnURL has a length limit (~255 chars)
+        // Passing the full JWT in the URL often exceeds this limit.
+        localStorage.setItem("vnpay_token", currentToken);
+
+        // 3. Prepare amount (VNPay expects VND)
         const totalVnd = Math.round(finalTotal * 25000);
 
-        const returnUrl = `${window.location.origin}/payment/vnpay-return?token=${currentToken}`;
+        // 4. Use a clean return URL
+        const returnUrl = `${window.location.origin}/payment/vnpay-return`;
 
         const response = await vnpayApi.createPayment({
           orderIds,
@@ -206,49 +214,58 @@ function PaymentContent() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-25 via-white to-orange-50 pb-24 safe-bottom">
+    <div className="min-h-screen bg-ivory-100 pb-32">
       {/* Header */}
-      <div className="sticky top-0 z-30 backdrop-blur-xl bg-white/90 border-b border-orange-100/50 shadow-sm px-6 py-4">
-        <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold text-gray-900">Payment</h1>
-          <button
-            onClick={() => router.push(`/order-tracking?token=${currentToken}`)}
-            className="text-gray-500 hover:text-gray-700 text-2xl"
-          >
-            ✕
-          </button>
+      <div className="sticky top-0 z-30 backdrop-blur-xl bg-ivory-100/90 border-b border-slate-200/50 px-6 pt-6 pb-4 shadow-sm">
+        <div className="flex items-center justify-between max-w-lg mx-auto">
+          <div className="flex flex-col">
+            <h1 className="text-h2 !text-xl !leading-tight">Checkout</h1>
+            <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em]">Secure Gateway</p>
+          </div>
         </div>
       </div>
 
-      <div className="px-6 py-6">
+      <div className="max-w-lg mx-auto px-6 pt-10 pb-20 space-y-10">
         {/* Error Message */}
         {error && (
-          <div className="mb-6 p-4 bg-red-50 rounded-2xl border border-red-200">
-            <p className="text-sm text-red-800">{error}</p>
+          <div className="p-5 bg-red-50 border border-red-100 rounded-[28px] text-red-700 text-xs font-bold flex items-center gap-4 animate-fade-in shadow-sm">
+            <div className="w-10 h-10 bg-red-100 rounded-2xl flex items-center justify-center flex-shrink-0">
+              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+              </svg>
+            </div>
+            <p className="flex-1">{error}</p>
           </div>
         )}
 
         {/* Order Summary */}
-        <div className="mb-6 p-6 bg-white rounded-3xl border border-orange-100/50 shadow-sm">
-          <h2 className="text-lg font-bold text-gray-900 mb-4">
-            Order Summary ({orders.length}{" "}
-            {orders.length === 1 ? "order" : "orders"})
-          </h2>
+        <div className="bento-card !p-8">
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-h3">Order Summary</h2>
+            <span className="badge badge-info tracking-widest !text-[9px]">
+              {orders.length} {orders.length === 1 ? "Order" : "Orders"}
+            </span>
+          </div>
 
-          <div className="space-y-3 mb-4 pb-4 border-b border-gray-200">
+          <div className="space-y-4 mb-6 pb-6 border-b border-slate-100">
             {orders.map((order) =>
               order.items.map((item) => (
                 <div
                   key={`${order.id}-${item.id}`}
-                  className="flex justify-between items-start text-sm"
+                  className="flex justify-between items-center group"
                 >
-                  <div>
-                    <p className="font-semibold text-gray-900">
-                      {item.menuItemName}
-                    </p>
-                    <p className="text-gray-500 text-xs">× {item.quantity}</p>
+                  <div className="flex items-center gap-4">
+                    <div className="w-10 h-10 bg-slate-50 rounded-xl flex items-center justify-center border border-slate-100 group-hover:bg-ivory-200 transition-colors">
+                      <span className="text-[10px] font-black text-slate-400">×{item.quantity}</span>
+                    </div>
+                    <div>
+                      <p className="text-sm font-bold text-slate-800 leading-tight">
+                        {item.menuItemName}
+                      </p>
+                      <p className="text-[10px] text-slate-400 uppercase font-bold tracking-wider pt-0.5">Item Detail</p>
+                    </div>
                   </div>
-                  <p className="font-semibold text-gray-900">
+                  <p className="text-sm font-black text-slate-900">
                     ${item.totalPrice.toFixed(2)}
                   </p>
                 </div>
@@ -257,160 +274,168 @@ function PaymentContent() {
           </div>
 
           {/* Price Breakdown */}
-          <div className="space-y-2">
-            <div className="flex justify-between text-gray-600">
-              <span>Subtotal:</span>
+          <div className="space-y-3">
+            <div className="flex justify-between text-xs font-bold text-slate-400 uppercase tracking-widest">
+              <span>Subtotal</span>
               <span>${baseTotal.toFixed(2)}</span>
             </div>
             {discountAmount > 0 && (
-              <div className="flex justify-between text-green-600">
-                <span>Discount (10% Off):</span>
-                <span>-${discountAmount.toFixed(2)}</span>
+              <div className="flex justify-between items-center bg-green-50/50 p-3 rounded-2xl border border-green-100">
+                <span className="text-[10px] font-black text-green-600 uppercase tracking-widest">10% Off Applied</span>
+                <span className="text-xs font-black text-green-600">-${discountAmount.toFixed(2)}</span>
               </div>
             )}
-            <div className="flex justify-between text-lg font-bold text-gray-900 pt-2 border-t border-gray-200">
-              <span>Final Total:</span>
-              <span className="text-orange-600">${finalTotal.toFixed(2)}</span>
+            <div className="flex justify-between items-baseline pt-4 border-t border-slate-100">
+              <span className="text-h3 !text-lg">Final Total</span>
+              <span className="text-2xl font-black text-slate-900">
+                ${finalTotal.toFixed(2)}
+              </span>
             </div>
           </div>
         </div>
 
         {/* Bill Request Section */}
         {!billRequested ? (
-          <div className="mb-6 p-6 bg-orange-50 rounded-3xl border border-orange-200 shadow-sm text-center">
-            <p className="text-sm font-semibold text-orange-800 mb-3">
-              Need a physical bill ?
-            </p>
-            <button
-              onClick={handleRequestBill}
-              disabled={processing}
-              className="w-full py-3 bg-white border-2 border-orange-500 text-orange-600 rounded-2xl font-bold hover:bg-orange-500 hover:text-white transition-all disabled:opacity-50"
-            >
-              {processing ? "Processing..." : "Request Bill"}
-            </button>
+          <div className="bento-card !bg-slate-900 !border-none !p-8 group">
+            <div className="flex items-center justify-between gap-6">
+              <div className="space-y-1">
+                <h3 className="text-white font-bold text-base tracking-tight">Need a bill?</h3>
+                <p className="text-slate-400 text-xs leading-relaxed">Request a physical copy for your records</p>
+              </div>
+              <button
+                onClick={handleRequestBill}
+                disabled={processing}
+                className="btn-secondary !bg-white !text-slate-900 !px-6 !py-3 whitespace-nowrap !rounded-[20px] shadow-xl group-hover:scale-110 active:scale-95 transition-all"
+              >
+                {processing ? "..." : "Request"}
+              </button>
+            </div>
           </div>
         ) : (
-          <div className="mb-6 p-6 bg-green-50 rounded-3xl border border-green-200 shadow-sm text-center">
-            <div className="flex items-center justify-center gap-2 mb-2">
-              <span className="text-xl">✅</span>
-              <p className="font-bold text-green-800">Bill Requested</p>
+          <div className="bento-card !bg-green-50/50 !border-green-100 !p-6 flex items-center gap-5">
+            <div className="w-12 h-12 bg-green-100 rounded-2xl flex items-center justify-center shrink-0 shadow-inner">
+              <svg className="w-6 h-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+              </svg>
             </div>
-            <p className="text-xs text-green-700">
-              Our staff is coming with your bill. You can still complete payment
-              online below.
-            </p>
+            <div className="space-y-1">
+              <p className="text-sm font-black text-green-700 uppercase tracking-wider">Bill Requested</p>
+              <p className="text-xs text-green-600/80 font-medium">Our staff will deliver your bill shortly. Feel free to pay online now.</p>
+            </div>
           </div>
         )}
 
         {/* Payment Method Selection */}
-        <div className="mb-6 p-6 bg-white rounded-3xl border border-orange-100/50 shadow-sm">
-          <h2 className="text-lg font-bold text-gray-900 mb-4">
-            Payment Method
-          </h2>
+        <div className="space-y-4">
+          <div className="flex items-center justify-between px-2">
+            <h2 className="text-h3">Select Method</h2>
+            <p className="text-caption !text-[10px]">Level 1 Encrypted</p>
+          </div>
 
-          <label
-            className={`flex items-center p-4 border-2 rounded-2xl cursor-pointer transition-all ${paymentMethod === "vnpay"
-              ? "border-orange-500 bg-orange-50"
-              : "border-gray-200"
-              }`}
-          >
-            <input
-              type="radio"
-              name="payment"
-              value="vnpay"
-              checked={paymentMethod === "vnpay"}
-              onChange={(e) => setPaymentMethod(e.target.value as any)}
-              className="w-4 h-4 text-orange-600 focus:ring-orange-500"
-            />
-            <span className="ml-3 font-semibold text-gray-900 flex items-center gap-2">
-              🇻🇳 VNPay QR / Bank Card
-            </span>
-          </label>
-
-          <label
-            className={`flex items-center p-4 border-2 rounded-2xl cursor-pointer transition-all ${paymentMethod === "card"
-              ? "border-orange-500 bg-orange-50"
-              : "border-gray-200"
-              }`}
-          >
-            <input
-              type="radio"
-              name="payment"
-              value="card"
-              checked={paymentMethod === "card"}
-              onChange={(e) => setPaymentMethod(e.target.value as any)}
-              className="w-4 h-4 text-orange-600 focus:ring-orange-500"
-            />
-            <span className="ml-3 font-semibold text-gray-900">
-              💳 Credit / Debit Card
-            </span>
-          </label>
-
-          <label
-            className={`flex items-center p-4 border-2 rounded-2xl cursor-pointer transition-all ${paymentMethod === "cash"
-              ? "border-orange-500 bg-orange-50"
-              : "border-gray-200"
-              }`}
-          >
-            <input
-              type="radio"
-              name="payment"
-              value="cash"
-              checked={paymentMethod === "cash"}
-              onChange={(e) => setPaymentMethod(e.target.value as any)}
-              className="w-4 h-4 text-orange-600 focus:ring-orange-500"
-            />
-            <span className="ml-3 font-semibold text-gray-900">
-              💵 Cash Payment
-            </span>
-          </label>
+          <div className="space-y-3">
+            {[
+              { id: "vnpay", label: "VNPay QR", sub: "Local Banks & Wallets", icon: "🇻🇳" },
+              { id: "card", label: "Credit Card", sub: "Global Cards", icon: "💳" },
+              { id: "cash", label: "Table Cash", sub: "Pay with Staff", icon: "💵" }
+            ].map((method) => (
+              <label
+                key={method.id}
+                className={`bento-card !p-4 flex items-center justify-between cursor-pointer group transition-all duration-500 relative overflow-hidden ${paymentMethod === method.id
+                  ? "ring-2 ring-slate-900 shadow-xl scale-[1.02]"
+                  : "bg-white/50 border-slate-100 opacity-70 hover:opacity-100"
+                  }`}
+              >
+                {paymentMethod === method.id && (
+                  <div className="absolute inset-0 bg-slate-900/5 -z-10 animate-fade-in" />
+                )}
+                <div className="flex items-center gap-5">
+                  <input
+                    type="radio"
+                    name="payment"
+                    value={method.id}
+                    checked={paymentMethod === method.id}
+                    onChange={(e) => setPaymentMethod(e.target.value as any)}
+                    className="hidden"
+                  />
+                  <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-2xl transition-all duration-300 ${paymentMethod === method.id ? "bg-slate-900 scale-110 rotate-3 shadow-lg" : "bg-slate-100 group-hover:scale-105"}`}>
+                    {method.icon}
+                  </div>
+                  <div className="flex flex-col">
+                    <span className={`text-sm font-black transition-colors ${paymentMethod === method.id ? "text-slate-900" : "text-slate-500"}`}>
+                      {method.label}
+                    </span>
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{method.sub}</span>
+                  </div>
+                </div>
+                <div className={`w-6 h-6 rounded-full border-2 transition-all flex items-center justify-center ${paymentMethod === method.id ? "border-slate-900 bg-slate-900" : "border-slate-200 group-hover:border-slate-400"}`}>
+                  {paymentMethod === method.id && (
+                    <div className="w-2 h-2 bg-white rounded-full animate-scale-in" />
+                  )}
+                </div>
+              </label>
+            ))}
+          </div>
         </div>
 
-        {/* Payment Info */}
-        {paymentMethod === "vnpay" && (
-          <div className="mb-6 p-4 bg-orange-50 rounded-2xl border border-orange-200">
-            <p className="text-sm text-orange-800">
-              🇻🇳 Secure payment via VNPay gateway. Supports QR code and all
-              Vietnamese banks.
-            </p>
-          </div>
-        )}
+        {/* Dynamic Payment Info */}
+        <div className="animate-fade-in">
+          {paymentMethod === "vnpay" && (
+            <div className="p-5 bg-orange-50/50 border border-orange-100 rounded-[28px] flex items-start gap-4 shadow-sm">
+              <div className="w-10 h-10 bg-orange-100 rounded-xl flex items-center justify-center shrink-0">
+                <span className="text-xl">🛡️</span>
+              </div>
+              <p className="text-xs text-orange-800 leading-relaxed pt-1">
+                You will be redirected to <span className="font-bold">VNPay Portal</span>. Supports VietQR, domestic banks, and international cards.
+              </p>
+            </div>
+          )}
 
-        {paymentMethod === "card" && (
-          <div className="mb-6 p-4 bg-blue-50 rounded-2xl border border-blue-200">
-            <p className="text-sm text-blue-800">
-              💳 Demo mode: Click &quot;Complete Payment&quot; to simulate
-              payment
-            </p>
-          </div>
-        )}
+          {paymentMethod === "card" && (
+            <div className="p-5 bg-blue-50/40 border border-blue-100 rounded-[28px] flex items-start gap-4">
+              <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center shrink-0">
+                <span className="text-xl">🧪</span>
+              </div>
+              <p className="text-xs text-blue-800 leading-relaxed pt-1 font-medium">
+                Testing Module: Complete payment simulation will be triggered. No real charges will be applied.
+              </p>
+            </div>
+          )}
 
-        {paymentMethod === "cash" && (
-          <div className="mb-6 p-4 bg-purple-50 rounded-2xl border border-purple-200">
-            <p className="text-sm text-purple-800">
-              💵 Cash payment: A staff member will collect payment at your table
-            </p>
-          </div>
-        )}
+          {paymentMethod === "cash" && (
+            <div className="p-5 bg-purple-50/40 border border-purple-100 rounded-[28px] flex items-start gap-4">
+              <div className="w-10 h-10 bg-purple-100 rounded-xl flex items-center justify-center shrink-0">
+                <span className="text-xl">🏃</span>
+              </div>
+              <p className="text-xs text-purple-800 leading-relaxed pt-1 font-medium">
+                Our staff member will be at your table momentarily to assist with cash payment.
+              </p>
+            </div>
+          )}
+        </div>
 
-        {/* Complete Payment Button */}
-        <button
-          onClick={handlePayment}
-          disabled={processing}
-          className="w-full py-4 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-2xl font-bold text-lg shadow-lg hover:shadow-xl hover:scale-105 transition-all disabled:opacity-50"
-        >
-          {processing
-            ? "Processing..."
-            : `Complete Payment - $${finalTotal.toFixed(2)}`}
-        </button>
+        {/* Action Buttons */}
+        <div className="pt-4 space-y-4">
+          <button
+            onClick={handlePayment}
+            disabled={processing}
+            className="w-full py-5 bg-slate-900 text-white rounded-[28px] font-black text-base shadow-2xl hover:shadow-slate-300 hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 relative overflow-hidden group"
+          >
+            <div className="absolute inset-0 bg-gradient-to-r from-emerald-400 to-cyan-400 opacity-0 group-hover:opacity-10 transition-opacity" />
+            <div className="flex items-center justify-center gap-3">
+              {processing && (
+                <div className="w-5 h-5 border-3 border-white/30 border-t-white rounded-full animate-spin" />
+              )}
+              <span>{processing ? "AUTHENTICATING..." : "AUTHORIZE PAYMENT"}</span>
+            </div>
+          </button>
 
-        {/* Back Button */}
-        <button
-          onClick={() => router.push(`/order-tracking?token=${currentToken}`)}
-          className="w-full py-3 mt-3 bg-white border border-gray-200 text-gray-900 rounded-2xl font-semibold hover:bg-gray-50 transition-colors"
-        >
-          Cancel
-        </button>
+          <button
+            onClick={() => router.push(`/order-tracking?token=${currentToken}`)}
+            className="w-full py-4 text-slate-400 font-bold text-xs uppercase tracking-[0.2em] hover:text-slate-900 transition-colors"
+          >
+            Go Back
+          </button>
+        </div>
       </div>
 
       <BottomNav token={currentToken} />
