@@ -1,3 +1,6 @@
+import { MenuResponse } from "./types";
+import { getMenuFromCache, setMenuInCache } from "./menu-cache";
+
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
 
 // Helper function to make API requests
@@ -153,7 +156,7 @@ export const authApi = {
 
 // Menu API
 export const menuApi = {
-  getMenu: (
+  getMenu: async (
     token: string,
     params?: {
       q?: string;
@@ -164,6 +167,21 @@ export const menuApi = {
       limit?: number;
     },
   ) => {
+    // Try to get from cache first
+    const cacheParams = {
+      token,
+      q: params?.q,
+      categoryId: params?.categoryId,
+      sort: params?.sort,
+      chefRecommended: params?.chefRecommended,
+      page: params?.page,
+    };
+
+    const cachedData = getMenuFromCache(cacheParams);
+    if (cachedData) {
+      return cachedData;
+    }
+
     const queryParams = new URLSearchParams();
     queryParams.set("token", token);
     if (params?.q) queryParams.set("q", params.q);
@@ -175,7 +193,16 @@ export const menuApi = {
     if (params?.page) queryParams.set("page", String(params.page));
     if (params?.limit) queryParams.set("limit", String(params.limit));
 
-    return apiRequest(`/api/menu?${queryParams.toString()}`);
+    const response = await apiRequest<MenuResponse>(
+      `/api/menu?${queryParams.toString()}`,
+    );
+
+    // Save to cache if successful
+    if (response.success) {
+      setMenuInCache(cacheParams, response);
+    }
+
+    return response;
   },
 
   getItemPhoto: (photoId: string) =>

@@ -1,4 +1,5 @@
 import { apiClient } from "../client";
+import { menuCache } from "../../menu-cache";
 import type {
   MenuCategory,
   CreateMenuCategoryDto,
@@ -30,6 +31,10 @@ export class MenuApi {
    * Get all categories with optional filters
    */
   async getCategories(filters?: MenuCategoryFilters): Promise<MenuCategory[]> {
+    const cacheKey = filters ? JSON.stringify(filters) : "all";
+    const cached = menuCache.getCategories(cacheKey);
+    if (cached) return cached;
+
     const params = new URLSearchParams();
     if (filters?.status) params.append("status", filters.status);
     if (filters?.sortBy) params.append("sortBy", filters.sortBy);
@@ -37,6 +42,8 @@ export class MenuApi {
     const response = await apiClient.get(
       `/api/admin/menu/categories?${params.toString()}`,
     );
+
+    menuCache.setCategories(response.data, cacheKey);
     return response.data;
   }
 
@@ -53,6 +60,7 @@ export class MenuApi {
    */
   async createCategory(data: CreateMenuCategoryDto): Promise<MenuCategory> {
     const response = await apiClient.post("/api/admin/menu/categories", data);
+    menuCache.invalidate();
     return response.data;
   }
 
@@ -67,6 +75,7 @@ export class MenuApi {
       `/api/admin/menu/categories/${id}`,
       data,
     );
+    menuCache.invalidate();
     return response.data;
   }
 
@@ -81,6 +90,7 @@ export class MenuApi {
       `/api/admin/menu/categories/${id}/status`,
       { status },
     );
+    menuCache.invalidate();
     return response.data;
   }
 
@@ -89,6 +99,7 @@ export class MenuApi {
    */
   async deleteCategory(id: string): Promise<void> {
     await apiClient.delete(`/api/admin/menu/categories/${id}`);
+    menuCache.invalidate();
   }
 
   // ============================================
@@ -101,6 +112,9 @@ export class MenuApi {
   async getItems(
     filters?: MenuItemFilters,
   ): Promise<{ items: MenuItem[]; total: number }> {
+    const cached = menuCache.getItems(filters);
+    if (cached) return cached;
+
     const params = new URLSearchParams();
     if (filters?.search) params.append("search", filters.search);
     if (filters?.categoryId) params.append("categoryId", filters.categoryId);
@@ -114,6 +128,8 @@ export class MenuApi {
     const response = await apiClient.get(
       `/api/admin/menu/items?${params.toString()}`,
     );
+
+    menuCache.setItems(filters, response.data);
     return response.data;
   }
 
@@ -121,7 +137,12 @@ export class MenuApi {
    * Get single item by ID
    */
   async getItemById(id: string): Promise<MenuItem> {
+    const cached = menuCache.getItem(id);
+    if (cached) return cached;
+
     const response = await apiClient.get(`/api/admin/menu/items/${id}`);
+
+    menuCache.setItem(id, response.data);
     return response.data;
   }
 
@@ -130,6 +151,7 @@ export class MenuApi {
    */
   async createItem(data: CreateMenuItemDto): Promise<MenuItem> {
     const response = await apiClient.post("/api/admin/menu/items", data);
+    menuCache.invalidate();
     return response.data;
   }
 
@@ -138,6 +160,7 @@ export class MenuApi {
    */
   async updateItem(id: string, data: UpdateMenuItemDto): Promise<MenuItem> {
     const response = await apiClient.put(`/api/admin/menu/items/${id}`, data);
+    menuCache.invalidate();
     return response.data;
   }
 
@@ -152,6 +175,7 @@ export class MenuApi {
       `/api/admin/menu/items/${id}/status`,
       { status },
     );
+    menuCache.invalidate();
     return response.data;
   }
 
@@ -160,6 +184,7 @@ export class MenuApi {
    */
   async deleteItem(id: string): Promise<void> {
     await apiClient.delete(`/api/admin/menu/items/${id}`);
+    menuCache.invalidate();
   }
 
   // ============================================
@@ -182,6 +207,7 @@ export class MenuApi {
         },
       },
     );
+    menuCache.invalidate();
     return response.data;
   }
 
@@ -190,6 +216,7 @@ export class MenuApi {
    */
   async deletePhoto(itemId: string, photoId: string): Promise<void> {
     await apiClient.delete(`/api/admin/menu/items/${itemId}/photos/${photoId}`);
+    menuCache.invalidate();
   }
 
   /**
@@ -216,6 +243,7 @@ export class MenuApi {
       `/api/admin/menu/items/${itemId}/photos/${photoId}/primary`,
       {},
     );
+    menuCache.invalidate();
     return response.data;
   }
 
@@ -253,6 +281,7 @@ export class MenuApi {
       data,
     );
     console.log("Frontend: Modifier group created:", response.data);
+    menuCache.invalidate();
     return response.data;
   }
 
@@ -267,6 +296,7 @@ export class MenuApi {
       `/api/admin/menu/modifier-groups/${id}`,
       data,
     );
+    menuCache.invalidate();
     return response.data;
   }
 
@@ -275,6 +305,7 @@ export class MenuApi {
    */
   async deleteModifierGroup(id: string): Promise<void> {
     await apiClient.delete(`/api/admin/menu/modifier-groups/${id}`);
+    menuCache.invalidate();
   }
 
   // ============================================
@@ -292,6 +323,7 @@ export class MenuApi {
       `/api/admin/menu/modifier-groups/${groupId}/options`,
       data,
     );
+    menuCache.invalidate();
     return response.data;
   }
 
@@ -306,6 +338,7 @@ export class MenuApi {
       `/api/admin/menu/modifier-options/${optionId}`,
       data,
     );
+    menuCache.invalidate();
     return response.data;
   }
 
@@ -314,6 +347,7 @@ export class MenuApi {
    */
   async deleteModifierOption(optionId: string): Promise<void> {
     await apiClient.delete(`/api/admin/menu/modifier-options/${optionId}`);
+    menuCache.invalidate();
   }
 
   // ============================================
@@ -331,6 +365,7 @@ export class MenuApi {
       `/api/admin/menu/items/${itemId}/modifier-groups`,
       data,
     );
+    menuCache.invalidate();
   }
 
   /**
