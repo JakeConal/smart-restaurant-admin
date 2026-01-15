@@ -16,6 +16,7 @@ import {
   getMyPendingOrders,
   acceptOrder,
   serveOrder,
+  markAsPaid,
   deleteOrder,
 } from "../../../shared/lib/api/waiter";
 import { initializeOfflineQueueProcessor } from "../../../shared/lib/offlineQueueProcessor";
@@ -34,6 +35,7 @@ export default function WaiterOrdersPage() {
   const [acceptingOrderId, setAcceptingOrderId] = useState<string | null>(null);
   const [servingOrderId, setServingOrderId] = useState<string | null>(null);
   const [deletingOrderId, setDeletingOrderId] = useState<string | null>(null);
+  const [payingOrderId, setPayingOrderId] = useState<string | null>(null);
   const [wsConnected, setWsConnected] = useState(false);
   const unsubscribesRef = useRef<Map<string, () => void>>(new Map());
 
@@ -282,6 +284,28 @@ export default function WaiterOrdersPage() {
     }
   };
 
+  const handlePay = async (orderId: string, paymentData: any) => {
+    if (payingOrderId) return;
+
+    setPayingOrderId(orderId);
+    try {
+      await markAsPaid(orderId, paymentData);
+      toast.success("Order marked as paid and completed!");
+      // Remove completed order from the list
+      setOrders(orders.filter((o) => o.orderId !== orderId));
+      setBillOrder(null);
+      if (selectedOrder?.orderId === orderId) {
+        setSelectedOrder(null);
+      }
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Failed to process payment";
+      toast.error(message);
+    } finally {
+      setPayingOrderId(null);
+    }
+  };
+
   const handleDelete = async (orderId: string) => {
     if (deletingOrderId) return;
 
@@ -463,6 +487,8 @@ export default function WaiterOrdersPage() {
           isOpen={!!billOrder}
           onClose={() => setBillOrder(null)}
           orders={[billOrder]}
+          onPay={handlePay}
+          isPaying={!!payingOrderId}
         />
       )}
     </DashboardLayout>

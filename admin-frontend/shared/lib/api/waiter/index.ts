@@ -50,6 +50,17 @@ export async function serveOrder(orderId: string): Promise<Order> {
   return response.data;
 }
 
+export async function markAsPaid(
+  orderId: string,
+  paymentData?: any,
+): Promise<Order> {
+  const response = await apiClient.put(
+    `/api/orders/${orderId}/paid`,
+    paymentData,
+  );
+  return response.data;
+}
+
 export async function deleteOrder(orderId: string): Promise<void> {
   await apiClient.delete(`/api/order/${orderId}`);
 }

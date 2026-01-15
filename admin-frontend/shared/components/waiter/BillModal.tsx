@@ -8,9 +8,17 @@ interface BillModalProps {
   isOpen: boolean;
   onClose: () => void;
   orders: Order[];
+  onPay?: (orderId: string, paymentData: any) => Promise<void>;
+  isPaying?: boolean;
 }
 
-export function BillModal({ isOpen, onClose, orders }: BillModalProps) {
+export function BillModal({
+  isOpen,
+  onClose,
+  orders,
+  onPay,
+  isPaying,
+}: BillModalProps) {
   if (!isOpen || orders.length === 0) return null;
 
   // Calculate totals
@@ -178,20 +186,45 @@ export function BillModal({ isOpen, onClose, orders }: BillModalProps) {
         </div>
 
         {/* Footer Actions */}
-        <div className="p-6 bg-white border-t border-gray-100 flex gap-3">
-          <button
-            onClick={onClose}
-            className="flex-1 py-3 text-gray-600 font-bold hover:bg-gray-50 rounded-xl transition-colors"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={handlePrint}
-            className="flex-[2] py-3 bg-slate-800 text-white rounded-xl font-bold shadow-lg shadow-slate-200 hover:bg-slate-900 transition-all flex items-center justify-center gap-2"
-          >
-            <Printer className="w-5 h-5" />
-            <span>Print Invoice (PDF)</span>
-          </button>
+        <div className="p-6 bg-white border-t border-gray-100 flex flex-col gap-3">
+          <div className="flex gap-3">
+            <button
+              onClick={onClose}
+              className="flex-1 py-3 text-gray-600 font-bold hover:bg-gray-50 rounded-xl transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handlePrint}
+              className="flex-1 py-3 bg-slate-100 text-slate-700 rounded-xl font-bold hover:bg-slate-200 transition-all flex items-center justify-center gap-2"
+            >
+              <Printer className="w-5 h-5" />
+              <span>Print</span>
+            </button>
+          </div>
+
+          {!isPaid && onPay && (
+            <button
+              onClick={() =>
+                onPay(firstOrder.orderId, {
+                  paymentMethod: "cash",
+                  discountPercentage:
+                    discountType === "percentage" ? discountValue : 0,
+                  discountAmount: discountAmount,
+                  finalTotal: finalTotal,
+                })
+              }
+              disabled={isPaying}
+              className="w-full py-4 bg-orange-500 text-white rounded-2xl font-black shadow-lg shadow-orange-200 hover:bg-orange-600 active:scale-[0.98] transition-all flex items-center justify-center gap-3 uppercase tracking-wider text-sm"
+            >
+              {isPaying ? (
+                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+              ) : (
+                <Receipt className="w-5 h-5" />
+              )}
+              <span>Complete Payment & Close Order</span>
+            </button>
+          )}
         </div>
       </div>
 

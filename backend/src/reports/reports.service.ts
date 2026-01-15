@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, Between } from 'typeorm';
-import { Order } from '../schema/order.schema';
+import { Repository, Between, Not, In } from 'typeorm';
+import { Order, OrderStatus } from '../schema/order.schema';
 
 @Injectable()
 export class ReportsService {
@@ -15,25 +15,25 @@ export class ReportsService {
     startDate?: string,
     endDate?: string,
   ): { start: Date; end: Date } {
-    const now = new Date();
+    const end: Date = endDate ? new Date(endDate) : new Date();
     let start: Date;
-    const end: Date = endDate ? new Date(endDate) : now;
 
     if (startDate) {
       start = new Date(startDate);
     } else {
+      start = new Date(end);
       switch (timeRange) {
         case 'daily':
-          start = new Date(now.setDate(now.getDate() - 7));
+          start.setDate(start.getDate() - 7);
           break;
         case 'weekly':
-          start = new Date(now.setDate(now.getDate() - 28));
+          start.setDate(start.getDate() - 28);
           break;
         case 'monthly':
-          start = new Date(now.setMonth(now.getMonth() - 6));
+          start.setMonth(start.getMonth() - 6);
           break;
         default:
-          start = new Date(now.setDate(now.getDate() - 7));
+          start.setDate(start.getDate() - 7);
       }
     }
 
@@ -48,10 +48,14 @@ export class ReportsService {
     const { start, end } = this.getDateRange(timeRange, startDate, endDate);
 
     const orders = await this.orderRepository.find({
-      where: {
-        createdAt: Between(start, end),
-        isPaid: true,
-      },
+      where: [
+        { isPaid: true, createdAt: Between(start, end), isDeleted: false },
+        {
+          status: OrderStatus.COMPLETED,
+          createdAt: Between(start, end),
+          isDeleted: false,
+        },
+      ],
       order: {
         createdAt: 'ASC',
       },
@@ -71,10 +75,14 @@ export class ReportsService {
     const { start, end } = this.getDateRange(timeRange, startDate, endDate);
 
     const orders = await this.orderRepository.find({
-      where: {
-        createdAt: Between(start, end),
-        isPaid: true,
-      },
+      where: [
+        { isPaid: true, createdAt: Between(start, end), isDeleted: false },
+        {
+          status: OrderStatus.COMPLETED,
+          createdAt: Between(start, end),
+          isDeleted: false,
+        },
+      ],
     });
 
     // Aggregate items
@@ -131,6 +139,8 @@ export class ReportsService {
     const orders = await this.orderRepository.find({
       where: {
         createdAt: Between(start, end),
+        status: Not(In([OrderStatus.CANCELLED, OrderStatus.REJECTED])),
+        isDeleted: false,
       },
     });
 
@@ -164,17 +174,23 @@ export class ReportsService {
     const { start, end } = this.getDateRange(timeRange, startDate, endDate);
 
     const orders = await this.orderRepository.find({
-      where: {
-        createdAt: Between(start, end),
-        isPaid: true,
-      },
+      where: [
+        { isPaid: true, createdAt: Between(start, end), isDeleted: false },
+        {
+          status: OrderStatus.COMPLETED,
+          createdAt: Between(start, end),
+          isDeleted: false,
+        },
+      ],
     });
 
-    const totalRevenue = orders.reduce(
-      (sum, order) =>
-        sum + parseFloat(String(order.finalTotal || order.total || 0)),
-      0,
-    );
+    const totalRevenue = orders.reduce((sum, order) => {
+      const amount =
+        order.finalTotal !== null && order.finalTotal !== undefined
+          ? order.finalTotal
+          : order.total || 0;
+      return sum + parseFloat(String(amount));
+    }, 0);
     const totalOrders = orders.length;
     const averageOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0;
 
@@ -224,7 +240,11 @@ export class ReportsService {
           key = date.toLocaleDateString();
       }
 
-      const revenue = parseFloat(String(order.finalTotal || order.total || 0));
+      const orderAmount =
+        order.finalTotal !== null && order.finalTotal !== undefined
+          ? order.finalTotal
+          : order.total || 0;
+      const revenue = parseFloat(String(orderAmount));
 
       if (grouped.has(key)) {
         const existing = grouped.get(key);

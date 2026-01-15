@@ -87,37 +87,142 @@ export class SeedService {
 
     const permissions = [
       // Menu permissions
-      { code: 'menu:read', resource: 'menu', action: 'read', description: 'View menu items' },
-      { code: 'menu:write', resource: 'menu', action: 'write', description: 'Create/Edit menu items' },
-      { code: 'menu:create', resource: 'menu', action: 'create', description: 'Create menu items' },
-      { code: 'menu:delete', resource: 'menu', action: 'delete', description: 'Delete menu items' },
-      
+      {
+        code: 'menu:read',
+        resource: 'menu',
+        action: 'read',
+        description: 'View menu items',
+      },
+      {
+        code: 'menu:write',
+        resource: 'menu',
+        action: 'write',
+        description: 'Create/Edit menu items',
+      },
+      {
+        code: 'menu:create',
+        resource: 'menu',
+        action: 'create',
+        description: 'Create menu items',
+      },
+      {
+        code: 'menu:delete',
+        resource: 'menu',
+        action: 'delete',
+        description: 'Delete menu items',
+      },
+
       // Order permissions
-      { code: 'order:read', resource: 'order', action: 'read', description: 'View orders' },
-      { code: 'order:create', resource: 'order', action: 'create', description: 'Create orders' },
-      { code: 'order:update_status', resource: 'order', action: 'update', description: 'Update order status' },
-      { code: 'order:cancel', resource: 'order', action: 'cancel', description: 'Cancel orders' },
-      
+      {
+        code: 'order:read',
+        resource: 'order',
+        action: 'read',
+        description: 'View orders',
+      },
+      {
+        code: 'order:create',
+        resource: 'order',
+        action: 'create',
+        description: 'Create orders',
+      },
+      {
+        code: 'order:update_status',
+        resource: 'order',
+        action: 'update',
+        description: 'Update order status',
+      },
+      {
+        code: 'order:cancel',
+        resource: 'order',
+        action: 'cancel',
+        description: 'Cancel orders',
+      },
+
       // Table permissions
-      { code: 'table:read', resource: 'table', action: 'read', description: 'View tables' },
-      { code: 'table:manage', resource: 'table', action: 'manage', description: 'Manage table settings' },
-      { code: 'table:assign', resource: 'table', action: 'assign', description: 'Assign tables' },
-      
+      {
+        code: 'table:read',
+        resource: 'table',
+        action: 'read',
+        description: 'View tables',
+      },
+      {
+        code: 'table:manage',
+        resource: 'table',
+        action: 'manage',
+        description: 'Manage table settings',
+      },
+      {
+        code: 'table:assign',
+        resource: 'table',
+        action: 'assign',
+        description: 'Assign tables',
+      },
+
       // User permissions (Admin only)
-      { code: 'user:read', resource: 'user', action: 'read', description: 'View users' },
-      { code: 'user:create', resource: 'user', action: 'create', description: 'Create users' },
-      { code: 'user:update', resource: 'user', action: 'update', description: 'Update users' },
-      { code: 'user:delete', resource: 'user', action: 'delete', description: 'Delete users' },
-      
+      {
+        code: 'user:read',
+        resource: 'user',
+        action: 'read',
+        description: 'View users',
+      },
+      {
+        code: 'user:create',
+        resource: 'user',
+        action: 'create',
+        description: 'Create users',
+      },
+      {
+        code: 'user:update',
+        resource: 'user',
+        action: 'update',
+        description: 'Update users',
+      },
+      {
+        code: 'user:delete',
+        resource: 'user',
+        action: 'delete',
+        description: 'Delete users',
+      },
+
       // Report permissions (Admin only)
-      { code: 'report:view', resource: 'report', action: 'view', description: 'View reports' },
-      { code: 'report:export', resource: 'report', action: 'export', description: 'Export reports' },
+      {
+        code: 'report:view',
+        resource: 'report',
+        action: 'view',
+        description: 'View reports',
+      },
+      {
+        code: 'report:export',
+        resource: 'report',
+        action: 'export',
+        description: 'Export reports',
+      },
 
       // Admin management permissions (Super Admin only)
-      { code: 'admin:read', resource: 'admin', action: 'read', description: 'View admin accounts' },
-      { code: 'admin:create', resource: 'admin', action: 'create', description: 'Create admin accounts' },
-      { code: 'admin:update', resource: 'admin', action: 'update', description: 'Update admin accounts' },
-      { code: 'admin:delete', resource: 'admin', action: 'delete', description: 'Deactivate admin accounts' },
+      {
+        code: 'admin:read',
+        resource: 'admin',
+        action: 'read',
+        description: 'View admin accounts',
+      },
+      {
+        code: 'admin:create',
+        resource: 'admin',
+        action: 'create',
+        description: 'Create admin accounts',
+      },
+      {
+        code: 'admin:update',
+        resource: 'admin',
+        action: 'update',
+        description: 'Update admin accounts',
+      },
+      {
+        code: 'admin:delete',
+        resource: 'admin',
+        action: 'delete',
+        description: 'Deactivate admin accounts',
+      },
     ];
 
     await this.permissionRepository.save(permissions);
@@ -131,18 +236,33 @@ export class SeedService {
       return;
     }
 
-    const superAdminRole = await this.roleRepository.findOne({ where: { code: 'SUPER_ADMIN' } });
-    const adminRole = await this.roleRepository.findOne({ where: { code: 'ADMIN' } });
-    const waiterRole = await this.roleRepository.findOne({ where: { code: 'WAITER' } });
-    const kitchenRole = await this.roleRepository.findOne({ where: { code: 'KITCHEN' } });
+    const superAdminRole = await this.roleRepository.findOne({
+      where: { code: 'SUPER_ADMIN' },
+    });
+    const adminRole = await this.roleRepository.findOne({
+      where: { code: 'ADMIN' },
+    });
+    const waiterRole = await this.roleRepository.findOne({
+      where: { code: 'WAITER' },
+    });
+    const kitchenRole = await this.roleRepository.findOne({
+      where: { code: 'KITCHEN' },
+    });
 
     // SUPER_ADMIN gets only admin management permissions
-    const superAdminPermissionCodes = ['admin:read', 'admin:create', 'admin:update', 'admin:delete'];
+    const superAdminPermissionCodes = [
+      'admin:read',
+      'admin:create',
+      'admin:update',
+      'admin:delete',
+    ];
     const superAdminPermissions = await this.permissionRepository
       .createQueryBuilder('permission')
-      .where('permission.code IN (:...codes)', { codes: superAdminPermissionCodes })
+      .where('permission.code IN (:...codes)', {
+        codes: superAdminPermissionCodes,
+      })
       .getMany();
-    const superAdminMappings = superAdminPermissions.map(permission => ({
+    const superAdminMappings = superAdminPermissions.map((permission) => ({
       role_id: superAdminRole.id,
       permission_id: permission.id,
     }));
@@ -150,8 +270,10 @@ export class SeedService {
     // ADMIN gets all permissions except admin management
     const allPermissions = await this.permissionRepository.find();
     const adminMappings = allPermissions
-      .filter(permission => !superAdminPermissionCodes.includes(permission.code))
-      .map(permission => ({
+      .filter(
+        (permission) => !superAdminPermissionCodes.includes(permission.code),
+      )
+      .map((permission) => ({
         role_id: adminRole.id,
         permission_id: permission.id,
       }));
@@ -159,14 +281,17 @@ export class SeedService {
     // WAITER gets specific permissions
     const waiterPermissionCodes = [
       'menu:read',
-      'order:read', 'order:create', 'order:update_status',
-      'table:read', 'table:assign',
+      'order:read',
+      'order:create',
+      'order:update_status',
+      'table:read',
+      'table:assign',
     ];
     const waiterPermissions = await this.permissionRepository
       .createQueryBuilder('permission')
       .where('permission.code IN (:...codes)', { codes: waiterPermissionCodes })
       .getMany();
-    const waiterMappings = waiterPermissions.map(permission => ({
+    const waiterMappings = waiterPermissions.map((permission) => ({
       role_id: waiterRole.id,
       permission_id: permission.id,
     }));
@@ -175,9 +300,11 @@ export class SeedService {
     const kitchenPermissionCodes = ['order:read', 'order:update_status'];
     const kitchenPermissions = await this.permissionRepository
       .createQueryBuilder('permission')
-      .where('permission.code IN (:...codes)', { codes: kitchenPermissionCodes })
+      .where('permission.code IN (:...codes)', {
+        codes: kitchenPermissionCodes,
+      })
       .getMany();
-    const kitchenMappings = kitchenPermissions.map(permission => ({
+    const kitchenMappings = kitchenPermissions.map((permission) => ({
       role_id: kitchenRole.id,
       permission_id: permission.id,
     }));
@@ -189,7 +316,9 @@ export class SeedService {
       ...kitchenMappings,
     ]);
 
-    console.log(`✓ Seeded role permissions (SUPER_ADMIN: ${superAdminMappings.length}, ADMIN: ${adminMappings.length}, WAITER: ${waiterMappings.length}, KITCHEN: ${kitchenMappings.length})`);
+    console.log(
+      `✓ Seeded role permissions (SUPER_ADMIN: ${superAdminMappings.length}, ADMIN: ${adminMappings.length}, WAITER: ${waiterMappings.length}, KITCHEN: ${kitchenMappings.length})`,
+    );
   }
 
   private async seedSuperAdmin() {
@@ -251,7 +380,9 @@ export class SeedService {
     });
 
     if (!user) {
-      console.log('⏭️  User huynhthaitoan254@gmail.com not found, skipping tables and orders seed');
+      console.log(
+        '⏭️  User huynhthaitoan254@gmail.com not found, skipping tables and orders seed',
+      );
       return;
     }
 
@@ -388,6 +519,8 @@ export class SeedService {
       tax: 12000,
       total: 132000,
       status: OrderStatus.COMPLETED,
+      isPaid: true,
+      paidAt: new Date(now.getTime() - 30 * 60 * 1000).toISOString(),
       acceptedAt: new Date(now.getTime() - 59 * 60 * 1000),
       createdAt: new Date(now.getTime() - 60 * 60 * 1000), // 1 hour ago
       updatedAt: new Date(now.getTime() - 30 * 60 * 1000),
