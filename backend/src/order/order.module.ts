@@ -5,13 +5,15 @@ import { Table } from '../schema/table.schema';
 import { MenuItem } from '../schema/menu-item.schema';
 import { AdminAuditLog } from '../schema/admin-audit-log.schema';
 import { OrderService } from './order.service';
+import { VNPayService } from './vnpay.service';
 import { OrderController } from './order.controller';
+import { VNPayController } from './vnpay.controller';
 import { OrderGateway } from './order.gateway';
 
 @Module({
   imports: [TypeOrmModule.forFeature([Order, Table, MenuItem, AdminAuditLog])],
-  providers: [OrderService, OrderGateway],
-  controllers: [OrderController],
-  exports: [OrderService, OrderGateway],
+  providers: [OrderService, VNPayService, OrderGateway],
+  controllers: [OrderController, VNPayController],
+  exports: [OrderService, VNPayService, OrderGateway],
 })
-export class OrderModule {}
+export class OrderModule { }
