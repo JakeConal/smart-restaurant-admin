@@ -89,7 +89,13 @@ export const TableFormModal: React.FC<TableFormModalProps> = ({
 
     setLoading(true);
     try {
-      await onSubmit(formData);
+      // Clean up data: remove empty strings for optional fields
+      const submitData = { ...formData };
+      if (!submitData.waiter_id) delete submitData.waiter_id;
+      if (!submitData.location) delete submitData.location;
+      if (!submitData.description) delete submitData.description;
+
+      await onSubmit(submitData);
       onClose();
       // Reset form
       setFormData({
@@ -102,7 +108,11 @@ export const TableFormModal: React.FC<TableFormModalProps> = ({
       });
       setErrors({});
     } catch (error: any) {
-      setErrors({ submit: error.message || "Failed to save table" });
+      const message =
+        error.response?.data?.message || error.message || "Failed to save table";
+      setErrors({
+        submit: Array.isArray(message) ? message.join(", ") : message,
+      });
     } finally {
       setLoading(false);
     }

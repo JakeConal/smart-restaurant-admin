@@ -55,7 +55,7 @@ export const AssignWaiterModal: React.FC<AssignWaiterModalProps> = ({
     e.preventDefault();
     setLoading(true);
     try {
-      await onAssign(waiterId);
+      await onAssign(waiterId || null as any);
       onClose();
     } catch (error) {
       console.error("Failed to assign waiter:", error);
