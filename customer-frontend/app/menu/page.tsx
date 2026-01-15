@@ -15,6 +15,7 @@ import {
   clearPaginationCache,
 } from "@/lib/menu-cache";
 import BottomNav from "@/components/BottomNav";
+import { MenuSkeleton, CategorySkeleton, FeaturedSkeleton } from "@/components/MenuSkeleton";
 
 function MenuContent() {
   const router = useRouter();
@@ -323,25 +324,64 @@ function MenuContent() {
 
   return (
     <div className="min-h-screen bg-ivory-100 pb-[240px]">
-      {/* Dynamic Header */}
-      <div className="sticky top-0 z-30 bg-ivory-50/80 backdrop-blur-xl border-b border-slate-200/50">
-        <div className="px-6 py-4">
-          <div className="flex justify-between items-center mb-6">
-            <div>
-              <h1 className="text-h1 tracking-tight">Crave something?</h1>
-              {tableNumber && (
-                <div className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-slate-900 text-white rounded-full mt-1 shadow-sm">
-                  <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                  <span className="text-[10px] font-black uppercase tracking-widest leading-none">
-                    Table {tableNumber}
-                  </span>
-                </div>
-              )}
+      {/* Header Title (Scrolls away) */}
+      <div className="bg-ivory-100 px-6 pt-10 pb-6 transition-all duration-300">
+        <div className="flex justify-between items-center">
+          <div>
+            <h1 className="text-h1 tracking-tight">Crave something?</h1>
+            {tableNumber && (
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-slate-900 text-white rounded-full mt-2 shadow-sm">
+                <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                <span className="text-[10px] font-black uppercase tracking-widest leading-none">
+                  Table {tableNumber}
+                </span>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Sticky Search & Filters (Stays at the top) */}
+      <div className="sticky top-0 z-30 bg-ivory-100/80 backdrop-blur-xl border-b border-slate-200/50 pt-2 shadow-sm transition-all duration-300">
+        <div className="py-4 space-y-4">
+          {/* Search Bar Container */}
+          <div className="px-6 flex gap-3">
+            <div className="relative flex-1 group">
+              <svg
+                className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 group-focus-within:text-slate-900 transition-colors"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2.5}
+                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                />
+              </svg>
+              <input
+                type="text"
+                placeholder="Search flavors..."
+                value={searchQuery}
+                onChange={(e) => {
+                  const newQuery = e.target.value;
+                  setSearchQuery(newQuery);
+                  updateUrl(
+                    newQuery,
+                    selectedCategory,
+                    sortBy,
+                    showChefRecommended,
+                  );
+                }}
+                className="w-full bg-white border border-slate-200 rounded-[28px] py-4 pl-12 pr-4 text-sm font-medium focus:border-slate-900 focus:ring-1 focus:ring-slate-900 transition-all shadow-sm"
+              />
             </div>
-            <div className="flex items-center gap-3 relative sort-dropdown">
+
+            <div className="relative sort-dropdown">
               <button
                 onClick={() => setShowSortDropdown(!showSortDropdown)}
-                className={`w-10 h-10 rounded-full border flex items-center justify-center shadow-sm transition-all ${showSortDropdown ? "bg-slate-900 border-slate-900 ring-4 ring-slate-900/10" : "bg-white border-slate-200 hover:border-slate-900"}`}
+                className={`w-14 h-full rounded-[28px] border flex items-center justify-center shadow-sm transition-all ${showSortDropdown ? "bg-slate-900 border-slate-900 ring-4 ring-slate-900/10" : "bg-white border-slate-200 hover:border-slate-900"}`}
               >
                 <svg
                   className={`w-5 h-5 transition-colors ${showSortDropdown ? "text-white" : "text-slate-600"}`}
@@ -359,7 +399,7 @@ function MenuContent() {
               </button>
 
               {showSortDropdown && (
-                <div className="absolute top-12 right-0 w-64 bg-white/95 backdrop-blur-xl rounded-[32px] shadow-2xl border border-slate-100 p-6 z-50 animate-scale-in">
+                <div className="absolute top-16 right-0 w-64 bg-white/95 backdrop-blur-xl rounded-[32px] shadow-2xl border border-slate-100 p-6 z-50 animate-scale-in origin-top-right">
                   <div className="space-y-6">
                     <div>
                       <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-4 px-1">
@@ -445,76 +485,50 @@ function MenuContent() {
             </div>
           </div>
 
-          <div className="relative group">
-            <svg
-              className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 group-focus-within:text-slate-900 transition-colors"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2.5}
-                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-              />
-            </svg>
-            <input
-              type="text"
-              placeholder="Search flavors..."
-              value={searchQuery}
-              onChange={(e) => {
-                const newQuery = e.target.value;
-                setSearchQuery(newQuery);
-                updateUrl(
-                  newQuery,
-                  selectedCategory,
-                  sortBy,
-                  showChefRecommended,
-                );
-              }}
-              className="w-full bg-white border border-slate-200 rounded-[28px] py-4 pl-12 pr-4 text-sm font-medium focus:border-slate-900 focus:ring-1 focus:ring-slate-900 transition-all shadow-sm"
-            />
+          {/* Categories Pill View (Full Width Scroll) */}
+          <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hidden px-6">
+            {loading && categories.length === 0 ? (
+              <CategorySkeleton />
+            ) : (
+              <>
+                <button
+                  onClick={() => {
+                    setSelectedCategory(null);
+                    setShowChefRecommended(false);
+                    updateUrl(searchQuery, null, sortBy, false);
+                  }}
+                  className={`px-6 py-2.5 rounded-full text-xs font-black uppercase tracking-widest transition-all whitespace-nowrap ${!selectedCategory && !showChefRecommended
+                    ? "bg-slate-900 text-white scale-105"
+                    : "bg-white text-slate-400 border border-slate-200 hover:border-slate-400"
+                    }`}
+                >
+                  All
+                </button>
+                {categories.map((category) => (
+                  <button
+                    key={category.id}
+                    onClick={() => {
+                      setSelectedCategory(category.id);
+                      setShowChefRecommended(false);
+                      updateUrl(searchQuery, category.id, sortBy, false);
+                    }}
+                    className={`px-6 py-2.5 rounded-full text-xs font-black uppercase tracking-widest transition-all whitespace-nowrap ${selectedCategory === category.id
+                      ? "bg-slate-900 text-white shadow-lg shadow-slate-200 scale-105"
+                      : "bg-white text-slate-400 border border-slate-200 hover:border-slate-400"
+                      }`}
+                  >
+                    {category.name}
+                  </button>
+                ))}
+              </>
+            )}
           </div>
-        </div>
-
-        {/* Categories Pill View */}
-        <div className="flex gap-2 overflow-x-auto px-6 pb-4 scrollbar-hidden">
-          <button
-            onClick={() => {
-              setSelectedCategory(null);
-              setShowChefRecommended(false);
-              updateUrl(searchQuery, null, sortBy, false);
-            }}
-            className={`px-6 py-2.5 rounded-full text-xs font-black uppercase tracking-widest transition-all whitespace-nowrap ${
-              !selectedCategory && !showChefRecommended
-                ? "bg-slate-900 text-white shadow-lg shadow-slate-200 scale-105"
-                : "bg-white text-slate-400 border border-slate-200 hover:border-slate-400"
-            }`}
-          >
-            All
-          </button>
-          {categories.map((category) => (
-            <button
-              key={category.id}
-              onClick={() => {
-                setSelectedCategory(category.id);
-                setShowChefRecommended(false);
-                updateUrl(searchQuery, category.id, sortBy, false);
-              }}
-              className={`px-6 py-2.5 rounded-full text-xs font-black uppercase tracking-widest transition-all whitespace-nowrap ${
-                selectedCategory === category.id
-                  ? "bg-slate-900 text-white shadow-lg shadow-slate-200 scale-105"
-                  : "bg-white text-slate-400 border border-slate-200 hover:border-slate-400"
-              }`}
-            >
-              {category.name}
-            </button>
-          ))}
         </div>
       </div>
 
       <main className="px-6 pt-8 space-y-12">
+        {loading && items.length === 0 && <FeaturedSkeleton />}
+
         {/* Featured Section */}
         {!loading &&
           !selectedCategory &&
@@ -662,81 +676,85 @@ function MenuContent() {
           </div>
 
           <div className="grid grid-cols-2 gap-4">
-            {items.map((item) => (
-              <Link
-                key={item.id}
-                href={`/menu/${item.id}?token=${currentToken}`}
-                className="group"
-              >
-                <div className="bento-card p-0 overflow-hidden h-full flex flex-col">
-                  <div className="aspect-square relative overflow-hidden bg-slate-50">
-                    {item.primaryPhotoUrl ? (
-                      <Image
-                        src={item.primaryPhotoUrl}
-                        alt={item.name}
-                        fill
-                        className="object-cover transition-transform duration-500 group-hover:scale-110"
-                        unoptimized
-                      />
-                    ) : (
-                      <div className="w-full h-full bg-slate-100 flex items-center justify-center text-slate-400">
-                        <svg
-                          className="w-8 h-8"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={1}
-                            d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
-                          />
-                        </svg>
-                      </div>
-                    )}
-                    {item.isChefRecommended && (
-                      <div className="absolute top-3 left-3">
-                        <div className="bg-slate-900 text-white rounded-full p-1.5 shadow-lg">
+            {loading && items.length === 0 ? (
+              <MenuSkeleton />
+            ) : (
+              items.map((item, index) => (
+                <Link
+                  key={item.id}
+                  href={`/menu/${item.id}?token=${currentToken}`}
+                  className="group"
+                >
+                  <div className="bento-card p-0 overflow-hidden h-full flex flex-col">
+                    <div className="aspect-square relative overflow-hidden bg-slate-50">
+                      {item.primaryPhotoUrl ? (
+                        <Image
+                          src={item.primaryPhotoUrl}
+                          alt={item.name}
+                          fill
+                          className="object-cover transition-transform duration-500 group-hover:scale-110"
+                          unoptimized
+                          priority={index < 4}
+                        />
+                      ) : (
+                        <div className="w-full h-full bg-slate-100 flex items-center justify-center text-slate-400">
                           <svg
-                            className="w-3 h-3"
-                            fill="currentColor"
-                            viewBox="0 0 20 20"
+                            className="w-8 h-8"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
                           >
-                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={1}
+                              d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                            />
+                          </svg>
+                        </div>
+                      )}
+                      {item.isChefRecommended && (
+                        <div className="absolute top-3 left-3">
+                          <div className="bg-slate-900 text-white rounded-full p-1.5 shadow-lg">
+                            <svg
+                              className="w-3 h-3"
+                              fill="currentColor"
+                              viewBox="0 0 20 20"
+                            >
+                              <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                            </svg>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                    <div className="p-4 flex flex-col flex-1 text-left">
+                      <h3 className="text-sm font-bold text-slate-900 line-clamp-2 leading-tight mb-2 group-hover:underline">
+                        {item.name}
+                      </h3>
+                      <div className="mt-auto pt-2 flex items-center justify-between">
+                        <span className="text-sm font-black text-slate-900 tracking-tight">
+                          ${item.price.toFixed(2)}
+                        </span>
+                        <div className="w-8 h-8 rounded-full border border-slate-200 flex items-center justify-center group-hover:bg-slate-900 group-hover:text-white group-hover:border-slate-900 transition-all">
+                          <svg
+                            className="w-4 h-4"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2.5}
+                              d="M12 4v16m8-8H4"
+                            />
                           </svg>
                         </div>
                       </div>
-                    )}
-                  </div>
-                  <div className="p-4 flex flex-col flex-1 text-left">
-                    <h3 className="text-sm font-bold text-slate-900 line-clamp-2 leading-tight mb-2 group-hover:underline">
-                      {item.name}
-                    </h3>
-                    <div className="mt-auto pt-2 flex items-center justify-between">
-                      <span className="text-sm font-black text-slate-900 tracking-tight">
-                        ${item.price.toFixed(2)}
-                      </span>
-                      <div className="w-8 h-8 rounded-full border border-slate-200 flex items-center justify-center group-hover:bg-slate-900 group-hover:text-white group-hover:border-slate-900 transition-all">
-                        <svg
-                          className="w-4 h-4"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2.5}
-                            d="M12 4v16m8-8H4"
-                          />
-                        </svg>
-                      </div>
                     </div>
                   </div>
-                </div>
-              </Link>
-            ))}
+                </Link>
+              )))}
           </div>
 
           {(loading || loadingMore) && (
