@@ -45,10 +45,12 @@ export default function OrderTrackingPage({
     );
   };
 
-  // Check if all orders are ready
+  // Check if all orders are ready or served
   const allOrdersReady =
     displayOrders.length > 0 &&
-    displayOrders.every((order) => order.status === "ready");
+    displayOrders.every((order) =>
+      ["ready", "served", "completed"].includes(order.status),
+    );
 
   // Get unpaid orders for bill/payment
   const unpaidOrders = displayOrders.filter((order) => !order.isPaid);
@@ -163,6 +165,11 @@ export default function OrderTrackingPage({
                         `Order #${subscriptionId.slice(-6)} is ready!`,
                         "success",
                       );
+                    } else if (data.newStatus === "served") {
+                      addNotification(
+                        `Order #${subscriptionId.slice(-6)} has been served. Enjoy!`,
+                        "success",
+                      );
                     }
                     return { ...o, status: data.newStatus };
                   } else if (data.type === "order:updated" && data.order) {
@@ -239,6 +246,13 @@ export default function OrderTrackingPage({
         color: "bg-emerald-500",
         progress: 90,
         icon: "✨",
+      },
+      served: {
+        label: "Served",
+        description: "Enjoy your meal!",
+        color: "bg-slate-900",
+        progress: 100,
+        icon: "🎉",
       },
       completed: {
         label: "Served",
