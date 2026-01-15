@@ -21,7 +21,7 @@ import { JwtAuthGuard } from './guards/jwt-auth.guard';
 
 @Controller('admin-auth')
 export class AdminAuthController {
-  constructor(private readonly adminAuthService: AdminAuthService) {}
+  constructor(private readonly adminAuthService: AdminAuthService) { }
 
   @Post('signup')
   async signup(@Body() dto: SignupDto & { fullName: string }) {
@@ -40,8 +40,8 @@ export class AdminAuthController {
     // Set refresh token in cookie
     res.cookie('refresh_token', result.refresh_token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
+      secure: true,
+      sameSite: 'none',
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
       path: '/',
     });
@@ -66,8 +66,8 @@ export class AdminAuthController {
     // Set new refresh token in cookie (rotation)
     res.cookie('refresh_token', result.refresh_token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
+      secure: true,
+      sameSite: 'none',
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
       path: '/',
     });
