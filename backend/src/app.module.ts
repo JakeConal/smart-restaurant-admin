@@ -41,8 +41,6 @@ import { Permission } from './schema/permission.schema';
 import { RolePermission } from './schema/role-permission.schema';
 import { UserCredentials } from './schema/user-credentials.schema';
 import { RefreshToken } from './schema/refresh-token.schema';
-import { SeedModule } from './seed/seed.module';
-import { SeedService } from './seed/seed.service';
 import { WaiterModule } from './waiter/waiter.module';
 import { ManagerModule } from './manager/manager.module';
 import { KitchenModule } from './kitchen/kitchen.module';
@@ -119,20 +117,8 @@ import { ReportsModule } from './reports/reports.module';
     KitchenModule,
     SuperAdminModule,
     ReportsModule,
-    SeedModule,
   ],
   controllers: [AppController],
   providers: [AppService],
 })
-export class AppModule implements OnModuleInit {
-  constructor(private readonly seedService: SeedService) {}
-
-  async onModuleInit() {
-    // Run database seeder on startup
-    try {
-      await this.seedService.seedAll();
-    } catch (error) {
-      console.error('❌ Database seed failed:', error.message);
-    }
-  }
-}
+export class AppModule { }
