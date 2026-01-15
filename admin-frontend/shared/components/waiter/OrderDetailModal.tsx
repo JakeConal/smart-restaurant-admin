@@ -150,6 +150,22 @@ export function OrderDetailModal({
                   Offline
                 </div>
               )}
+              {order.isPaid && (
+                <div className="flex items-center gap-2">
+                  <span className="bg-green-500 text-white px-3 py-1 rounded-lg text-sm font-bold">
+                    PAID
+                  </span>
+                  {order.paymentMethod && (
+                    <span className="bg-green-50 text-green-700 px-3 py-1 rounded-lg text-sm border border-green-200 italic">
+                      via{" "}
+                      {order.paymentMethod === "e-wallet" ||
+                      order.paymentMethod === "card"
+                        ? "E-Wallet"
+                        : "Cash"}
+                    </span>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Order items */}
@@ -261,10 +277,16 @@ export function OrderDetailModal({
               {onPrintBill && (
                 <button
                   onClick={() => onPrintBill(order)}
-                  className="w-full mt-4 flex items-center justify-center gap-2 py-3 bg-slate-100 text-slate-700 rounded-xl font-bold hover:bg-slate-200 transition-colors"
+                  className={`w-full mt-4 flex items-center justify-center gap-2 py-3 rounded-xl font-bold transition-colors ${
+                    order.isPaid
+                      ? "bg-slate-50 text-slate-500 border border-slate-200"
+                      : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                  }`}
                 >
-                  <Receipt className="w-5 h-5" />
-                  Preview & Print Invoice
+                  <Receipt
+                    className={`w-5 h-5 ${order.isPaid ? "text-slate-400" : "text-slate-700"}`}
+                  />
+                  {order.isPaid ? "View Receipt" : "Preview & Print Invoice"}
                 </button>
               )}
             </div>

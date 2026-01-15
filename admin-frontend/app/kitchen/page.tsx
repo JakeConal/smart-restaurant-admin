@@ -25,7 +25,7 @@ import { getOrderWebSocketClient } from "../../shared/lib/orderWebSocket";
 import type { Order, OrderStatus } from "../../shared/types/order";
 import { Howl, Howler } from "howler";
 
-type KitchenColumn = "received" | "preparing" | "ready";
+type KitchenColumn = "received" | "preparing" | "ready" | "hidden";
 
 interface KitchenOrderCardProps {
   order: Order;
@@ -392,14 +392,41 @@ export default function KitchenPage() {
           console.log("[Kitchen] Received WebSocket update:", data);
 
           if (data.type === "order:progress" && data.order) {
-            // Update order in list
-            setOrders((prev) =>
-              prev.map((o) => (o.orderId === orderId ? data.order : o)),
-            );
+            const updatedOrder = data.order;
+            // If the order has been served, completed or cancelled, remove it from the kitchen view
+            if (
+              ["served", "completed", "cancelled"].includes(updatedOrder.status)
+            ) {
+              setOrders((prev) => prev.filter((o) => o.orderId !== orderId));
+              // Unsubscribe
+              const unsubscribe = unsubscribesRef.current.get(orderId);
+              if (unsubscribe) {
+                unsubscribe();
+                unsubscribesRef.current.delete(orderId);
+              }
+            } else {
+              // Update order in list
+              setOrders((prev) =>
+                prev.map((o) => (o.orderId === orderId ? updatedOrder : o)),
+              );
+            }
           } else if (data.type === "order:updated" && data.order) {
-            setOrders((prev) =>
-              prev.map((o) => (o.orderId === orderId ? data.order : o)),
-            );
+            const updatedOrder = data.order;
+            if (
+              ["served", "completed", "cancelled"].includes(updatedOrder.status)
+            ) {
+              setOrders((prev) => prev.filter((o) => o.orderId !== orderId));
+              // Unsubscribe
+              const unsubscribe = unsubscribesRef.current.get(orderId);
+              if (unsubscribe) {
+                unsubscribe();
+                unsubscribesRef.current.delete(orderId);
+              }
+            } else {
+              setOrders((prev) =>
+                prev.map((o) => (o.orderId === orderId ? updatedOrder : o)),
+              );
+            }
           }
         },
         user?.restaurantId, // Pass restaurantId to filter socket broadcasts
@@ -441,7 +468,11 @@ export default function KitchenPage() {
         newStatus,
       });
 
-      if (newStatus === "completed" || newStatus === "cancelled") {
+      if (
+        newStatus === "served" ||
+        newStatus === "completed" ||
+        newStatus === "cancelled"
+      ) {
         // Remove from list
         setOrders((prev) => prev.filter((o) => o.orderId !== orderId));
         // Unsubscribe
@@ -571,11 +602,13 @@ export default function KitchenPage() {
     setDragOverColumn(null);
   };
 
-  const getOrderColumn = (order: Order): KitchenColumn => {
+  const getOrderColumn = (order: Order): KitchenColumn | "hidden" => {
     const status = order.status?.toLowerCase();
     if (status === "received") return "received";
     if (status === "preparing") return "preparing";
     if (status === "ready") return "ready";
+    if (status === "served" || status === "completed" || status === "cancelled")
+      return "hidden";
     return "received";
   };
 

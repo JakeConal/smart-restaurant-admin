@@ -4,7 +4,7 @@ import {
   ConflictException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, In } from 'typeorm';
+import { Repository, In, Not, IsNull } from 'typeorm';
 import { Order, OrderStatus } from '../schema/order.schema';
 import { Table } from '../schema/table.schema';
 import { MenuItem } from '../schema/menu-item.schema';
@@ -328,10 +328,26 @@ export class OrderService {
             OrderStatus.RECEIVED,
             OrderStatus.PREPARING,
             OrderStatus.READY,
+            OrderStatus.SERVED,
           ]),
           isDeleted: false,
           waiter_id: waiterId, // Orders specifically assigned to this waiter
           restaurantId: restaurantId,
+          isPaid: false,
+        },
+        {
+          status: In([
+            OrderStatus.RECEIVED,
+            OrderStatus.PREPARING,
+            OrderStatus.READY,
+            OrderStatus.SERVED,
+            OrderStatus.COMPLETED,
+          ]),
+          isDeleted: false,
+          waiter_id: waiterId,
+          restaurantId: restaurantId,
+          isPaid: true,
+          billRequestedAt: Not(IsNull()), // Always show paid orders if a bill was requested
         },
       ],
       order: { createdAt: 'ASC' },
@@ -425,6 +441,7 @@ export class OrderService {
 
     const previousStatus = order.status;
     order.status = OrderStatus.SERVED;
+    order.servedAt = new Date();
     order.updatedAt = new Date();
 
     const updatedOrder = await this.orderRepository.save(order);

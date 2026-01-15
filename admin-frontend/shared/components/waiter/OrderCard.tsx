@@ -83,13 +83,20 @@ export function OrderCard({
 
     calculateElapsed();
 
+    // Only update if not served
+    if (order.status === "served") {
+      return;
+    }
+
     // Update every second for live countdown
     const interval = setInterval(calculateElapsed, 1000);
     return () => clearInterval(interval);
-  }, [order.createdAt]);
+  }, [order.createdAt, order.status]);
 
   // Color code based on elapsed time
   const getTimeColor = () => {
+    if (order.status === "served")
+      return "text-slate-600 bg-slate-50 border-slate-200";
     if (elapsedSeconds < 120)
       return "text-green-600 bg-green-50 border-green-200";
     if (elapsedSeconds < 240)
@@ -98,6 +105,7 @@ export function OrderCard({
   };
 
   const getCardBorder = () => {
+    if (order.status === "served") return "border-slate-200 border";
     if (elapsedSeconds < 120) return "border-green-200 border";
     if (elapsedSeconds < 240) return "border-orange-200 border";
     return "border-red-200 border-2";
@@ -108,6 +116,12 @@ export function OrderCard({
     const minutes = Math.floor((elapsedSeconds % 3600) / 60);
     const seconds = elapsedSeconds % 60;
     return `${hours.toString().padStart(2, "0")}:${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
+  };
+
+  const formatServedTime = () => {
+    if (!order.servedAt) return "";
+    const date = new Date(order.servedAt);
+    return `Served at: ${date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })} - ${date.toLocaleDateString([], { day: "2-digit", month: "2-digit" })}`;
   };
 
   return (
@@ -145,23 +159,38 @@ export function OrderCard({
                 </span>
               )}
               {order.isPaid && (
-                <span className="text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider bg-green-500 text-white shadow-sm">
-                  PAID
-                </span>
+                <div className="flex flex-col gap-1">
+                  <span className="text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider bg-green-500 text-white shadow-sm w-fit">
+                    PAID
+                  </span>
+                  {order.paymentMethod && (
+                    <span className="text-[9px] font-medium text-green-600 bg-green-50 px-1.5 py-0.5 rounded border border-green-100 italic w-fit">
+                      via{" "}
+                      {order.paymentMethod === "e-wallet" ||
+                      order.paymentMethod === "card"
+                        ? "E-Wallet"
+                        : "Cash"}
+                    </span>
+                  )}
+                </div>
               )}
             </div>
           </div>
         </div>
-        {order.billRequestedAt && !order.isPaid && (
+        {order.billRequestedAt && (
           <button
             onClick={(e) => {
               e.stopPropagation();
               onPrintBill && onPrintBill(order);
             }}
-            className="bg-red-50 text-red-600 p-1.5 rounded-lg flex items-center gap-1 animate-bounce shadow-sm border border-red-100 hover:bg-red-100 transition-colors"
+            className={`${
+              order.isPaid
+                ? "bg-slate-50 text-slate-500 border-slate-200"
+                : "bg-red-50 text-red-600 border-red-100 animate-bounce"
+            } p-1.5 rounded-lg flex items-center gap-1 shadow-sm border hover:opacity-80 transition-all`}
           >
             <Receipt className="w-4 h-4" />
-            <span className="text-[10px] font-black uppercase">BILL!</span>
+            <span className="text-[10px] font-black uppercase">BILL</span>
           </button>
         )}
       </div>
@@ -239,13 +268,13 @@ export function OrderCard({
         })()}
       </div>
 
-      {/* Elapsed time */}
+      {/* Elapsed time / Served time */}
       <div
         className={`${getTimeColor()} flex items-center gap-2 px-3 py-2 rounded-lg border mb-3`}
       >
         <Clock className="w-4 h-4" />
         <span className="text-sm font-medium font-mono">
-          {formatElapsedTime()}
+          {order.status === "served" ? formatServedTime() : formatElapsedTime()}
         </span>
       </div>
 
@@ -310,11 +339,19 @@ export function OrderCard({
                 e.stopPropagation();
                 onPrintBill && onPrintBill(order);
               }}
-              className="flex-1 py-3 bg-green-50 rounded-xl border border-green-200 flex items-center justify-center gap-2 hover:bg-green-100 transition-colors"
+              className={`flex-1 py-3 rounded-xl border flex items-center justify-center gap-2 transition-colors ${
+                order.isPaid
+                  ? "bg-slate-50 border-slate-200"
+                  : "bg-green-50 border-green-200 hover:bg-green-100"
+              }`}
             >
-              <Receipt className="w-4 h-4 text-green-600" />
-              <span className="text-sm font-bold text-green-700 uppercase tracking-widest">
-                Print Bill
+              <Receipt
+                className={`w-4 h-4 ${order.isPaid ? "text-slate-400" : "text-green-600"}`}
+              />
+              <span
+                className={`text-sm font-bold uppercase tracking-widest ${order.isPaid ? "text-slate-500" : "text-green-700"}`}
+              >
+                {order.isPaid ? "View Receipt" : "Print Bill"}
               </span>
             </button>
             <Button

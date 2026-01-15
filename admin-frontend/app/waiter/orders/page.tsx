@@ -34,10 +34,22 @@ export default function WaiterOrdersPage() {
   const [rejectingOrderId, setRejectingOrderId] = useState<string | null>(null);
   const [acceptingOrderId, setAcceptingOrderId] = useState<string | null>(null);
   const [servingOrderId, setServingOrderId] = useState<string | null>(null);
-  const [deletingOrderId, setDeletingOrderId] = useState<string | null>(null);
   const [payingOrderId, setPayingOrderId] = useState<string | null>(null);
   const [wsConnected, setWsConnected] = useState(false);
+  const [hiddenOrderIds, setHiddenOrderIds] = useState<string[]>([]);
   const unsubscribesRef = useRef<Map<string, () => void>>(new Map());
+
+  // Load hidden order IDs from localStorage
+  useEffect(() => {
+    const stored = localStorage.getItem("waiter_hidden_orders");
+    if (stored) {
+      try {
+        setHiddenOrderIds(JSON.parse(stored));
+      } catch (e) {
+        console.error("Failed to parse hidden orders", e);
+      }
+    }
+  }, []);
 
   // Auth check - only allow WAITER and ADMIN roles
   useEffect(() => {
@@ -66,10 +78,24 @@ export default function WaiterOrdersPage() {
   const loadOrders = async () => {
     try {
       const data = await getMyPendingOrders();
-      setOrders(data);
+
+      // Get hidden orders from localStorage directly for sync access
+      let currentHidden: string[] = [];
+      const stored = localStorage.getItem("waiter_hidden_orders");
+      if (stored) {
+        try {
+          currentHidden = JSON.parse(stored);
+        } catch (e) {}
+      }
+
+      // Filter out orders hidden by the waiter
+      const filteredData = data.filter(
+        (order) => !currentHidden.includes(order.orderId),
+      );
+      setOrders(filteredData);
 
       // Subscribe to WebSocket updates for each order
-      data.forEach((order) => {
+      filteredData.forEach((order) => {
         subscribeToOrder(order.orderId);
       });
     } catch (error) {
@@ -147,11 +173,21 @@ export default function WaiterOrdersPage() {
           } else if (data.type === "order:updated" && data.order) {
             // General order update
             console.log("[WaiterOrders] Order updated");
-            setOrders((prev) =>
-              prev.map((o) => (o.orderId === orderId ? data.order : o)),
-            );
-            if (selectedOrder?.orderId === orderId) {
-              setSelectedOrder(data.order);
+            const updatedOrd = data.order;
+
+            // If it's paid and no bill was requested, we can remove it from active view
+            if (updatedOrd.isPaid && !updatedOrd.billRequestedAt) {
+              setOrders((prev) => prev.filter((o) => o.orderId !== orderId));
+              if (selectedOrder?.orderId === orderId) {
+                setSelectedOrder(null);
+              }
+            } else {
+              setOrders((prev) =>
+                prev.map((o) => (o.orderId === orderId ? updatedOrd : o)),
+              );
+              if (selectedOrder?.orderId === orderId) {
+                setSelectedOrder(updatedOrd);
+              }
             }
           }
         },
@@ -289,13 +325,23 @@ export default function WaiterOrdersPage() {
 
     setPayingOrderId(orderId);
     try {
-      await markAsPaid(orderId, paymentData);
+      const updatedOrder = await markAsPaid(orderId, paymentData);
       toast.success("Order marked as paid and completed!");
-      // Remove completed order from the list
-      setOrders(orders.filter((o) => o.orderId !== orderId));
+
+      // If bill was requested, keep it in the list (with Paid status)
+      // otherwise remove it as usual
+      if (updatedOrder.billRequestedAt) {
+        setOrders(
+          orders.map((o) => (o.orderId === orderId ? updatedOrder : o)),
+        );
+      } else {
+        // Remove completed order from the list
+        setOrders(orders.filter((o) => o.orderId !== orderId));
+      }
+
       setBillOrder(null);
       if (selectedOrder?.orderId === orderId) {
-        setSelectedOrder(null);
+        setSelectedOrder(updatedOrder.billRequestedAt ? updatedOrder : null);
       }
     } catch (error) {
       const message =
@@ -306,25 +352,37 @@ export default function WaiterOrdersPage() {
     }
   };
 
-  const handleDelete = async (orderId: string) => {
-    if (deletingOrderId) return;
+  const handleDelete = (orderId: string) => {
+    if (
+      !confirm(
+        "Hide this order card from your view? (It will not be deleted from database)",
+      )
+    )
+      return;
 
-    if (!confirm("Remove this order card?")) return;
-
-    setDeletingOrderId(orderId);
     try {
-      await deleteOrder(orderId);
-      toast.success("Order card removed");
+      // Local hide only - don't delete from database
+      const stored = localStorage.getItem("waiter_hidden_orders");
+      let currentHidden: string[] = [];
+      if (stored) {
+        try {
+          currentHidden = JSON.parse(stored);
+        } catch (e) {}
+      }
+
+      if (!currentHidden.includes(orderId)) {
+        const newHidden = [...currentHidden, orderId];
+        setHiddenOrderIds(newHidden);
+        localStorage.setItem("waiter_hidden_orders", JSON.stringify(newHidden));
+      }
+
+      toast.success("Order card hidden");
       setOrders(orders.filter((o) => o.orderId !== orderId));
       if (selectedOrder?.orderId === orderId) {
         setSelectedOrder(null);
       }
     } catch (error) {
-      const message =
-        error instanceof Error ? error.message : "Failed to remove order card";
-      toast.error(message);
-    } finally {
-      setDeletingOrderId(null);
+      toast.error("Failed to hide order card");
     }
   };
 
@@ -447,7 +505,6 @@ export default function WaiterOrdersPage() {
                   onPrintBill={handlePrintBill}
                   isAccepting={acceptingOrderId === order.orderId}
                   isServing={servingOrderId === order.orderId}
-                  isDeleting={deletingOrderId === order.orderId}
                 />
               ))}
           </div>
