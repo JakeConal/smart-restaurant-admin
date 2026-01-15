@@ -4,7 +4,7 @@ import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useApp } from "@/lib/context";
-import { orderApi } from "@/lib/api";
+import { orderApi, vnpayApi } from "@/lib/api";
 import { Order } from "@/lib/types";
 import BottomNav from "@/components/BottomNav";
 
@@ -18,7 +18,9 @@ function PaymentContent() {
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState(false);
   const [error, setError] = useState("");
-  const [paymentMethod, setPaymentMethod] = useState<"card" | "cash">("card");
+  const [paymentMethod, setPaymentMethod] = useState<"card" | "cash" | "vnpay">(
+    "vnpay",
+  );
   const [billRequested, setBillRequested] = useState(false);
 
   // Calculate total from orders
@@ -106,7 +108,30 @@ function PaymentContent() {
     setProcessing(true);
     setError("");
     try {
-      // Simulate payment processing
+      if (paymentMethod === "vnpay") {
+        // VNPay integration
+        const orderIds = orders.map((o) => o.orderId || String(o.id));
+
+        // Convert USD to VND (approximate) for VNPay
+        const totalVnd = Math.round(finalTotal * 25000);
+
+        const returnUrl = `${window.location.origin}/payment/vnpay-return?token=${currentToken}`;
+
+        const response = await vnpayApi.createPayment({
+          orderIds,
+          totalAmount: totalVnd,
+          returnUrl,
+        });
+
+        if (response.success && response.paymentUrl) {
+          window.location.href = response.paymentUrl;
+          return; // Redirecting, so we don't need to do anything else
+        } else {
+          throw new Error("Failed to create VNPay payment URL");
+        }
+      }
+
+      // Simulate payment processing for other methods
       await new Promise((resolve) => setTimeout(resolve, 1500));
 
       // Mark all orders as paid
@@ -283,42 +308,74 @@ function PaymentContent() {
             Payment Method
           </h2>
 
-          <div className="space-y-3">
-            <label className="flex items-center p-4 border-2 border-orange-300 rounded-2xl cursor-pointer bg-orange-50">
-              <input
-                type="radio"
-                name="payment"
-                value="card"
-                checked={paymentMethod === "card"}
-                onChange={(e) =>
-                  setPaymentMethod(e.target.value as "card" | "cash")
-                }
-                className="w-4 h-4"
-              />
-              <span className="ml-3 font-semibold text-gray-900">
-                💳 Card Payment
-              </span>
-            </label>
+          <label
+            className={`flex items-center p-4 border-2 rounded-2xl cursor-pointer transition-all ${paymentMethod === "vnpay"
+              ? "border-orange-500 bg-orange-50"
+              : "border-gray-200"
+              }`}
+          >
+            <input
+              type="radio"
+              name="payment"
+              value="vnpay"
+              checked={paymentMethod === "vnpay"}
+              onChange={(e) => setPaymentMethod(e.target.value as any)}
+              className="w-4 h-4 text-orange-600 focus:ring-orange-500"
+            />
+            <span className="ml-3 font-semibold text-gray-900 flex items-center gap-2">
+              🇻🇳 VNPay QR / Bank Card
+            </span>
+          </label>
 
-            <label className="flex items-center p-4 border-2 border-gray-200 rounded-2xl cursor-pointer">
-              <input
-                type="radio"
-                name="payment"
-                value="cash"
-                checked={paymentMethod === "cash"}
-                onChange={(e) =>
-                  setPaymentMethod(e.target.value as "card" | "cash")
-                }
-                className="w-4 h-4"
-              />
-              <span className="ml-3 font-semibold text-gray-900">
-                💵 Cash Payment
-              </span>
-            </label>
-          </div>
+          <label
+            className={`flex items-center p-4 border-2 rounded-2xl cursor-pointer transition-all ${paymentMethod === "card"
+              ? "border-orange-500 bg-orange-50"
+              : "border-gray-200"
+              }`}
+          >
+            <input
+              type="radio"
+              name="payment"
+              value="card"
+              checked={paymentMethod === "card"}
+              onChange={(e) => setPaymentMethod(e.target.value as any)}
+              className="w-4 h-4 text-orange-600 focus:ring-orange-500"
+            />
+            <span className="ml-3 font-semibold text-gray-900">
+              💳 Credit / Debit Card
+            </span>
+          </label>
+
+          <label
+            className={`flex items-center p-4 border-2 rounded-2xl cursor-pointer transition-all ${paymentMethod === "cash"
+              ? "border-orange-500 bg-orange-50"
+              : "border-gray-200"
+              }`}
+          >
+            <input
+              type="radio"
+              name="payment"
+              value="cash"
+              checked={paymentMethod === "cash"}
+              onChange={(e) => setPaymentMethod(e.target.value as any)}
+              className="w-4 h-4 text-orange-600 focus:ring-orange-500"
+            />
+            <span className="ml-3 font-semibold text-gray-900">
+              💵 Cash Payment
+            </span>
+          </label>
         </div>
 
         {/* Payment Info */}
+        {paymentMethod === "vnpay" && (
+          <div className="mb-6 p-4 bg-orange-50 rounded-2xl border border-orange-200">
+            <p className="text-sm text-orange-800">
+              🇻🇳 Secure payment via VNPay gateway. Supports QR code and all
+              Vietnamese banks.
+            </p>
+          </div>
+        )}
+
         {paymentMethod === "card" && (
           <div className="mb-6 p-4 bg-blue-50 rounded-2xl border border-blue-200">
             <p className="text-sm text-blue-800">

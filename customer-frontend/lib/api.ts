@@ -389,8 +389,8 @@ export const orderApi = {
       method: "GET",
       headers: authToken
         ? {
-            Authorization: `Bearer ${authToken}`,
-          }
+          Authorization: `Bearer ${authToken}`,
+        }
         : {},
     }),
 
@@ -404,8 +404,30 @@ export const orderApi = {
       method: "GET",
       headers: authToken
         ? {
-            Authorization: `Bearer ${authToken}`,
-          }
+          Authorization: `Bearer ${authToken}`,
+        }
         : {},
+    }),
+};
+
+// VNPay API
+export const vnpayApi = {
+  createPayment: (data: {
+    orderIds: string[];
+    totalAmount: number;
+    returnUrl: string;
+  }) =>
+    apiRequest<{ success: boolean; paymentUrl: string }>("/api/vnpay/create-payment", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+
+  verifyReturn: (queryParams: string) =>
+    apiRequest<{
+      success: boolean;
+      message: string;
+      orderIds?: string[];
+    }>(`/api/vnpay/vnpay-return?${queryParams}`, {
+      method: "GET",
     }),
 };

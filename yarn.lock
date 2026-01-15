@@ -4509,6 +4509,7 @@ __metadata:
     typeorm: "npm:^0.3.28"
     typescript: "npm:^5.7.3"
     typescript-eslint: "npm:^8.20.0"
+    vnpay: "npm:^2.4.4"
   languageName: unknown
   linkType: soft
 
@@ -5486,7 +5487,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"dayjs@npm:^1.11.19":
+"dayjs@npm:^1.11.13, dayjs@npm:^1.11.19":
   version: 1.11.19
   resolution: "dayjs@npm:1.11.19"
   checksum: 10c0/7d8a6074a343f821f81ea284d700bd34ea6c7abbe8d93bce7aba818948957c1b7f56131702e5e890a5622cdfc05dcebe8aed0b8313bdc6838a594d7846b0b000
@@ -12510,6 +12511,15 @@ __metadata:
     d3-time: "npm:^3.0.0"
     d3-timer: "npm:^3.0.1"
   checksum: 10c0/0a9628db30b898160409628f26d457ba15adc86472531817d73fbeb847de498d94f91dee5f4caa969195744e91be93e100eeff7a392b591ac5349343a36dec29
+  languageName: node
+  linkType: hard
+
+"vnpay@npm:^2.4.4":
+  version: 2.4.4
+  resolution: "vnpay@npm:2.4.4"
+  dependencies:
+    dayjs: "npm:^1.11.13"
+  checksum: 10c0/3d02d1c0e47eb57fcd236b20a73952b850cfa36c892148a69d23c15f119ea3ec0c48419f5fc2215c33f084b78ddd83ef8e6a6bc9116f50f0579ec59b230f8660
   languageName: node
   linkType: hard
 
