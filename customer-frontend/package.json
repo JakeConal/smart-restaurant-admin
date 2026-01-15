@@ -1,7 +1,6 @@
 {
   "name": "customer-frontend",
   "version": "0.1.0",
-  "packageManager": "yarn@4.12.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
