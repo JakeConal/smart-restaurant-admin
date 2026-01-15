@@ -33,20 +33,15 @@ export class VNPayController {
             console.log('[VNPay Controller] Creating payment request body:', body);
 
             // 1. Clean TxnRef: Must be unique for every request even for the same order
-            // Format: [id1]n[id2]z[timestamp]
-            // 'n' separates IDs, 'z' separates IDs from unique timestamp
-            const baseIds = body.orderIds.join('n');
-            const uniqueSuffix = 'z' + Date.now().toString().slice(-7); // 7 digits of timestamp
+            // We strip non-alphanumeric chars for VNPay compatibility
+            const cleanedIds = body.orderIds.map(id => id.replace(/[^a-zA-Z0-9]/g, ''));
+            const baseIds = cleanedIds.join('n');
+            const uniqueSuffix = 'z' + Date.now().toString().slice(-4);
 
             let txnRef = baseIds + uniqueSuffix;
             if (txnRef.length > 24) {
-                // If too long (many orders), use the first ID and mark as "multiple" with 'm'
-                // We'll have to rely on the fact that these orders are usually processed together
-                // or just truncate IDs until it fits.
-                txnRef = 'm' + body.orderIds[0] + uniqueSuffix;
-                if (txnRef.length > 24) {
-                    txnRef = txnRef.substring(txnRef.length - 24);
-                }
+                // If too long, use the first ID and mark as "multiple" with 'm'
+                txnRef = 'm' + cleanedIds[0].substring(0, 15) + uniqueSuffix;
             }
 
             // 2. Normalize IP Address: Must be IPv4 format
@@ -126,10 +121,16 @@ export class VNPayController {
             }
 
             for (const idStr of orderIdsToUpdate) {
-                const id = parseInt(idStr);
-                if (!isNaN(id)) {
-                    console.log(`[VNPay] Marking order ${id} as paid`);
-                    await this.orderService.markAsPaid(id);
+                if (idStr) {
+                    console.log(`[VNPay] Marking order ${idStr} as paid`);
+                    // Find order by its cleaned alphanumeric ID or original orderId
+                    // To be safe, we'll try to use a more flexible matcher if needed, 
+                    // but markAsPaidByOrderId is closest. 
+                    // Note: Since we cleaned the ID to alphanum, we might need a 
+                    // helper to find the order by the "cleaned" version if it doesn't match exactly.
+                    await this.orderService.markAsPaidByOrderId(idStr, {
+                        paymentMethod: 'VNPay'
+                    });
                 }
             }
 

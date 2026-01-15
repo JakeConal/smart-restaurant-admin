@@ -115,9 +115,9 @@ function PaymentContent() {
           (o.orderId || String(o.id)).replace(/[^a-zA-Z0-9]/g, "")
         );
 
-        // 2. Persist token in localStorage because VNPay ReturnURL has a length limit (~255 chars)
-        // Passing the full JWT in the URL often exceeds this limit.
+        // 2. Persist order info because VNPay ReturnURL/TxnRef has strict limits
         localStorage.setItem("vnpay_token", currentToken);
+        localStorage.setItem("vnpay_order_ids", JSON.stringify(orderIds));
 
         // 3. Prepare amount (VNPay expects VND)
         const totalVnd = Math.round(finalTotal * 25000);

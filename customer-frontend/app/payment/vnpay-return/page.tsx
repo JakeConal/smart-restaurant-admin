@@ -33,19 +33,47 @@ function VNPayReturnContent() {
                     setStatus("success");
                     setMessage("Payment successful! Your orders have been updated.");
 
-                    // Clear payment-related local data if needed
-                    // For this app, we might want to clear specific session storage items if we know which ones were paid
-                    if (response.orderIds) {
-                        response.orderIds.forEach(id => {
-                            const orderData = sessionStorage.getItem(`order-${id}`);
-                            if (orderData) {
-                                const parsed = JSON.parse(orderData);
-                                parsed.isPaid = true;
-                                parsed.paidAt = new Date().toISOString();
-                                sessionStorage.setItem(`order-${id}`, JSON.stringify(parsed));
+                    // Update sessionStorage to mark orders as paid (Same as Cash logic)
+                    const storedOrderIdsStr = localStorage.getItem("vnpay_order_ids");
+                    const storedOrderIds: string[] = storedOrderIdsStr ? JSON.parse(storedOrderIdsStr) : [];
+                    const backendOrderIds = response.orderIds || [];
+
+                    const allPaidIds = Array.from(new Set([
+                        ...backendOrderIds,
+                        ...storedOrderIds
+                    ])).map(id => id.toLowerCase().replace(/[^a-z0-9]/g, ''));
+
+                    if (allPaidIds.length > 0) {
+                        for (let i = 0; i < sessionStorage.length; i++) {
+                            const key = sessionStorage.key(i);
+                            if (key && key.startsWith("order-")) {
+                                const orderData = sessionStorage.getItem(key);
+                                if (orderData) {
+                                    try {
+                                        const parsed = JSON.parse(orderData);
+                                        const orderId = (parsed.orderId || String(parsed.id)).toLowerCase().replace(/[^a-z0-9]/g, '');
+
+                                        if (allPaidIds.includes(orderId)) {
+                                            const updatedOrder = {
+                                                ...parsed,
+                                                isPaid: true,
+                                                paidAt: new Date().toISOString(),
+                                                updatedAt: new Date().toISOString()
+                                            };
+                                            sessionStorage.setItem(key, JSON.stringify(updatedOrder));
+                                            console.log(`[VNPay] Marked as paid in session: ${key}`);
+                                        }
+                                    } catch (e) {
+                                        console.error("Error updating order in session:", key, e);
+                                    }
+                                }
                             }
-                        });
+                        }
                     }
+
+                    // Clear the temporary stores
+                    localStorage.removeItem("vnpay_token");
+                    localStorage.removeItem("vnpay_order_ids");
                 } else {
                     setStatus("error");
                     setMessage(response.message || "Payment verification failed.");
