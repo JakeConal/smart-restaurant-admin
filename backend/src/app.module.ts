@@ -47,6 +47,7 @@ import { WaiterModule } from './waiter/waiter.module';
 import { ManagerModule } from './manager/manager.module';
 import { KitchenModule } from './kitchen/kitchen.module';
 import { SuperAdminModule } from './super-admin/super-admin.module';
+import { ReportsModule } from './reports/reports.module';
 
 @Module({
   imports: [
@@ -116,6 +117,7 @@ import { SuperAdminModule } from './super-admin/super-admin.module';
     ManagerModule,
     KitchenModule,
     SuperAdminModule,
+    ReportsModule,
     SeedModule,
   ],
   controllers: [AppController],

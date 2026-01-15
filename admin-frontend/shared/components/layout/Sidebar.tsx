@@ -15,6 +15,7 @@ import {
   Table2,
   Soup,
   LogOut,
+  BarChart3,
 } from "lucide-react";
 import { useAuth } from "@/shared/components/auth/AuthContext";
 
@@ -24,6 +25,7 @@ const menuItems = [
   { icon: Users2, label: "Waiters", href: "/waiters" },
   { icon: ChefHat, label: "Kitchen Staff", href: "/kitchen-staff" },
   { icon: Utensils, label: "Menu", href: "/menu" },
+  { icon: BarChart3, label: "Reports", href: "/reports" },
 ];
 
 export const Sidebar: React.FC = () => {
@@ -31,7 +33,7 @@ export const Sidebar: React.FC = () => {
   const { user, logout } = useAuth();
 
   // Super Admin uses a different layout without sidebar
-  if (user?.role?.toUpperCase() === 'SUPER_ADMIN') {
+  if (user?.role?.toUpperCase() === "SUPER_ADMIN") {
     return null;
   }
 
