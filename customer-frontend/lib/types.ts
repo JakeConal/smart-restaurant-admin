@@ -166,6 +166,8 @@ export interface Order {
   isPaid?: boolean;
   billRequestedAt?: string;
   paidAt?: string;
+  rejectedAt?: string;
+  rejectionReason?: string;
   sentToKitchenAt?: string;
   kitchenReceivedAt?: string;
   kitchenPreparingAt?: string;
