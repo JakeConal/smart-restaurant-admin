@@ -206,12 +206,6 @@ export default function ReportsPage() {
     }
   };
 
-  // Download report
-  const handleDownloadReport = () => {
-    toast.success("Report download will be implemented soon");
-    // TODO: Implement PDF/CSV download
-  };
-
   // Colors for charts (following design system)
   const COLORS = {
     primary: "#495057",
@@ -263,13 +257,6 @@ export default function ReportsPage() {
         </div>
 
         <div className="flex gap-2">
-          <button
-            onClick={handleDownloadReport}
-            className="flex items-center gap-2 px-4 py-2.5 bg-slate-200 hover:bg-slate-300 text-slate-800 rounded-xl font-bold text-sm transition-all"
-          >
-            <Download className="w-5 h-5" />
-            <span className="hidden md:inline">Download</span>
-          </button>
           <button
             onClick={loadReports}
             className="flex items-center gap-2 px-4 py-2.5 bg-slate-200 hover:bg-slate-300 text-slate-800 rounded-xl font-bold text-sm transition-all"
