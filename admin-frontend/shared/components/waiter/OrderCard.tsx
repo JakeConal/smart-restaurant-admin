@@ -180,12 +180,19 @@ export function OrderCard({
               ? order.total
               : parseFloat(String(order.total)) || 0;
 
+          const finalTotal =
+            order.finalTotal !== undefined && order.finalTotal !== null
+              ? typeof order.finalTotal === "number"
+                ? order.finalTotal
+                : parseFloat(String(order.finalTotal)) || 0
+              : undefined;
+
           // Check for auto-discount (10% if > 100) or if backend already provides finalTotal
           const hasDiscount =
             baseTotal > 100 ||
-            (order.finalTotal && order.finalTotal < baseTotal);
+            (finalTotal !== undefined && finalTotal < baseTotal);
           const displayTotal =
-            order.finalTotal ?? (baseTotal > 100 ? baseTotal * 0.9 : baseTotal);
+            finalTotal ?? (baseTotal > 100 ? baseTotal * 0.9 : baseTotal);
 
           return (
             <div className="flex items-baseline gap-2">

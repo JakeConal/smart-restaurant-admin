@@ -228,12 +228,17 @@ export function OrderDetailModal({
               </div>
               {(() => {
                 const baseTotal = Number(order.total);
+                const finalTotal =
+                  order.finalTotal !== undefined && order.finalTotal !== null
+                    ? typeof order.finalTotal === "number"
+                      ? order.finalTotal
+                      : parseFloat(String(order.finalTotal)) || 0
+                    : undefined;
                 const hasDiscount =
                   baseTotal > 100 ||
-                  (order.finalTotal && order.finalTotal < baseTotal);
+                  (finalTotal !== undefined && finalTotal < baseTotal);
                 const displayTotal =
-                  order.finalTotal ??
-                  (baseTotal > 100 ? baseTotal * 0.9 : baseTotal);
+                  finalTotal ?? (baseTotal > 100 ? baseTotal * 0.9 : baseTotal);
                 const discountAmount = baseTotal - displayTotal;
 
                 return (
