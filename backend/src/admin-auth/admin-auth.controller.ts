@@ -8,6 +8,7 @@ import {
   Res,
   Headers,
   Ip,
+  UnauthorizedException,
 } from '@nestjs/common';
 import type { Request, Response } from 'express';
 import { AdminAuthService } from './admin-auth.service';
@@ -34,17 +35,20 @@ export class AdminAuthController {
     @Headers('user-agent') userAgent: string,
     @Ip() ipAddress: string,
     @Res({ passthrough: true }) res: Response,
+    @Req() req: Request,
   ) {
     const result = await this.adminAuthService.login(dto, userAgent, ipAddress);
 
     // Set refresh token in cookie
+    const isProd = process.env.NODE_ENV === 'production';
     res.cookie('refresh_token', result.refresh_token, {
       httpOnly: true,
-      secure: true,
-      sameSite: 'none',
+      secure: isProd,
+      sameSite: isProd ? 'none' : 'lax',
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
       path: '/',
-    });
+      ...(isProd ? { partitioned: true } : {}),
+    } as any);
 
     return {
       access_token: result.access_token,
@@ -59,18 +63,19 @@ export class AdminAuthController {
   ) {
     const refreshToken = req.cookies['refresh_token'];
     if (!refreshToken) {
-      throw new Error('Refresh token is required');
+      throw new UnauthorizedException('Refresh token is required');
     }
     const result = await this.adminAuthService.refreshAccessToken(refreshToken);
 
-    // Set new refresh token in cookie (rotation)
+    const isProd = process.env.NODE_ENV === 'production';
     res.cookie('refresh_token', result.refresh_token, {
       httpOnly: true,
-      secure: true,
-      sameSite: 'none',
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+      secure: isProd,
+      sameSite: isProd ? 'none' : 'lax',
+      maxAge: 7 * 24 * 60 * 60 * 1000,
       path: '/',
-    });
+      ...(isProd ? { partitioned: true } : {}),
+    } as any);
 
     return {
       access_token: result.access_token,
@@ -88,9 +93,14 @@ export class AdminAuthController {
       await this.adminAuthService.logout(refreshToken);
     }
 
+    const isProd = process.env.NODE_ENV === 'production';
     res.clearCookie('refresh_token', {
+      httpOnly: true,
+      secure: isProd,
+      sameSite: isProd ? 'none' : 'lax',
       path: '/',
-    });
+      ...(isProd ? { partitioned: true } : {}),
+    } as any);
 
     return { message: 'Logged out successfully' };
   }
