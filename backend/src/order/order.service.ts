@@ -22,7 +22,7 @@ export class OrderService {
     @InjectRepository(MenuItem)
     private readonly menuItemRepository: Repository<MenuItem>,
     private readonly orderGateway: OrderGateway,
-  ) {}
+  ) { }
 
   async create(createOrderDto: CreateOrderDto): Promise<Order> {
     // Get table to find assigned waiter and restaurantId
@@ -199,7 +199,19 @@ export class OrderService {
       order.finalTotal = Number(order.total);
     }
 
-    return this.orderRepository.save(order);
+    order.paymentMethod = 'vnpay';
+
+    // Ensure billRequestedAt is set so it doesn't disappear from waiter view immediately
+    if (!order.billRequestedAt) {
+      order.billRequestedAt = new Date().toISOString();
+    }
+
+    const savedOrder = await this.orderRepository.save(order);
+
+    // Notify staff through WebSocket
+    this.orderGateway.broadcastOrderUpdate(order.orderId, savedOrder);
+
+    return savedOrder;
   }
 
   async markAsPaidByOrderId(
@@ -239,6 +251,11 @@ export class OrderService {
 
     if (paymentData && paymentData.paymentMethod) {
       order.paymentMethod = paymentData.paymentMethod;
+    }
+
+    // Ensure billRequestedAt is set so it doesn't disappear from waiter view immediately
+    if (!order.billRequestedAt) {
+      order.billRequestedAt = new Date().toISOString();
     }
 
     const savedOrder = await this.orderRepository.save(order);
