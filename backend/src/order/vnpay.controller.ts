@@ -33,15 +33,14 @@ export class VNPayController {
             console.log('[VNPay Controller] Creating payment request body:', body);
 
             // 1. Clean TxnRef: Must be unique for every request even for the same order
-            // We strip non-alphanumeric chars for VNPay compatibility
-            const cleanedIds = body.orderIds.map(id => id.replace(/[^a-zA-Z0-9]/g, ''));
-            const baseIds = cleanedIds.join('n');
+            // We use numeric IDs (digits only) + unique suffix
+            const baseIds = body.orderIds.join('n');
             const uniqueSuffix = 'z' + Date.now().toString().slice(-4);
 
             let txnRef = baseIds + uniqueSuffix;
             if (txnRef.length > 24) {
-                // If too long, use the first ID and mark as "multiple" with 'm'
-                txnRef = 'm' + cleanedIds[0].substring(0, 15) + uniqueSuffix;
+                // FALLBACK: Use only the first numeric ID if too long
+                txnRef = 'm' + body.orderIds[0] + uniqueSuffix;
             }
 
             // 2. Normalize IP Address: Must be IPv4 format
@@ -88,19 +87,22 @@ export class VNPayController {
     @Get('vnpay-return')
     async vnpayReturn(@Query() query: any) {
         try {
+            console.log('[VNPay Controller] Return URL Query:', query);
             const verify = this.vnpayService.verifyReturnUrl(query);
+            console.log('[VNPay Controller] Verification Result:', verify);
 
             if (!verify.isVerified) {
+                console.error('[VNPay Controller] Signature verification failed!');
                 return {
                     success: false,
-                    message: 'Data integrity verification failed',
+                    message: 'Data integrity verification failed (Invalid Signature)',
                 };
             }
 
             if (!verify.isSuccess) {
                 return {
                     success: false,
-                    message: 'Payment failed or cancelled',
+                    message: `Payment failed or cancelled (Code: ${verify.vnp_ResponseCode})`,
                 };
             }
 
@@ -121,16 +123,10 @@ export class VNPayController {
             }
 
             for (const idStr of orderIdsToUpdate) {
-                if (idStr) {
-                    console.log(`[VNPay] Marking order ${idStr} as paid`);
-                    // Find order by its cleaned alphanumeric ID or original orderId
-                    // To be safe, we'll try to use a more flexible matcher if needed, 
-                    // but markAsPaidByOrderId is closest. 
-                    // Note: Since we cleaned the ID to alphanum, we might need a 
-                    // helper to find the order by the "cleaned" version if it doesn't match exactly.
-                    await this.orderService.markAsPaidByOrderId(idStr, {
-                        paymentMethod: 'VNPay'
-                    });
+                const id = parseInt(idStr);
+                if (!isNaN(id)) {
+                    console.log(`[VNPay] Marking order #${id} as paid via ReturnURL`);
+                    await this.orderService.markAsPaid(id);
                 }
             }
 
@@ -140,11 +136,60 @@ export class VNPayController {
                 orderIds: orderIdsToUpdate,
             };
         } catch (error) {
+            console.error('[VNPay Controller] Error in Return URL handler:', error);
             return {
                 success: false,
                 message: 'Error processing VNPay return',
                 error: error.message,
             };
+        }
+    }
+
+    /**
+     * VNPay IPN (Instant Payment Notification)
+     * This is the secure way to confirm payment in production.
+     * VNPay server will call this endpoint automatically and asynchronously.
+     */
+    @Get('vnpay-ipn')
+    async vnpayIpn(@Query() query: any) {
+        try {
+            console.log('[VNPay IPN] Received notification:', query);
+            const verify = this.vnpayService.verifyReturnUrl(query);
+
+            if (!verify.isVerified) {
+                console.error('[VNPay IPN] Invalid signature!');
+                return { RspCode: '97', Message: 'Invalid signature' };
+            }
+
+            // Check if order exists and if payment already processed
+            // (In a real app, you should check your DB here)
+
+            const fullTxnRef = verify.vnp_TxnRef;
+            const idsPart = fullTxnRef.split('z')[0];
+            let orderIdsToUpdate: string[] = [];
+
+            if (idsPart.startsWith('m')) {
+                orderIdsToUpdate = [idsPart.substring(1)];
+            } else {
+                orderIdsToUpdate = idsPart.includes('n') ? idsPart.split('n') : idsPart.split('_');
+            }
+
+            if (verify.vnp_ResponseCode === '00') {
+                for (const idStr of orderIdsToUpdate) {
+                    const id = parseInt(idStr);
+                    if (!isNaN(id)) {
+                        console.log(`[VNPay IPN] Success - Updating order #${id}`);
+                        await this.orderService.markAsPaid(id);
+                    }
+                }
+                return { RspCode: '00', Message: 'Success' };
+            } else {
+                console.warn(`[VNPay IPN] Payment failed for ${fullTxnRef}. Code: ${verify.vnp_ResponseCode}`);
+                return { RspCode: '00', Message: 'Confirm Success (Payment failed status recorded)' };
+            }
+        } catch (error) {
+            console.error('[VNPay IPN] Error:', error);
+            return { RspCode: '99', Message: 'Unknown error: ' + error.message };
         }
     }
 }

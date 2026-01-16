@@ -110,10 +110,8 @@ function PaymentContent() {
     try {
       if (paymentMethod === "vnpay") {
         // VNPay integration
-        // 1. Clean order IDs to be strictly alphanumeric for VNPay TxnRef
-        const orderIds = orders.map((o) =>
-          (o.orderId || String(o.id)).replace(/[^a-zA-Z0-9]/g, "")
-        );
+        // 1. Use numeric IDs for VNPay (Short, digits only, reliable)
+        const orderIds = orders.map((o) => String(o.id));
 
         // 2. Persist order info because VNPay ReturnURL/TxnRef has strict limits
         localStorage.setItem("vnpay_token", currentToken);
@@ -123,7 +121,9 @@ function PaymentContent() {
         const totalVnd = Math.round(finalTotal * 25000);
 
         // 4. Use a clean return URL
-        const returnUrl = `${window.location.origin}/payment/vnpay-return`;
+        // Prefer explicit env variable for production stability, fallback to current origin
+        const frontendBaseUrl = process.env.NEXT_PUBLIC_CUSTOMER_FRONTEND_URL || window.location.origin;
+        const returnUrl = `${frontendBaseUrl}/payment/vnpay-return`;
 
         const response = await vnpayApi.createPayment({
           orderIds,
