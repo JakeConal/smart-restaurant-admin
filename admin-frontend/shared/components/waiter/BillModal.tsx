@@ -19,7 +19,7 @@ export function BillModal({
   onPay,
   isPaying,
 }: BillModalProps) {
-  const [selectedMethod, setSelectedMethod] = React.useState<"cash" | "card">(
+  const [selectedMethod, setSelectedMethod] = React.useState<"cash" | "e-wallet">(
     "cash",
   );
 
@@ -212,23 +212,21 @@ export function BillModal({
               <div className="flex gap-2 p-1 bg-slate-100 rounded-xl">
                 <button
                   onClick={() => setSelectedMethod("cash")}
-                  className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${
-                    selectedMethod === "cash"
+                  className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${selectedMethod === "cash"
                       ? "bg-white text-orange-600 shadow-sm"
                       : "text-slate-500 hover:text-slate-700"
-                  }`}
+                    }`}
                 >
                   Cash Payment
                 </button>
                 <button
-                  onClick={() => setSelectedMethod("card")}
-                  className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${
-                    selectedMethod === "card"
+                  onClick={() => setSelectedMethod("e-wallet")}
+                  className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${selectedMethod === "e-wallet"
                       ? "bg-white text-blue-600 shadow-sm"
                       : "text-slate-500 hover:text-slate-700"
-                  }`}
+                    }`}
                 >
-                  E-Wallet (Card)
+                  E-Wallet (Other)
                 </button>
               </div>
 
@@ -243,11 +241,10 @@ export function BillModal({
                   })
                 }
                 disabled={isPaying}
-                className={`w-full py-4 text-white rounded-2xl font-black shadow-lg active:scale-[0.98] transition-all flex items-center justify-center gap-3 uppercase tracking-wider text-sm ${
-                  selectedMethod === "cash"
+                className={`w-full py-4 text-white rounded-2xl font-black shadow-lg active:scale-[0.98] transition-all flex items-center justify-center gap-3 uppercase tracking-wider text-sm ${selectedMethod === "cash"
                     ? "bg-orange-500 shadow-orange-200 hover:bg-orange-600"
                     : "bg-blue-500 shadow-blue-200 hover:bg-blue-600"
-                }`}
+                  }`}
               >
                 {isPaying ? (
                   <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />

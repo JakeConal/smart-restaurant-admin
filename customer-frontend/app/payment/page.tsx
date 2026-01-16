@@ -18,7 +18,7 @@ function PaymentContent() {
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState(false);
   const [error, setError] = useState("");
-  const [paymentMethod, setPaymentMethod] = useState<"card" | "cash" | "vnpay">(
+  const [paymentMethod, setPaymentMethod] = useState<"cash" | "vnpay">(
     "vnpay",
   );
   const [billRequested, setBillRequested] = useState(false);
@@ -335,7 +335,6 @@ function PaymentContent() {
           <div className="space-y-3">
             {[
               { id: "vnpay", label: "VNPay QR", sub: "Local Banks & Wallets", icon: "🇻🇳" },
-              { id: "card", label: "Credit Card", sub: "Global Cards", icon: "💳" },
               { id: "cash", label: "Table Cash", sub: "Pay with Staff", icon: "💵" }
             ].map((method) => (
               <label
@@ -390,16 +389,6 @@ function PaymentContent() {
             </div>
           )}
 
-          {paymentMethod === "card" && (
-            <div className="p-5 bg-blue-50/40 border border-blue-100 rounded-[28px] flex items-start gap-4">
-              <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center shrink-0">
-                <span className="text-xl">🧪</span>
-              </div>
-              <p className="text-xs text-blue-800 leading-relaxed pt-1 font-medium">
-                Testing Module: Complete payment simulation will be triggered. No real charges will be applied.
-              </p>
-            </div>
-          )}
 
           {paymentMethod === "cash" && (
             <div className="p-5 bg-purple-50/40 border border-purple-100 rounded-[28px] flex items-start gap-4">

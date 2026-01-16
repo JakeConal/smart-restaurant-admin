@@ -55,7 +55,7 @@ export async function markAsPaid(
   paymentData?: any,
 ): Promise<Order> {
   const response = await apiClient.put(
-    `/api/orders/${orderId}/paid`,
+    `/api/waiter/orders/${orderId}/mark-paid`,
     paymentData,
   );
   return response.data;

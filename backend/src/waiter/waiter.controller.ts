@@ -23,7 +23,7 @@ export class WaiterController {
   constructor(
     private readonly orderService: OrderService,
     private readonly tableService: TableService,
-  ) {}
+  ) { }
 
   /**
    * Get my pending and active orders (in kitchen)
@@ -115,5 +115,25 @@ export class WaiterController {
       user.userId,
       user.restaurantId,
     );
+  }
+
+  /**
+   * Complete payment for an order (Cash/E-wallet)
+   */
+  @Put('orders/:orderId/mark-paid')
+  @HttpCode(HttpStatus.OK)
+  async markAsPaid(
+    @Param('orderId') orderId: string,
+    @Body()
+    paymentData: {
+      paymentMethod: string;
+      discountPercentage?: number;
+      discountAmount?: number;
+      finalTotal?: number;
+    },
+    @CurrentUser() user: AuthUser,
+  ) {
+    // We can add verification that the waiter is assigned to this order if needed
+    return await this.orderService.markAsPaidByOrderId(orderId, paymentData);
   }
 }
