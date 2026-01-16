@@ -39,16 +39,33 @@ export class AdminAuthController {
   ) {
     const result = await this.adminAuthService.login(dto, userAgent, ipAddress);
 
-    // Set refresh token in cookie
-    const isProd = process.env.NODE_ENV === 'production';
-    res.cookie('refresh_token', result.refresh_token, {
+    // Cookie configuration
+    const env = (process.env.NODE_ENV || 'development').toLowerCase();
+    const isProd = env === 'production';
+    const host = req.get('host') || '';
+    const isLocalhost = host.includes('localhost') || host.includes('127.0.0.1');
+
+    // On production/deploy, we MUST use Secure and SameSite=None
+    // Even on local, if you use a proxy, Secure/None is often safer.
+    const cookieOptions: any = {
       httpOnly: true,
-      secure: isProd,
-      sameSite: isProd ? 'none' : 'lax',
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+      secure: true, // Requirement for SameSite=None
+      sameSite: 'none',
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days in ms
+      expires: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
       path: '/',
-      ...(isProd ? { partitioned: true } : {}),
-    } as any);
+      partitioned: true,
+    };
+
+    // Fallback for non-https local development
+    if (isLocalhost && !isProd) {
+      cookieOptions.secure = false;
+      cookieOptions.sameSite = 'lax';
+      delete cookieOptions.partitioned;
+    }
+
+    console.log(`[Auth] Setting cookie for ${dto.email}. isProd: ${isProd}, Secure: ${cookieOptions.secure}`);
+    res.cookie('refresh_token', result.refresh_token, cookieOptions);
 
     return {
       access_token: result.access_token,
@@ -67,15 +84,28 @@ export class AdminAuthController {
     }
     const result = await this.adminAuthService.refreshAccessToken(refreshToken);
 
-    const isProd = process.env.NODE_ENV === 'production';
-    res.cookie('refresh_token', result.refresh_token, {
+    const env = (process.env.NODE_ENV || 'development').toLowerCase();
+    const isProd = env === 'production';
+    const host = req.get('host') || '';
+    const isLocalhost = host.includes('localhost') || host.includes('127.0.0.1');
+
+    const cookieOptions: any = {
       httpOnly: true,
-      secure: isProd,
-      sameSite: isProd ? 'none' : 'lax',
+      secure: true,
+      sameSite: 'none',
       maxAge: 7 * 24 * 60 * 60 * 1000,
+      expires: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
       path: '/',
-      ...(isProd ? { partitioned: true } : {}),
-    } as any);
+      partitioned: true,
+    };
+
+    if (isLocalhost && !isProd) {
+      cookieOptions.secure = false;
+      cookieOptions.sameSite = 'lax';
+      delete cookieOptions.partitioned;
+    }
+
+    res.cookie('refresh_token', result.refresh_token, cookieOptions);
 
     return {
       access_token: result.access_token,
@@ -93,14 +123,26 @@ export class AdminAuthController {
       await this.adminAuthService.logout(refreshToken);
     }
 
-    const isProd = process.env.NODE_ENV === 'production';
-    res.clearCookie('refresh_token', {
+    const env = (process.env.NODE_ENV || 'development').toLowerCase();
+    const isProd = env === 'production';
+    const host = req.get('host') || '';
+    const isLocalhost = host.includes('localhost') || host.includes('127.0.0.1');
+
+    const cookieOptions: any = {
       httpOnly: true,
-      secure: isProd,
-      sameSite: isProd ? 'none' : 'lax',
+      secure: true,
+      sameSite: 'none',
       path: '/',
-      ...(isProd ? { partitioned: true } : {}),
-    } as any);
+      partitioned: true,
+    };
+
+    if (isLocalhost && !isProd) {
+      cookieOptions.secure = false;
+      cookieOptions.sameSite = 'lax';
+      delete cookieOptions.partitioned;
+    }
+
+    res.clearCookie('refresh_token', cookieOptions);
 
     return { message: 'Logged out successfully' };
   }
