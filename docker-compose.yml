@@ -1,0 +1,115 @@
+version: "3.8"
+
+services:
+  # MySQL Database
+  db:
+    image: mysql:8.0
+    container_name: smart-restaurant-db
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-rootpassword}
+      MYSQL_DATABASE: ${DB_NAME:-smart_restaurant}
+      MYSQL_USER: ${DB_USERNAME:-restaurant_user}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-restaurant_password}
+    ports:
+      - "${DB_PORT:-3306}:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+    networks:
+      - smart-restaurant-network
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "mysqladmin",
+          "ping",
+          "-h",
+          "localhost",
+          "-u",
+          "root",
+          "-p${DB_ROOT_PASSWORD:-rootpassword}",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Backend API
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    container_name: smart-restaurant-backend
+    restart: unless-stopped
+    ports:
+      - "${BACKEND_PORT:-3000}:3000"
+    environment:
+      PORT: 3000
+      DB_HOST: db
+      DB_PORT: 3306
+      DB_USERNAME: ${DB_USERNAME:-restaurant_user}
+      DB_PASSWORD: ${DB_PASSWORD:-restaurant_password}
+      DB_NAME: ${DB_NAME:-smart_restaurant}
+      JWT_SECRET: ${JWT_SECRET:-your-super-secret-jwt-key-change-in-production}
+      BASE_URL: ${BASE_URL:-http://localhost:3000}
+      ADMIN_FRONTEND_URL: ${ADMIN_FRONTEND_URL:-http://localhost:3001}
+      CUSTOMER_FRONTEND_URL: ${CUSTOMER_FRONTEND_URL:-http://localhost:4000}
+      EMAIL_HOST: ${EMAIL_HOST:-smtp.gmail.com}
+      EMAIL_PORT: ${EMAIL_PORT:-587}
+      GMAIL_USER: ${GMAIL_USER:-your-email@gmail.com}
+      GMAIL_APP_PASSWORD: ${GMAIL_APP_PASSWORD:-your-email-password}
+      EMAIL_FROM: ${EMAIL_FROM:-noreply@smartrestaurant.com}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
+      GOOGLE_CALLBACK_URL: ${GOOGLE_CALLBACK_URL:-http://localhost:3000/auth/google/callback}
+      GOOGLE_CUSTOMER_CALLBACK_URL: ${GOOGLE_CUSTOMER_CALLBACK_URL:-http://localhost:3000/auth/google/customer/callback}
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - smart-restaurant-network
+    volumes:
+      - backend_uploads:/app/backend/uploads
+
+  # Admin Frontend
+  admin-frontend:
+    build:
+      context: .
+      dockerfile: admin-frontend/Dockerfile
+    container_name: smart-restaurant-admin-frontend
+    restart: unless-stopped
+    ports:
+      - "${ADMIN_FRONTEND_PORT:-3001}:3001"
+    environment:
+      PORT: 3001
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:3000}
+      NEXT_PUBLIC_SOCKET_URL: ${NEXT_PUBLIC_SOCKET_URL:-http://localhost:3000}
+    depends_on:
+      - backend
+    networks:
+      - smart-restaurant-network
+
+  # Customer Frontend
+  customer-frontend:
+    build:
+      context: .
+      dockerfile: customer-frontend/Dockerfile
+    container_name: smart-restaurant-customer-frontend
+    restart: unless-stopped
+    ports:
+      - "${CUSTOMER_FRONTEND_PORT:-4000}:4000"
+    environment:
+      PORT: 4000
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:3000}
+      NEXT_PUBLIC_SOCKET_URL: ${NEXT_PUBLIC_SOCKET_URL:-http://localhost:3000}
+    depends_on:
+      - backend
+    networks:
+      - smart-restaurant-network
+
+networks:
+  smart-restaurant-network:
+    driver: bridge
+
+volumes:
+  db_data:
+  backend_uploads:

@@ -1,0 +1,151 @@
+version: "3.8"
+
+services:
+  # MySQL Database
+  db:
+    image: mysql:8.0
+    container_name: smart-restaurant-db-prod
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${DB_NAME}
+      MYSQL_USER: ${DB_USERNAME}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - db_data:/var/lib/mysql
+    networks:
+      - smart-restaurant-network
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "mysqladmin",
+          "ping",
+          "-h",
+          "localhost",
+          "-u",
+          "root",
+          "-p${DB_ROOT_PASSWORD}",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    # Only expose internally, not to host
+    expose:
+      - "3306"
+
+  # Backend API
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    container_name: smart-restaurant-backend-prod
+    restart: always
+    expose:
+      - "3000"
+    environment:
+      PORT: 3000
+      NODE_ENV: production
+      DB_HOST: db
+      DB_PORT: 3306
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_NAME: ${DB_NAME}
+      JWT_SECRET: ${JWT_SECRET}
+      BASE_URL: ${BASE_URL}
+      ADMIN_FRONTEND_URL: ${ADMIN_FRONTEND_URL}
+      CUSTOMER_FRONTEND_URL: ${CUSTOMER_FRONTEND_URL}
+      EMAIL_HOST: ${EMAIL_HOST}
+      EMAIL_PORT: ${EMAIL_PORT}
+      GMAIL_USER: ${GMAIL_USER}
+      GMAIL_APP_PASSWORD: ${GMAIL_APP_PASSWORD}
+      EMAIL_FROM: ${EMAIL_FROM}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
+      GOOGLE_CALLBACK_URL: ${GOOGLE_CALLBACK_URL}
+      GOOGLE_CUSTOMER_CALLBACK_URL: ${GOOGLE_CUSTOMER_CALLBACK_URL}
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - smart-restaurant-network
+    volumes:
+      - backend_uploads:/app/backend/uploads
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "require('http').get('http://localhost:3000', (r) => process.exit(r.statusCode === 404 ? 0 : 1))",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Admin Frontend
+  admin-frontend:
+    build:
+      context: .
+      dockerfile: admin-frontend/Dockerfile
+    container_name: smart-restaurant-admin-frontend-prod
+    restart: always
+    expose:
+      - "3001"
+    environment:
+      PORT: 3001
+      NODE_ENV: production
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
+      NEXT_PUBLIC_SOCKET_URL: ${NEXT_PUBLIC_SOCKET_URL}
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - smart-restaurant-network
+
+  # Customer Frontend
+  customer-frontend:
+    build:
+      context: .
+      dockerfile: customer-frontend/Dockerfile
+    container_name: smart-restaurant-customer-frontend-prod
+    restart: always
+    expose:
+      - "4000"
+    environment:
+      PORT: 4000
+      NODE_ENV: production
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
+      NEXT_PUBLIC_SOCKET_URL: ${NEXT_PUBLIC_SOCKET_URL}
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - smart-restaurant-network
+
+  # Nginx Reverse Proxy
+  nginx:
+    image: nginx:alpine
+    container_name: smart-restaurant-nginx-prod
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./ssl:/etc/nginx/ssl:ro
+    depends_on:
+      - backend
+      - admin-frontend
+      - customer-frontend
+    networks:
+      - smart-restaurant-network
+
+networks:
+  smart-restaurant-network:
+    driver: bridge
+
+volumes:
+  db_data:
+  backend_uploads:

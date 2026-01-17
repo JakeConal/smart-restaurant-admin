@@ -1945,6 +1945,26 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@nestjs/websockets@npm:^11.1.12":
+  version: 11.1.12
+  resolution: "@nestjs/websockets@npm:11.1.12"
+  dependencies:
+    iterare: "npm:1.2.1"
+    object-hash: "npm:3.0.0"
+    tslib: "npm:2.8.1"
+  peerDependencies:
+    "@nestjs/common": ^11.0.0
+    "@nestjs/core": ^11.0.0
+    "@nestjs/platform-socket.io": ^11.0.0
+    reflect-metadata: ^0.1.12 || ^0.2.0
+    rxjs: ^7.1.0
+  peerDependenciesMeta:
+    "@nestjs/platform-socket.io":
+      optional: true
+  checksum: 10c0/3c0dc563cd4861e5317993d0dc97de9c2a15d8375f2c3311cda498c345dd019bd4c143a1ea2ff260797b7e669d28016959c1d3a32aa6b17dc226fe640fdbdfd2
+  languageName: node
+  linkType: hard
+
 "@next/env@npm:16.0.10":
   version: 16.0.10
   resolution: "@next/env@npm:16.0.10"
@@ -4462,6 +4482,7 @@ __metadata:
     "@nestjs/schematics": "npm:^11.0.0"
     "@nestjs/testing": "npm:^11.0.1"
     "@nestjs/typeorm": "npm:^11.0.0"
+    "@nestjs/websockets": "npm:^11.1.12"
     "@swc/cli": "npm:^0.6.0"
     "@swc/core": "npm:^1.10.8"
     "@types/archiver": "npm:^7.0.0"

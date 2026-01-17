@@ -1,0 +1,47 @@
+# Dependencies
+node_modules
+npm-debug.log
+yarn-error.log
+.pnp
+.pnp.js
+
+# Testing
+coverage
+*.log
+
+# Production
+dist
+build
+
+# Misc
+.DS_Store
+*.pem
+
+# Debug
+*.log*
+.npm
+
+# Local env files
+.env
+.env*.local
+
+# Vercel
+.vercel
+
+# TypeScript
+*.tsbuildinfo
+
+# Git
+.git
+.gitignore
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+*~
+
+# Temporary files
+tmp
+temp
