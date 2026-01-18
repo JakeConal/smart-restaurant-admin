@@ -14,7 +14,7 @@ export class MenuItemModifierGroup {
   @JoinColumn({ name: 'menuItemId' })
   menuItem: MenuItem;
 
-  @ManyToOne(() => ModifierGroup, (group) => group.menuItems)
+  @ManyToOne(() => ModifierGroup, (group) => group.menuItems, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'groupId' })
   group: ModifierGroup;
 }

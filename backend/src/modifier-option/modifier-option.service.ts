@@ -12,7 +12,7 @@ export class ModifierOptionService {
     private readonly repo: Repository<ModifierOption>,
     @InjectRepository(ModifierGroup)
     private readonly groupRepo: Repository<ModifierGroup>,
-  ) {}
+  ) { }
 
   async createOption(groupId: string, dto: CreateModifierOptionDto) {
     console.log(
@@ -59,5 +59,27 @@ export class ModifierOptionService {
 
   async findByGroup(groupId: string) {
     return this.repo.find({ where: { groupId } });
+  }
+
+  async deleteOption(id: string, restaurantId: string) {
+    const option = await this.repo.findOne({
+      where: { id },
+      relations: ['group'],
+    });
+
+    if (!option) {
+      throw new NotFoundException('Modifier option not found');
+    }
+
+    // Verify the option belongs to a group in this restaurant
+    const group = await this.groupRepo.findOne({
+      where: { id: option.groupId, restaurantId },
+    });
+
+    if (!group) {
+      throw new NotFoundException('Modifier group not found');
+    }
+
+    await this.repo.remove(option);
   }
 }

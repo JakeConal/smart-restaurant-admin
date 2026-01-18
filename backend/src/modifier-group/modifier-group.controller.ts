@@ -6,6 +6,7 @@ import {
   Put,
   Body,
   Param,
+  Delete,
   HttpException,
   HttpStatus,
 } from '@nestjs/common';
@@ -19,7 +20,7 @@ import { ModifierGroupService } from './modifier-group.service';
 @Controller('api/admin/menu/modifier-groups')
 @UseGuards(AdminGuard)
 export class ModifierGroupController {
-  constructor(private readonly service: ModifierGroupService) {}
+  constructor(private readonly service: ModifierGroupService) { }
 
   @Post()
   async create(
@@ -50,5 +51,23 @@ export class ModifierGroupController {
   @Get()
   async findAll(@CurrentUser() user: AuthUser) {
     return this.service.findAllByRestaurant(user.restaurantId);
+  }
+
+  @Get(':id')
+  async findOne(@Param('id') id: string, @CurrentUser() user: AuthUser) {
+    return this.service.findOneByRestaurant(id, user.restaurantId);
+  }
+
+  @Delete(':id')
+  async remove(@Param('id') id: string, @CurrentUser() user: AuthUser) {
+    try {
+      return await this.service.deleteGroup(id, user.restaurantId);
+    } catch (error) {
+      console.error('Controller: Error deleting modifier group:', error);
+      throw new HttpException(
+        error.message || 'Failed to delete modifier group',
+        error.status || HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
   }
 }

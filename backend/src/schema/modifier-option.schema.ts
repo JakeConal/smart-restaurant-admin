@@ -18,7 +18,7 @@ export class ModifierOption {
   @Column('uuid')
   groupId: string;
 
-  @ManyToOne(() => ModifierGroup, (group) => group.options)
+  @ManyToOne(() => ModifierGroup, (group) => group.options, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'groupId' })
   group: ModifierGroup;
 

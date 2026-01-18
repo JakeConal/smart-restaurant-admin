@@ -5,6 +5,7 @@ import {
   Put,
   Param,
   Body,
+  Delete,
   UseGuards,
   HttpException,
   HttpStatus,
@@ -19,7 +20,7 @@ import type { AuthUser } from '../auth/interfaces/auth-user.interface';
 @Controller('api/admin/menu')
 @UseGuards(AdminGuard)
 export class ModifierOptionController {
-  constructor(private readonly service: ModifierOptionService) {}
+  constructor(private readonly service: ModifierOptionService) { }
 
   @Post('modifier-groups/:groupId/options')
   async create(
@@ -61,5 +62,10 @@ export class ModifierOptionController {
     @CurrentUser() user: AuthUser,
   ) {
     return this.service.findByGroup(groupId);
+  }
+
+  @Delete('modifier-options/:id')
+  async remove(@Param('id') id: string, @CurrentUser() user: AuthUser) {
+    return this.service.deleteOption(id, user.restaurantId);
   }
 }
