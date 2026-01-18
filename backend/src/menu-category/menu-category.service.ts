@@ -17,7 +17,7 @@ export class MenuCategoryService {
     private readonly CategoryRepo: Repository<MenuCategory>,
     @InjectRepository(MenuItem)
     private readonly itemRepo: Repository<MenuItem>,
-  ) {}
+  ) { }
 
   async create(restaurantId: string, dto: CreateMenuCategoryDto) {
     const exists = await this.CategoryRepo.findOne({
@@ -146,7 +146,7 @@ export class MenuCategoryService {
     };
   }
 
-  async deactivate(id: string, restaurantId: string) {
+  async updateStatus(id: string, restaurantId: string, status: CategoryStatus) {
     const category = await this.CategoryRepo.findOne({
       where: { id, restaurantId },
     });
@@ -155,10 +155,10 @@ export class MenuCategoryService {
       throw new NotFoundException('Category not found');
     }
 
-    category.status = CategoryStatus.INACTIVE;
+    category.status = status;
     const savedCategory = await this.CategoryRepo.save(category);
 
-    // Calculate item count for the deactivated category
+    // Calculate item count for the updated category
     const itemCount = await this.itemRepo.count({
       where: {
         categoryId: savedCategory.id,

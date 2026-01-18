@@ -11,6 +11,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { MenuCategoryService } from './menu-category.service';
+import { MenuCategory, CategoryStatus } from 'src/schema/menu-category.schema';
 import { CreateMenuCategoryDto } from 'src/dto/create-menu-category.dto';
 import { UpdateMenuCategoryDto } from 'src/dto/update-menu-category.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt.guards';
@@ -21,7 +22,7 @@ import type { AuthUser } from '../auth/interfaces/auth-user.interface';
 @Controller('api/admin/menu/categories')
 @UseGuards(AdminGuard)
 export class MenuCategoryController {
-  constructor(private readonly service: MenuCategoryService) {}
+  constructor(private readonly service: MenuCategoryService) { }
 
   @Post()
   create(@CurrentUser() user: AuthUser, @Body() dto: CreateMenuCategoryDto) {
@@ -47,8 +48,12 @@ export class MenuCategoryController {
   }
 
   @Patch(':id/status')
-  deactivate(@CurrentUser() user: AuthUser, @Param('id') id: string) {
-    return this.service.deactivate(id, user.restaurantId);
+  updateStatus(
+    @CurrentUser() user: AuthUser,
+    @Param('id') id: string,
+    @Body('status') status: CategoryStatus,
+  ) {
+    return this.service.updateStatus(id, user.restaurantId, status);
   }
 
   @Delete(':id')
