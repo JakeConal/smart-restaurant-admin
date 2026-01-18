@@ -2,9 +2,12 @@ import {
   Controller,
   Get,
   Query,
+  Param,
+  Res,
   BadRequestException,
   NotFoundException,
 } from '@nestjs/common';
+import { Response } from 'express';
 import { TableService } from '../table/table.service';
 import { MenuService } from './menu.service';
 
@@ -72,5 +75,27 @@ export class MenuController {
       },
       menu,
     };
+  }
+
+  @Get('items/:itemId')
+  async getGuestMenuItem(
+    @Param('itemId') itemId: string,
+    @Query('token') token: string,
+  ) {
+    if (!token) {
+      throw new BadRequestException('Token is required');
+    }
+
+    const table = await this.tableService.verifyQrToken(token);
+    if (!table) {
+      throw new NotFoundException('Invalid token');
+    }
+
+    const item = await this.menuService.getGuestMenuItem(itemId);
+    if (!item) {
+      throw new NotFoundException('Menu item not found');
+    }
+
+    return item;
   }
 }

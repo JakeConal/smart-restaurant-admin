@@ -1,4 +1,4 @@
-import { MenuResponse } from "./types";
+import { MenuResponse, MenuItem } from "./types";
 import { getMenuFromCache, setMenuInCache } from "./menu-cache";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
@@ -26,6 +26,10 @@ async function apiRequest<T>(
       ...defaultHeaders,
       ...options.headers,
     },
+    // Default caching for GET requests in Next.js
+    ...(options.method === "GET" || !options.method
+      ? { next: { revalidate: 300 } } // Cache for 5 minutes
+      : {}),
   });
 
   if (!response.ok) {
@@ -203,6 +207,17 @@ export const menuApi = {
     }
 
     return response;
+  },
+
+  getMenuItem: async (id: string, token: string) => {
+    return apiRequest<MenuItem>(`/api/menu/items/${id}?token=${token}`);
+  },
+
+  getPhotoUrl: (url?: string) => {
+    if (!url) return "";
+    if (url.startsWith("http")) return url;
+    if (url.startsWith("data:")) return url;
+    return `${API_BASE_URL}${url}`;
   },
 
   getItemPhoto: (photoId: string) =>
@@ -389,8 +404,8 @@ export const orderApi = {
       method: "GET",
       headers: authToken
         ? {
-          Authorization: `Bearer ${authToken}`,
-        }
+            Authorization: `Bearer ${authToken}`,
+          }
         : {},
     }),
 
@@ -404,8 +419,8 @@ export const orderApi = {
       method: "GET",
       headers: authToken
         ? {
-          Authorization: `Bearer ${authToken}`,
-        }
+            Authorization: `Bearer ${authToken}`,
+          }
         : {},
     }),
 };
@@ -417,10 +432,13 @@ export const vnpayApi = {
     totalAmount: number;
     returnUrl: string;
   }) =>
-    apiRequest<{ success: boolean; paymentUrl: string }>("/api/vnpay/create-payment", {
-      method: "POST",
-      body: JSON.stringify(data),
-    }),
+    apiRequest<{ success: boolean; paymentUrl: string }>(
+      "/api/vnpay/create-payment",
+      {
+        method: "POST",
+        body: JSON.stringify(data),
+      },
+    ),
 
   verifyReturn: (queryParams: string) =>
     apiRequest<{

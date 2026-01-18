@@ -30,8 +30,13 @@ export class MenuItemPhotoController {
     @Res() res: Response,
   ) {
     const photo = await this.service.getPhoto(itemId, photoId);
-    (res as any).set('Content-Type', photo.mimeType);
-    (res as any).send(photo.data);
+
+    // Set caching headers for better client-side performance
+    res.setHeader('Content-Type', photo.mimeType);
+    res.setHeader('Cache-Control', 'public, max-age=86400'); // 24 hours
+    res.setHeader('ETag', `"${photo.id}"`);
+
+    res.send(photo.data);
   }
 
   @Get(':itemId/photos')
@@ -80,4 +85,3 @@ export class MenuItemPhotoController {
     return this.service.setPrimaryPhoto(user.restaurantId, itemId, photoId);
   }
 }
-

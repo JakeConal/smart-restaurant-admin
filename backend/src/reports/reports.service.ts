@@ -56,6 +56,7 @@ export class ReportsService {
           isDeleted: false,
         },
       ],
+      select: ['createdAt', 'total', 'finalTotal'],
       order: {
         createdAt: 'ASC',
       },
@@ -75,6 +76,7 @@ export class ReportsService {
     const { start, end } = this.getDateRange(timeRange, startDate, endDate);
 
     const orders = await this.orderRepository.find({
+      select: ['items'],
       where: [
         { isPaid: true, createdAt: Between(start, end), isDeleted: false },
         {
@@ -174,6 +176,7 @@ export class ReportsService {
     const { start, end } = this.getDateRange(timeRange, startDate, endDate);
 
     const orders = await this.orderRepository.find({
+      select: ['total', 'finalTotal', 'id'],
       where: [
         { isPaid: true, createdAt: Between(start, end), isDeleted: false },
         {

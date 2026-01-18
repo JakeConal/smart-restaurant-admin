@@ -67,7 +67,8 @@ export class MenuItemService {
     const queryBuilder = this.itemRepo
       .createQueryBuilder('item')
       .leftJoinAndSelect('item.category', 'category')
-      .leftJoinAndSelect('item.photos', 'photos')
+      .leftJoin('item.photos', 'photos')
+      .addSelect(['photos.id', 'photos.isPrimary', 'photos.mimeType']) // EXCLUDE photos.data
       .leftJoinAndSelect('item.modifierGroups', 'modifierGroups')
       .leftJoinAndSelect('modifierGroups.options', 'options')
       .addSelect('CAST(item.price AS DECIMAL(12,2))', 'numericPrice')

@@ -2,6 +2,7 @@ import {
   Entity,
   PrimaryGeneratedColumn,
   Column,
+  Index,
   CreateDateColumn,
   UpdateDateColumn,
   OneToMany,
@@ -15,6 +16,7 @@ export enum SelectionType {
 }
 
 @Entity()
+@Index(['restaurantId'])
 export class ModifierGroup {
   @PrimaryGeneratedColumn('uuid')
   id: string;

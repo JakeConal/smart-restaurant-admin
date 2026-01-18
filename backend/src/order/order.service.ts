@@ -22,7 +22,7 @@ export class OrderService {
     @InjectRepository(MenuItem)
     private readonly menuItemRepository: Repository<MenuItem>,
     private readonly orderGateway: OrderGateway,
-  ) { }
+  ) {}
 
   async create(createOrderDto: CreateOrderDto): Promise<Order> {
     // Get table to find assigned waiter and restaurantId
@@ -48,21 +48,27 @@ export class OrderService {
 
     // Enrich items with prep time and calculate max prep time
     let maxPrepTimeMinutes = 0;
-    const enrichedItems = await Promise.all(
-      createOrderDto.items.map(async (item) => {
-        const menuItem = await this.menuItemRepository.findOne({
-          where: { id: item.menuItemId },
-        });
-        const prepTime = menuItem?.prepTimeMinutes || 0;
-        if (prepTime > maxPrepTimeMinutes) {
-          maxPrepTimeMinutes = prepTime;
-        }
-        return {
-          ...item,
-          prepTimeMinutes: prepTime,
-        };
-      }),
-    );
+
+    // Batch fetch all menu items in one query instead of a loop
+    const menuItemIds = createOrderDto.items.map((i) => i.menuItemId);
+    const menuItems = await this.menuItemRepository.find({
+      where: { id: In(menuItemIds) },
+      select: ['id', 'prepTimeMinutes'],
+    });
+
+    const menuItemMap = new Map(menuItems.map((item) => [item.id, item]));
+
+    const enrichedItems = createOrderDto.items.map((item) => {
+      const menuItem = menuItemMap.get(item.menuItemId);
+      const prepTime = menuItem?.prepTimeMinutes || 0;
+      if (prepTime > maxPrepTimeMinutes) {
+        maxPrepTimeMinutes = prepTime;
+      }
+      return {
+        ...item,
+        prepTimeMinutes: prepTime,
+      };
+    });
 
     // Create order with ONLY fields we want, explicitly ignore status from DTO
     const order = this.orderRepository.create({
@@ -331,8 +337,10 @@ export class OrderService {
   async getMyActiveOrders(
     waiterId: string,
     restaurantId: string,
+    selectFields?: (keyof Order)[],
   ): Promise<Order[]> {
     return this.orderRepository.find({
+      select: selectFields,
       where: [
         {
           status: OrderStatus.PENDING_ACCEPTANCE,
@@ -396,7 +404,10 @@ export class OrderService {
     count: number;
     oldestOrderMinutes: number | null;
   }> {
-    const orders = await this.getMyActiveOrders(waiterId, restaurantId);
+    const orders = await this.getMyActiveOrders(waiterId, restaurantId, [
+      'id',
+      'createdAt',
+    ]);
     const count = orders.length;
 
     let oldestOrderMinutes: number | null = null;

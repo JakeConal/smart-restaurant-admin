@@ -1,4 +1,5 @@
 import { Module, OnModuleInit } from '@nestjs/common';
+import { CacheModule } from '@nestjs/cache-manager';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { TableModule } from './table/table.module';
@@ -50,6 +51,11 @@ import { ReportsModule } from './reports/reports.module';
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
+    CacheModule.register({
+      isGlobal: true,
+      ttl: 60000, // 1 minute default TTL
+      max: 100, // maximum number of items in cache
+    }),
     ScheduleModule.forRoot(),
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
@@ -90,9 +96,11 @@ import { ReportsModule } from './reports/reports.module';
         synchronize: true,
         // Add connection pool and retry settings
         extra: {
-          connectionLimit: 10,
+          connectionLimit: 20,
+          idleTimeout: 30000,
+          enableKeepAlive: true,
+          keepAliveInitialDelay: 10000,
           acquireTimeout: 60000,
-          timeout: 60000,
         },
         retryAttempts: 3,
         retryDelay: 3000,
@@ -121,4 +129,4 @@ import { ReportsModule } from './reports/reports.module';
   controllers: [AppController],
   providers: [AppService],
 })
-export class AppModule { }
+export class AppModule {}

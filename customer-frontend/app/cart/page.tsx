@@ -6,7 +6,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useApp } from "@/lib/context";
 import { useCart } from "@/lib/cart-context";
-import { orderApi } from "@/lib/api";
+import { menuApi, orderApi } from "@/lib/api";
 import { Order } from "@/lib/types";
 import BottomNav from "@/components/BottomNav";
 import OrderInfoModal from "../../components/OrderInfoModal";
@@ -251,7 +251,8 @@ function CartContent() {
           <div className="space-y-4">
             <h1 className="text-h1">Hungry?</h1>
             <p className="text-body text-slate-500">
-              Your cart is waiting to be filled with <br />something delicious.
+              Your cart is waiting to be filled with <br />
+              something delicious.
             </p>
           </div>
 
@@ -282,8 +283,18 @@ function CartContent() {
               onClick={() => router.back()}
               className="w-10 h-10 rounded-full bg-white border border-slate-200 flex items-center justify-center shadow-sm hover:border-slate-900 transition-all active:scale-95"
             >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" />
+              <svg
+                className="w-5 h-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2.5}
+                  d="M15 19l-7-7 7-7"
+                />
               </svg>
             </button>
             <h1 className="text-h2">My Selection</h1>
@@ -292,7 +303,9 @@ function CartContent() {
           {tableNumber && (
             <div className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-900 text-white rounded-full shadow-lg shadow-slate-900/10">
               <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-              <span className="text-[10px] font-black uppercase tracking-widest leading-none">Table {tableNumber}</span>
+              <span className="text-[10px] font-black uppercase tracking-widest leading-none">
+                Table {tableNumber}
+              </span>
             </div>
           )}
         </div>
@@ -302,8 +315,16 @@ function CartContent() {
         {/* Error Feedback */}
         {error && (
           <div className="p-4 bg-red-50 border border-red-100 rounded-2xl text-red-700 text-[10px] font-bold uppercase tracking-wider flex items-center gap-3 animate-fade-in">
-            <svg className="w-4 h-4 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+            <svg
+              className="w-4 h-4 flex-shrink-0"
+              fill="currentColor"
+              viewBox="0 0 20 20"
+            >
+              <path
+                fillRule="evenodd"
+                d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
+                clipRule="evenodd"
+              />
             </svg>
             {error}
           </div>
@@ -312,26 +333,38 @@ function CartContent() {
         {/* Categories Breakdown (Grouped items if needed, but for now simple list) */}
         <div className="space-y-4">
           <div className="flex items-end justify-between px-1">
-            <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Order Items</span>
-            <button onClick={clearCart} className="text-[10px] font-bold uppercase tracking-widest text-red-500 hover:text-red-600 transition-colors">Clear All</button>
+            <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">
+              Order Items
+            </span>
+            <button
+              onClick={clearCart}
+              className="text-[10px] font-bold uppercase tracking-widest text-red-500 hover:text-red-600 transition-colors"
+            >
+              Clear All
+            </button>
           </div>
 
           <div className="space-y-4">
             {items.map((item) => (
-              <div key={item.id} className="bento-card p-4 group transition-all">
+              <div
+                key={item.id}
+                className="bento-card p-4 group transition-all"
+              >
                 <div className="flex gap-4">
                   {/* Item Image */}
                   <div className="w-24 h-24 rounded-[20px] overflow-hidden bg-slate-50 border border-slate-100 relative shadow-inner flex-shrink-0">
                     {item.menuItem.primaryPhotoUrl ? (
                       <Image
-                        src={item.menuItem.primaryPhotoUrl}
+                        src={menuApi.getPhotoUrl(item.menuItem.primaryPhotoUrl)}
                         alt={item.menuItem.name}
                         fill
                         className="object-cover transition-transform duration-500 group-hover:scale-110"
                         unoptimized
                       />
                     ) : (
-                      <div className="w-full h-full flex items-center justify-center text-3xl">🍽️</div>
+                      <div className="w-full h-full flex items-center justify-center text-3xl">
+                        🍽️
+                      </div>
                     )}
                   </div>
 
@@ -346,7 +379,19 @@ function CartContent() {
                           onClick={() => removeItem(item.id)}
                           className="w-6 h-6 rounded-full flex items-center justify-center text-slate-300 hover:text-red-500 hover:bg-red-50 transition-all"
                         >
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" /></svg>
+                          <svg
+                            className="w-4 h-4"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2.5}
+                              d="M6 18L18 6M6 6l12 12"
+                            />
+                          </svg>
                         </button>
                       </div>
 
@@ -367,7 +412,19 @@ function CartContent() {
                       {/* Special Note */}
                       {item.specialInstructions && (
                         <div className="mt-2 flex items-start gap-1.5">
-                          <svg className="w-3 h-3 text-slate-400 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+                          <svg
+                            className="w-3 h-3 text-slate-400 mt-0.5"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                            />
+                          </svg>
                           <p className="text-[10px] text-slate-400 italic font-medium truncate">
                             {item.specialInstructions}
                           </p>
@@ -376,22 +433,57 @@ function CartContent() {
                     </div>
 
                     <div className="flex items-center justify-between mt-3">
-                      <span className="text-sm font-black text-slate-900">${item.totalPrice.toFixed(2)}</span>
+                      <span className="text-sm font-black text-slate-900">
+                        ${item.totalPrice.toFixed(2)}
+                      </span>
 
                       {/* Compact Quantity Controls */}
                       <div className="flex items-center bg-slate-50 rounded-full p-1 border border-slate-100">
                         <button
-                          onClick={() => updateItemQuantity(item.id, Math.max(1, item.quantity - 1))}
+                          onClick={() =>
+                            updateItemQuantity(
+                              item.id,
+                              Math.max(1, item.quantity - 1),
+                            )
+                          }
                           className="w-7 h-7 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-900 hover:bg-white transition-all shadow-sm active:scale-90"
                         >
-                          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M20 12H4" /></svg>
+                          <svg
+                            className="w-3 h-3"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={3}
+                              d="M20 12H4"
+                            />
+                          </svg>
                         </button>
-                        <span className="w-8 text-center text-xs font-black text-slate-900">{item.quantity}</span>
+                        <span className="w-8 text-center text-xs font-black text-slate-900">
+                          {item.quantity}
+                        </span>
                         <button
-                          onClick={() => updateItemQuantity(item.id, item.quantity + 1)}
+                          onClick={() =>
+                            updateItemQuantity(item.id, item.quantity + 1)
+                          }
                           className="w-7 h-7 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-900 hover:bg-white transition-all shadow-sm active:scale-90"
                         >
-                          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M12 4v16m8-8H4" /></svg>
+                          <svg
+                            className="w-3 h-3"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={3}
+                              d="M12 4v16m8-8H4"
+                            />
+                          </svg>
                         </button>
                       </div>
                     </div>
@@ -414,7 +506,7 @@ function CartContent() {
           tax: getTotalPrice() * 0.1,
           onClick: handleOpenOrderModal,
           disabled: placingOrder || !tableId || items.length === 0,
-          isLoading: placingOrder
+          isLoading: placingOrder,
         }}
       />
 

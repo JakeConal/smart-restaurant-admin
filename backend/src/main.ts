@@ -2,6 +2,7 @@ import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import cookieParser from 'cookie-parser';
+import compression from 'compression';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
@@ -11,6 +12,7 @@ async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
 
   app.use(cookieParser());
+  app.use(compression());
   app.set('trust proxy', 1); // Trust the first proxy (e.g. Nginx, Load Balancer)
 
   app.enableCors({

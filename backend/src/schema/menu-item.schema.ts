@@ -24,6 +24,10 @@ export enum MenuItemStatus {
 
 @Entity('menu_items')
 @Index(['restaurantId'])
+@Index(['categoryId'])
+@Index(['name'])
+@Index(['restaurantId', 'isDeleted', 'status'])
+@Index(['restaurantId', 'categoryId', 'isDeleted', 'status'])
 export class MenuItem {
   @PrimaryGeneratedColumn('uuid')
   id: string;

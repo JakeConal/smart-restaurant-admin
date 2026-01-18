@@ -2,6 +2,7 @@ import {
   Entity,
   PrimaryGeneratedColumn,
   Column,
+  Index,
   CreateDateColumn,
   ManyToOne,
   JoinColumn,
@@ -9,6 +10,7 @@ import {
 import { ModifierGroup } from './modifier-group.schema';
 
 @Entity()
+@Index(['groupId'])
 export class ModifierOption {
   @PrimaryGeneratedColumn('uuid')
   id: string;

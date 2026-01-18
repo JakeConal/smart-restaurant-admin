@@ -1,5 +1,7 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Inject } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import type { Cache } from 'cache-manager';
 import { Repository, Like, In } from 'typeorm';
 import { MenuCategory, CategoryStatus } from '../schema/menu-category.schema';
 import { MenuItem, MenuItemStatus } from '../schema/menu-item.schema';
@@ -11,6 +13,7 @@ import { MenuItemModifierGroup } from '../schema/menu-item-modifier.schema';
 @Injectable()
 export class MenuService {
   constructor(
+    @Inject(CACHE_MANAGER) private cacheManager: Cache,
     @InjectRepository(MenuCategory)
     private readonly categoryRepo: Repository<MenuCategory>,
     @InjectRepository(MenuItem)
@@ -45,14 +48,32 @@ export class MenuService {
       limit = 20,
     } = query;
 
-    // Get active categories
-    const categories = await this.categoryRepo.find({
-      where: { restaurantId, status: CategoryStatus.ACTIVE },
-      order: { name: 'ASC' },
-    });
+    // 1. Try to get from cache first for high performance
+    const cacheKey = `guest_menu:${restaurantId}:${q || ''}:${categoryId || ''}:${sort || ''}:${chefRecommended}:${page}:${limit}`;
+    const cachedResult = await this.cacheManager.get(cacheKey);
+    if (cachedResult) {
+      return cachedResult;
+    }
+
+    // 2. Cache categories list for 5 minutes as it rarely changes
+    const categoryCacheKey = `categories:${restaurantId}`;
+    let categories =
+      await this.cacheManager.get<MenuCategory[]>(categoryCacheKey);
+
+    if (!categories) {
+      categories = await this.categoryRepo.find({
+        where: { restaurantId, status: CategoryStatus.ACTIVE },
+        order: { name: 'ASC' },
+        select: ['id', 'name', 'description', 'restaurantId', 'status'], // Only necessary fields
+      });
+      await this.cacheManager.set(categoryCacheKey, categories, 300000); // 5 mins
+    }
 
     // Build where conditions for items
-    const where: any = { restaurantId, isDeleted: false };
+    const where: any = {
+      restaurantId,
+      isDeleted: false,
+    };
     if (categoryId) where.categoryId = categoryId;
     if (chefRecommended !== undefined)
       where.isChefRecommended = chefRecommended;
@@ -61,123 +82,116 @@ export class MenuService {
     // Sort options
     let order: any = { name: 'ASC' };
     if (sort === 'popularity') {
-      // Sort by popularity score (higher scores first), then by name
-      // Popularity score = average rating * 10
       order = { popularityScore: 'DESC', name: 'ASC' };
     } else if (sort === 'asc') {
-      // Sort by price low to high, then by name
       order = { price: 'ASC', name: 'ASC' };
     } else if (sort === 'desc') {
-      // Sort by price high to low, then by name
       order = { price: 'DESC', name: 'ASC' };
     }
 
-    // Get items with pagination
+    // 3. Get items with pagination - selecting only needed fields
     const [items, total] = await this.itemRepo.findAndCount({
       where,
       order,
       skip: (page - 1) * limit,
       take: limit,
+      select: [
+        'id',
+        'name',
+        'price',
+        'description',
+        'status',
+        'isChefRecommended',
+        'categoryId',
+        'prepTimeMinutes',
+      ],
     });
+
+    if (items.length === 0) {
+      const emptyResult = { categories, items: [], total, page, limit };
+      await this.cacheManager.set(cacheKey, emptyResult, 60000);
+      return emptyResult;
+    }
 
     // Get item IDs
     const itemIds = items.map((item) => item.id);
 
-    // Get ALL photos for items (not just primary)
-    const allPhotos = await this.photoRepo.find({
-      where: { menuItemId: In(itemIds) },
-      order: { isPrimary: 'DESC', createdAt: 'ASC' },
-    });
+    // 4. Fetch photos (EXCLUDING data BLOB) and modifier groups with options in parallel
+    const [allPhotos, itemModifiers] = await Promise.all([
+      this.photoRepo.find({
+        where: { menuItemId: In(itemIds) },
+        order: { isPrimary: 'DESC', createdAt: 'ASC' },
+        select: ['id', 'menuItemId', 'mimeType', 'isPrimary', 'createdAt'],
+      }),
+      this.itemModifierRepo.find({
+        where: { menuItemId: In(itemIds) },
+        relations: ['group', 'group.options'],
+      }),
+    ]);
 
-    // Group photos by menuItemId
+    // Group photos by menuItemId and prepare URLs
     const photosByItem = new Map<string, any[]>();
+    const photoMap = new Map<string, string>();
+    const baseUrl = process.env.API_BASE_URL || '';
+
     allPhotos.forEach((photo) => {
+      const photoUrl = `/api/menu/items/${photo.menuItemId}/photos/${photo.id}`;
+
       if (!photosByItem.has(photo.menuItemId)) {
         photosByItem.set(photo.menuItemId, []);
       }
-      const photoArray = photosByItem.get(photo.menuItemId)!;
-      if (photo.data && photo.mimeType) {
-        const base64 = photo.data.toString('base64');
-        const photoUrl = `data:${photo.mimeType};base64,${base64}`;
-        photoArray.push({
-          id: photo.id,
-          menuItemId: photo.menuItemId,
-          data: photoUrl,
-          mimeType: photo.mimeType,
-          isPrimary: photo.isPrimary,
-          createdAt: photo.createdAt.toISOString(),
-        });
+
+      const photoData = {
+        id: photo.id,
+        menuItemId: photo.menuItemId,
+        data: photoUrl,
+        mimeType: photo.mimeType,
+        isPrimary: photo.isPrimary,
+        createdAt:
+          photo.createdAt instanceof Date
+            ? photo.createdAt.toISOString()
+            : photo.createdAt,
+      };
+
+      photosByItem.get(photo.menuItemId)!.push(photoData);
+
+      if (photo.isPrimary && !photoMap.has(photo.menuItemId)) {
+        photoMap.set(photo.menuItemId, photoUrl);
       }
     });
 
-    // Get primary photo for backward compatibility
-    const photoMap = new Map<string, string>();
-    allPhotos.forEach((p) => {
-      if (p.isPrimary && !photoMap.has(p.menuItemId)) {
-        if (p.data && p.mimeType) {
-          const base64 = p.data.toString('base64');
-          photoMap.set(p.menuItemId, `data:${p.mimeType};base64,${base64}`);
-        }
+    // Group modifiers by item ID
+    const modifiersByItem = new Map<string, any[]>();
+    itemModifiers.forEach((im) => {
+      if (!im.group) return;
+      if (!modifiersByItem.has(im.menuItemId)) {
+        modifiersByItem.set(im.menuItemId, []);
       }
+
+      modifiersByItem.get(im.menuItemId)!.push({
+        ...im.group,
+        options: im.group.options || [],
+      });
     });
 
-    // Get modifier groups for items
-    const itemModifiers = await this.itemModifierRepo.find({
-      where: { menuItemId: In(itemIds) },
-    });
-    const groupIds = itemModifiers.map((im) => im.groupId);
-    const groups = await this.modifierGroupRepo.find({
-      where: { id: In(groupIds) },
-    });
-    const groupMap = new Map(groups.map((g) => [g.id, g]));
-
-    // Get options for groups
-    const options = await this.modifierOptionRepo.find({
-      where: { groupId: In(groupIds) },
-    });
-    const optionsByGroup = options.reduce(
-      (acc, opt) => {
-        if (!acc[opt.groupId]) acc[opt.groupId] = [];
-        acc[opt.groupId].push(opt);
-        return acc;
-      },
-      {} as Record<string, any[]>,
-    );
-
-    // Attach modifiers to items
+    // Attach modifiers and photos to items
     const itemsWithModifiers = items.map((item) => {
-      const itemMods = itemModifiers.filter((im) => im.menuItemId === item.id);
-      const modifierGroups = itemMods
-        .map((im) => {
-          const group = groupMap.get(im.groupId);
-          if (group) {
-            return {
-              ...group,
-              options: optionsByGroup[group.id] || [],
-            };
-          }
-          return null;
-        })
-        .filter(Boolean);
-
-      const photo = photoMap.get(item.id);
       const itemPhotos = photosByItem.get(item.id) || [];
-
-      let primaryPhotoUrl = photo;
-      if (!primaryPhotoUrl && itemPhotos.length > 0) {
-        primaryPhotoUrl = itemPhotos[0].data;
-      }
+      const primaryPhotoUrl =
+        photoMap.get(item.id) ||
+        (itemPhotos.length > 0 ? itemPhotos[0].data : null);
 
       return {
         ...item,
+        photo: primaryPhotoUrl,
         primaryPhotoUrl,
         photos: itemPhotos,
-        modifierGroups,
+        modifierGroups: modifiersByItem.get(item.id) || [],
         canOrder: item.status === MenuItemStatus.AVAILABLE,
       };
     });
 
-    return {
+    const finalResult = {
       categories,
       items: itemsWithModifiers,
       pagination: {
@@ -186,6 +200,68 @@ export class MenuService {
         total,
         totalPages: Math.ceil(total / limit),
       },
+    };
+
+    // Store in cache for 1 minute
+    await this.cacheManager.set(cacheKey, finalResult, 60000);
+
+    return finalResult;
+  }
+
+  async getMenuItemPhoto(photoId: string) {
+    return this.photoRepo.findOne({
+      where: { id: photoId },
+      select: ['id', 'data', 'mimeType'],
+    });
+  }
+
+  async getGuestMenuItem(itemId: string) {
+    const item = await this.itemRepo.findOne({
+      where: { id: itemId, isDeleted: false },
+      select: [
+        'id',
+        'name',
+        'price',
+        'description',
+        'status',
+        'isChefRecommended',
+        'categoryId',
+        'prepTimeMinutes',
+        'restaurantId',
+      ],
+    });
+
+    if (!item) return null;
+
+    const [photos, modifierGroups] = await Promise.all([
+      this.photoRepo.find({
+        where: { menuItemId: itemId },
+        order: { isPrimary: 'DESC', createdAt: 'ASC' },
+        select: ['id', 'mimeType', 'isPrimary'],
+      }),
+      this.itemModifierRepo.find({
+        where: { menuItemId: itemId },
+        relations: ['group', 'group.options'],
+      }),
+    ]);
+
+    const formattedPhotos = photos.map((p) => ({
+      ...p,
+      data: `/api/menu/items/${itemId}/photos/${p.id}`,
+    }));
+
+    const primaryPhoto =
+      formattedPhotos.find((p) => p.isPrimary) || formattedPhotos[0];
+
+    return {
+      ...item,
+      photos: formattedPhotos,
+      primaryPhotoUrl: primaryPhoto ? primaryPhoto.data : null,
+      modifierGroups: modifierGroups.map((mg) => ({
+        ...mg.group,
+        options: mg.group.options || [],
+      })),
+      canOrder: item.status === MenuItemStatus.AVAILABLE,
     };
   }
 }

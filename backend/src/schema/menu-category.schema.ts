@@ -2,6 +2,7 @@ import {
   Entity,
   PrimaryGeneratedColumn,
   Column,
+  Index,
   CreateDateColumn,
   UpdateDateColumn,
 } from 'typeorm';
@@ -12,6 +13,7 @@ export enum CategoryStatus {
 }
 
 @Entity()
+@Index(['restaurantId'])
 export class MenuCategory {
   @PrimaryGeneratedColumn('uuid')
   id: string;
