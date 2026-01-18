@@ -11,7 +11,7 @@ export class MenuItemPhotoService {
     private readonly itemRepo: Repository<MenuItem>,
     @InjectRepository(MenuItemPhoto)
     private readonly photoRepo: Repository<MenuItemPhoto>,
-  ) {}
+  ) { }
 
   async getPhoto(itemId: string, photoId: string) {
     const photo = await this.photoRepo.findOne({
@@ -45,12 +45,16 @@ export class MenuItemPhotoService {
       throw new NotFoundException('Menu item not found');
     }
 
+    const hasPrimary = await this.photoRepo.findOne({
+      where: { menuItemId: itemId, isPrimary: true },
+    });
+
     const photos = files.map((file: Express.Multer.File, index: number) =>
       this.photoRepo.create({
         menuItemId: itemId,
         data: file.buffer,
         mimeType: file.mimetype,
-        isPrimary: index === 0, // first = primary
+        isPrimary: !hasPrimary && index === 0,
       }),
     );
 
@@ -64,7 +68,22 @@ export class MenuItemPhotoService {
 
     if (!photo) throw new NotFoundException();
 
-    return this.photoRepo.remove(photo);
+    const wasPrimary = photo.isPrimary;
+    await this.photoRepo.remove(photo);
+
+    // If we deleted the primary photo, make another one primary
+    if (wasPrimary) {
+      const nextPhoto = await this.photoRepo.findOne({
+        where: { menuItemId: itemId },
+        order: { createdAt: 'ASC' },
+      });
+
+      if (nextPhoto) {
+        await this.photoRepo.update({ id: nextPhoto.id }, { isPrimary: true });
+      }
+    }
+
+    return { message: 'Photo removed' };
   }
 
   async setPrimaryPhoto(restaurantId: string, itemId: string, photoId: string) {
