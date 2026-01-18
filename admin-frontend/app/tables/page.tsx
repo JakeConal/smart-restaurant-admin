@@ -206,7 +206,6 @@ export default function TablesPage() {
     <DashboardLayout>
       <TopBar
         title="Table Layout"
-        subtitle="First Floor • Main Hall"
         onAddClick={() => setShowCreateModal(true)}
         showViewToggle
       />

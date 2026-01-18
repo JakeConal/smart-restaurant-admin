@@ -36,31 +36,6 @@ export const TopBar: React.FC<TopBarProps> = ({
       </div>
 
       <div className="flex items-center gap-3">
-        {showViewToggle && (
-          <div className="hidden md:flex bg-white px-1 py-1 rounded-2xl border border-slate-100 shadow-sm items-center">
-            <button
-              onClick={() => onViewChange?.("list")}
-              className={`px-5 py-2 rounded-xl font-bold text-sm transition-all ${
-                currentView === "list"
-                  ? "bg-slate-100 text-slate-800 shadow-inner"
-                  : "text-gray-400 hover:text-slate-800"
-              }`}
-            >
-              List View
-            </button>
-            <button
-              onClick={() => onViewChange?.("map")}
-              className={`px-5 py-2 rounded-xl font-bold text-sm transition-all ${
-                currentView === "map"
-                  ? "bg-slate-100 text-slate-800 shadow-inner"
-                  : "text-gray-400 hover:text-slate-800"
-              }`}
-            >
-              Map View
-            </button>
-          </div>
-        )}
-
         <button className="w-12 h-12 bg-white rounded-2xl border border-slate-100 shadow-sm flex items-center justify-center hover:bg-slate-50 text-slate-800 transition-all">
           <Bell className="w-5 h-5" />
         </button>
