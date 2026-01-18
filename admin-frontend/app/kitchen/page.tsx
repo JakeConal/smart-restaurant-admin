@@ -300,6 +300,7 @@ export default function KitchenPage() {
   const [wsConnected, setWsConnected] = useState(false);
   const [soundEnabled, setSoundEnabled] = useState(true);
   const unsubscribesRef = useRef<Map<string, () => void>>(new Map());
+  const updatingRef = useRef<Set<string>>(new Set());
   const soundRef = useRef<Howl | null>(null);
 
   // Auth check - only allow KITCHEN_STAFF and ADMIN roles
@@ -370,7 +371,22 @@ export default function KitchenPage() {
   const loadOrders = useCallback(async () => {
     try {
       const data = await getKitchenOrders();
-      setOrders(data);
+
+      setOrders((prevOrders) => {
+        const updating = updatingRef.current;
+
+        // Merge strategy:
+        // Use server version for all orders EXCEPT those currently being updated locally
+        return data.map((serverOrder) => {
+          if (updating.has(serverOrder.orderId)) {
+            const local = prevOrders.find(
+              (o) => o.orderId === serverOrder.orderId,
+            );
+            return local || serverOrder;
+          }
+          return serverOrder;
+        });
+      });
 
       // Subscribe to WebSocket updates for each order
       data.forEach((order) => {
@@ -407,6 +423,10 @@ export default function KitchenPage() {
         orderId,
         (data) => {
           console.log("[Kitchen] Received WebSocket update:", data);
+
+          if (updatingRef.current.has(orderId)) {
+            return;
+          }
 
           if (data.type === "order:progress" && data.order) {
             const updatedOrder = data.order;
@@ -480,6 +500,15 @@ export default function KitchenPage() {
 
     const handleOrderUpdate = (event: any) => {
       const { orderId, order, newStatus } = event.detail;
+
+      // Prevent UI snap-back if we are in the middle of a drag-drop update
+      if (updatingRef.current.has(orderId)) {
+        console.log(
+          `[Kitchen] Blocking WS update for order ${orderId} during API move`,
+        );
+        return;
+      }
+
       console.log("[Kitchen] Received order update event:", {
         orderId,
         newStatus,
@@ -576,6 +605,9 @@ export default function KitchenPage() {
       return;
     }
 
+    // Mark as updating to prevent polling/WS from overriding optimistic state
+    updatingRef.current.add(orderId);
+
     // Optimistically update UI
     const updatedOrder = { ...order };
     if (targetColumn === "received") {
@@ -614,9 +646,13 @@ export default function KitchenPage() {
       toast.error("Failed to update order status");
       // Revert optimistic update
       setOrders((prev) => prev.map((o) => (o.orderId === orderId ? order : o)));
+    } finally {
+      // Small delay before removing from updating set to allow server/WS to settle
+      setTimeout(() => {
+        updatingRef.current.delete(orderId);
+      }, 1000);
+      setDragOverColumn(null);
     }
-
-    setDragOverColumn(null);
   };
 
   const getOrderColumn = (order: Order): KitchenColumn | "hidden" => {
