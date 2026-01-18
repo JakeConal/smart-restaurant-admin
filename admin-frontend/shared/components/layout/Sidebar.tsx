@@ -2,7 +2,7 @@
 
 import React from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   LayoutGrid,
   Layers,
@@ -30,7 +30,13 @@ const menuItems = [
 
 export const Sidebar: React.FC = () => {
   const pathname = usePathname();
+  const router = useRouter();
   const { user, logout } = useAuth();
+
+  const handleLogout = () => {
+    logout();
+    router.push("/login");
+  };
 
   // Super Admin uses a different layout without sidebar
   if (user?.role?.toUpperCase() === "SUPER_ADMIN") {
@@ -66,14 +72,16 @@ export const Sidebar: React.FC = () => {
               <Link
                 key={item.href}
                 href={item.href}
-                className={`flex items-center gap-4 px-4 py-3.5 rounded-2xl transition-all group ${isActive
-                  ? "bg-slate-800 text-white shadow-lg shadow-slate-200"
-                  : "text-gray-500 hover:text-slate-800 hover:bg-slate-50"
-                  }`}
+                className={`flex items-center gap-4 px-4 py-3.5 rounded-2xl transition-all group ${
+                  isActive
+                    ? "bg-slate-800 text-white shadow-lg shadow-slate-200"
+                    : "text-gray-500 hover:text-slate-800 hover:bg-slate-50"
+                }`}
               >
                 <Icon
-                  className={`w-6 h-6 ${isActive ? "" : "group-hover:scale-110 transition-transform"
-                    }`}
+                  className={`w-6 h-6 ${
+                    isActive ? "" : "group-hover:scale-110 transition-transform"
+                  }`}
                 />
                 <span
                   className={`font-${isActive ? "bold" : "semibold"} hidden lg:block`}
@@ -87,41 +95,45 @@ export const Sidebar: React.FC = () => {
         {/* Waiter Orders - visible to WAITER and ADMIN roles */}
         {(user?.role?.toUpperCase() === "WAITER" ||
           user?.role?.toUpperCase() === "ADMIN") && (
-            <Link
-              href="/waiter/orders"
-              className={`flex items-center gap-4 px-4 py-3.5 rounded-2xl transition-all group ${pathname === "/waiter/orders"
+          <Link
+            href="/waiter/orders"
+            className={`flex items-center gap-4 px-4 py-3.5 rounded-2xl transition-all group ${
+              pathname === "/waiter/orders"
                 ? "bg-slate-800 text-white shadow-lg shadow-slate-200"
                 : "text-gray-500 hover:text-slate-800 hover:bg-slate-50"
-                }`}
-            >
-              <ClipboardList
-                className={`w-6 h-6 ${pathname === "/waiter/orders"
+            }`}
+          >
+            <ClipboardList
+              className={`w-6 h-6 ${
+                pathname === "/waiter/orders"
                   ? ""
                   : "group-hover:scale-110 transition-transform"
-                  }`}
-              />
-              <span
-                className={`font-${pathname === "/waiter/orders" ? "bold" : "semibold"} hidden lg:block`}
-              >
-                Waiter Orders
-              </span>
-            </Link>
-          )}
+              }`}
+            />
+            <span
+              className={`font-${pathname === "/waiter/orders" ? "bold" : "semibold"} hidden lg:block`}
+            >
+              Waiter Orders
+            </span>
+          </Link>
+        )}
 
         {/* Waiter Tables - visible to WAITER and ADMIN roles */}
         {user?.role?.toUpperCase() === "WAITER" && (
           <Link
             href="/waiter/tables"
-            className={`flex items-center gap-4 px-4 py-3.5 rounded-2xl transition-all group ${pathname === "/waiter/tables"
-              ? "bg-slate-800 text-white shadow-lg shadow-slate-200"
-              : "text-gray-500 hover:text-slate-800 hover:bg-slate-50"
-              }`}
+            className={`flex items-center gap-4 px-4 py-3.5 rounded-2xl transition-all group ${
+              pathname === "/waiter/tables"
+                ? "bg-slate-800 text-white shadow-lg shadow-slate-200"
+                : "text-gray-500 hover:text-slate-800 hover:bg-slate-50"
+            }`}
           >
             <Table2
-              className={`w-6 h-6 ${pathname === "/waiter/tables"
-                ? ""
-                : "group-hover:scale-110 transition-transform"
-                }`}
+              className={`w-6 h-6 ${
+                pathname === "/waiter/tables"
+                  ? ""
+                  : "group-hover:scale-110 transition-transform"
+              }`}
             />
             <span
               className={`font-${pathname === "/waiter/tables" ? "bold" : "semibold"} hidden lg:block`}
@@ -135,16 +147,18 @@ export const Sidebar: React.FC = () => {
         {user?.role?.toUpperCase() === "ADMIN" && (
           <Link
             href="/kitchen"
-            className={`flex items-center gap-4 px-4 py-3.5 rounded-2xl transition-all group ${pathname === "/kitchen"
-              ? "bg-slate-800 text-white shadow-lg shadow-slate-200"
-              : "text-gray-500 hover:text-slate-800 hover:bg-slate-50"
-              }`}
+            className={`flex items-center gap-4 px-4 py-3.5 rounded-2xl transition-all group ${
+              pathname === "/kitchen"
+                ? "bg-slate-800 text-white shadow-lg shadow-slate-200"
+                : "text-gray-500 hover:text-slate-800 hover:bg-slate-50"
+            }`}
           >
             <Soup
-              className={`w-6 h-6 ${pathname === "/kitchen"
-                ? ""
-                : "group-hover:scale-110 transition-transform"
-                }`}
+              className={`w-6 h-6 ${
+                pathname === "/kitchen"
+                  ? ""
+                  : "group-hover:scale-110 transition-transform"
+              }`}
             />
             <span
               className={`font-${pathname === "/kitchen" ? "bold" : "semibold"} hidden lg:block`}
@@ -159,7 +173,7 @@ export const Sidebar: React.FC = () => {
       <div className="mt-auto pt-4 border-t border-slate-50 flex flex-col items-center lg:items-stretch shrink-0">
         {/* Logout Button */}
         <button
-          onClick={logout}
+          onClick={handleLogout}
           className="flex items-center gap-4 px-4 py-3.5 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-2xl transition-all group"
         >
           <LogOut className="w-6 h-6 group-hover:scale-110 transition-transform" />

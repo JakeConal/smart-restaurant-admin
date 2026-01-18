@@ -1,15 +1,24 @@
-'use client';
+"use client";
 
-import React from 'react';
-import { Shield, LogOut } from 'lucide-react';
-import { useAuth } from '@/shared/components/auth/AuthContext';
+import React from "react";
+import { Shield, LogOut } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/shared/components/auth/AuthContext";
 
 export interface SuperAdminLayoutProps {
   children: React.ReactNode;
 }
 
-export const SuperAdminLayout: React.FC<SuperAdminLayoutProps> = ({ children }) => {
+export const SuperAdminLayout: React.FC<SuperAdminLayoutProps> = ({
+  children,
+}) => {
+  const router = useRouter();
   const { user, logout } = useAuth();
+
+  const handleLogout = () => {
+    logout();
+    router.push("/login");
+  };
 
   return (
     <div className="min-h-screen bg-ivory-50">
@@ -34,7 +43,7 @@ export const SuperAdminLayout: React.FC<SuperAdminLayoutProps> = ({ children }) 
 
             {/* Logout */}
             <button
-              onClick={logout}
+              onClick={handleLogout}
               className="flex items-center gap-2 px-4 py-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-xl transition-all font-semibold"
             >
               <LogOut className="w-5 h-5" />

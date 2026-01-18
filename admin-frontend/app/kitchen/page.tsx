@@ -12,6 +12,7 @@ import {
   Volume2,
   VolumeX,
 } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { DashboardLayout } from "../../shared/components/layout";
 import { useToast } from "../../shared/components/ui/Toast";
 import { useAuth } from "../../shared/components/auth/AuthContext";
@@ -288,7 +289,8 @@ function KitchenColumnComponent({
 
 export default function KitchenPage() {
   const toast = useToast();
-  const { user } = useAuth();
+  const router = useRouter();
+  const { user, isLoading: authLoading } = useAuth();
   const [orders, setOrders] = useState<Order[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [draggedOrderId, setDraggedOrderId] = useState<string | null>(null);
@@ -299,6 +301,21 @@ export default function KitchenPage() {
   const [soundEnabled, setSoundEnabled] = useState(true);
   const unsubscribesRef = useRef<Map<string, () => void>>(new Map());
   const soundRef = useRef<Howl | null>(null);
+
+  // Auth check - only allow KITCHEN_STAFF and ADMIN roles
+  useEffect(() => {
+    if (!authLoading && !user) {
+      router.push("/login");
+    } else if (
+      !authLoading &&
+      user?.role?.toUpperCase() !== "ADMIN" &&
+      user?.role?.toUpperCase() !== "KITCHEN_STAFF" &&
+      user?.role?.toUpperCase() !== "KITCHEN"
+    ) {
+      router.push("/");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, authLoading]);
 
   // Initialize sound on mount
   useEffect(() => {
