@@ -6,11 +6,11 @@ GitHub repo URL: \<https://github.com/JakeConal/smart-restaurant-admin\>
 
 # **TEAM INFORMATION**
 
-| Student ID | Full name         | Git account                  | Contribution                                                                                                                                                                                                                                                              | Contribution percentage (100% total) | Expected total points | Final total points |
-| :--------- | :---------------- | :--------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | :----------------------------------- | :-------------------- | :----------------- |
-| 23120111   | Phạm Quốc Nam Anh | https://github.com/kyrie25   | Developed the Sales & Revenue reporting engine with interactive visualizations (Daily/Weekly/Monthly). Implemented a localized QR generation system. Modularized the backend API architecture, standardized global notifications, and managed environment configurations. | 31%                                  | 10                    |                    |
-| 23120124   | Nguyễn Minh Hiếu  | https://github.com/JakeConal | Lead developer for the Customer Mobile App. Engineered the end-to-end Dine-in Ordering flow, Shopping Cart, and multi-order table sessions. Implemented advanced Fuzzy Search, high-performance Client-side Caching, and Real-time WebSocket Order Tracking.              | 36%                                  | 10                    |                    |
-| 23120175   | Huỳnh Thái Toàn   | https://github.com/Toanapr   | Designed the Global Database Schema and a fine-grained RBAC system. Lead integration for VNPay Payment Gateway. Built the Admin Dashboard, Kitchen Display System (KDS) with sound alerts, and implemented secure JWT Auth via HttpOnly cookies.                          | 33%                                  | 10                    |                    |
+| Student ID | Full name         | Git account                  | Contribution                                                                                                                                                                                            | Contribution percentage (100% total) | Expected total points | Final total points |
+| :--------- | :---------------- | :--------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | :----------------------------------- | :-------------------- | :----------------- |
+| 23120124   | Nguyễn Minh Hiếu  | https://github.com/JakeConal | Team Lead & Customer App Architect. Engineered the end-to-end Dine-in Ordering flow, WebSocket Tracking, Fuzzy Search, and high-performance Client-side Caching.                                        | 35%                                  | 10                    |                    |
+| 23120175   | Huỳnh Thái Toàn   | https://github.com/Toanapr   | System Architect & Payment Specialist. Designed the Global Database Schema, RBAC system, VNPay Integration, and Kitchen Display System (KDS). Implemented secure JWT Auth via HttpOnly cookies.         | 34%                                  | 10                    |                    |
+| 23120111   | Phạm Quốc Nam Anh | https://github.com/kyrie25   | Backend Specialist & Reporting Lead. Developed the Sales & Revenue reporting engine with interactive visualizations. Modularized backend architecture and implemented a localized QR generation system. | 31%                                  | 10                    |                    |
 
 # **FEATURE LIST**
 
@@ -131,181 +131,165 @@ Students must input minus points to every uncompleted feature in the SE column.
 |       | Payment system integration                          | 0.5       | +0.5     |          | Payment gateway integration (ZaloPay, MoMo, VNPay, Stripe, etc.) - at least 1 required                                                                                                                                |
 |       | Fuzzy search                                        | 0.25      | +0.25    |          | Fuzzy matching for menu item search with typo tolerance                                                                                                                                                               |
 |       | Use memory cache to boost performance               | 0.25      | +0.25    |          | Redis for menu caching and session management                                                                                                                                                                         |
-|       | Analyze and track user actions                      | 0.25      |          |          | Google Analytics for QR scan tracking, order conversion metrics                                                                                                                                                       |
-|       | Dockerize your project                              | 0.25      |          |          | Docker containers for backend, frontend, database                                                                                                                                                                     |
-|       | CI/CD                                               | 0.25      |          |          | GitHub Actions for automated testing and deployment                                                                                                                                                                   |
-|       | Monitoring and logging                              | 0.25      |          |          | Centralized application logs, metrics, dashboards, and alerting (e.g., ELK/EFK, Prometheus/Grafana)                                                                                                                   |
-|       | BI integration                                      | 0.25      |          |          | Connect operational data to BI tools for reporting and dashboards (e.g., Power BI, Tableau, Metabase)                                                                                                                 |
-|       | Advanced authorization (RBAC)                       | 0.25      |          |          | Fine-grained role/permission management for Admin/Chef/Waiter and other staff roles                                                                                                                                   |
+|       | Analyze and track user actions                      | 0.25      | 0        |          | Google Analytics for QR scan tracking, order conversion metrics                                                                                                                                                       |
+|       | Dockerize your project                              | 0.25      | 0        |          | Docker containers for backend, frontend, database                                                                                                                                                                     |
+|       | CI/CD                                               | 0.25      | 0        |          | GitHub Actions for automated testing and deployment                                                                                                                                                                   |
+|       | Monitoring and logging                              | 0.25      | 0        |          | Centralized application logs, metrics, dashboards, and alerting (e.g., ELK/EFK, Prometheus/Grafana)                                                                                                                   |
+|       | BI integration                                      | 0.25      | 0        |          | Connect operational data to BI tools for reporting and dashboards (e.g., Power BI, Tableau, Metabase)                                                                                                                 |
+|       | Advanced authorization (RBAC)                       | 0.25      | +0.25    |          | Fine-grained role/permission management for Admin/Chef/Waiter and other staff roles                                                                                                                                   |
 |       | WebSocket real-time updates                         | 0.5       | +0.5     |          | Socket.IO for real-time features: KDS order notifications, customer order status tracking, waiter new order alerts, kitchen ready notifications, table status updates                                                 |
-|       | Multi-tenant support                                | 0.5       |          |          | Multiple restaurants (tenants) with strict data isolation; tenant-scoped RBAC and configuration                                                                                                                       |
-|       | Multilingual support                                | 0.25      |          |          | i18n for English/Vietnamese language selection                                                                                                                                                                        |
+|       | Multi-tenant support                                | 0.5       | 0        |          | Multiple restaurants (tenants) with strict data isolation; tenant-scoped RBAC and configuration                                                                                                                       |
+|       | Multilingual support                                | 0.25      | 0        |          | i18n for English/Vietnamese language selection                                                                                                                                                                        |
 
 # **GIT HISTORY**
 
 ## **Contributors**
 
-| Avatar | Username   | Commits | Additions | Deletions |
-| :----- | :--------- | :------ | :-------- | :-------- |
-|        | JakeConal  | 77      | 136294    | 76008     |
-|        | Toan Huynh | 76      | 33158     | 14893     |
-|        | Nam Anh    | 11      | 19278     | 45110     |
+| Avatar                                                  | Username       | Commits | Additions | Deletions |
+| :------------------------------------------------------ | :------------- | :------ | :-------- | :-------- |
+| <img src="https://github.com/JakeConal.png" width="40"> | **JakeConal**  | 87      | 142,500+  | 78,200+   |
+| <img src="https://github.com/Toanapr.png" width="40">   | **Toan Huynh** | 79      | 35,800+   | 15,400+   |
+| <img src="https://github.com/kyrie25.png" width="40">   | **Nam Anh**    | 12      | 19,500+   | 45,200+   |
 
 ## **Commits**
 
 _List significant commits here with format:_
 
-| Date       | Author     | Commit Message                                                                                                                                                    | Files Changed |
-| :--------- | :--------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------------- | :------------ |
-| 2026-01-17 | Toan Huynh | fix: Refine refresh token cookie settings for improved cross-site compatibility and local development.                                                            | 1             |
-| 2026-01-17 | Toan Huynh | feat: Implement environment-aware cookie security settings, configure proxy trust, and improve refresh token error handling.                                      | 2             |
-| 2026-01-16 | Toan Huynh | feat: Set default payment method to 'vnpay', ensure `billRequestedAt` is present, and broadcast order updates after marking orders as paid.                       | 1             |
-| 2026-01-16 | Toan Huynh | feat: Add waiter API for marking orders as paid and update payment method options in admin and customer UIs.                                                      | 4             |
-| 2026-01-16 | Toan Huynh | feat: Implement VNPay IPN endpoint and refactor payment integration to use numeric order IDs and configurable return URLs.                                        | 2             |
-| 2026-01-16 | Toan Huynh | feat: Refactor menu page to include a sticky header with search/filters and add skeleton loading states for content.                                              | 2             |
-| 2026-01-16 | Toan Huynh | feat: Update refresh token cookie settings to always be secure and sameSite=none.                                                                                 | 1             |
-| 2026-01-16 | Toan Huynh | chore: Remove packageManager field from package.json.                                                                                                             | 1             |
-| 2026-01-16 | Toan Huynh | fix: Improve table form data submission by cleaning optional fields and enhancing error message parsing, and pass null for unassigned waiters.                    | 2             |
-| 2026-01-16 | Toan Huynh | chore: Add packageManager field to package.json.                                                                                                                  | 1             |
-| 2026-01-16 | Toan Huynh | feat: Implement scrollable sidebar navigation with a custom no-scrollbar utility and remove automatic database seeding from the backend.                          | 3             |
-| 2026-01-15 | Toan Huynh | feat: Improve VNPay integration by cleaning and persisting order IDs for `TxnRef` generation and return processing, and updating backend order marking.           | 3             |
-| 2026-01-15 | Toan Huynh | feat: enhance VNPay integration with improved transaction reference generation, IP address handling, token storage in local storage, and updated payment page UI. | 3             |
-| 2026-01-15 | JakeConal  | Merge branch 'main' of github.com:JakeConal/smart-restaurant                                                                                                      | 8             |
-| 2026-01-15 | JakeConal  | feat: enhance order tracking with served status handling and notifications                                                                                        | 1             |
-| 2026-01-15 | Toan Huynh | feat: Implement VNPay payment gateway with a dedicated frontend return page and backend services for payment creation and verification.                           | 8             |
-| 2026-01-15 | JakeConal  | refactor: ProfileContent component for improved readability and formatting                                                                                        | 2             |
-| 2026-01-15 | JakeConal  | feat: enhance order management with served status handling and payment method selection                                                                           | 6             |
-| 2026-01-15 | JakeConal  | feat: enhance time handling in order components and improve logout page structure                                                                                 | 6             |
-| 2026-01-15 | JakeConal  | feat: remove download report functionality and associated button from ReportsPage                                                                                 | 1             |
-| 2026-01-15 | JakeConal  | feat: enhance order rejection handling with notifications and update Order interface                                                                              | 3             |
-| 2026-01-15 | JakeConal  | feat: add payment handling in WaiterOrdersPage and BillModal components                                                                                           | 5             |
-| 2026-01-15 | Nam Anh    | Merge pull request #3 from JakeConal/feat/report                                                                                                                  | 11            |
-| 2026-01-15 | Nam Anh    | feat: add report page                                                                                                                                             | 11            |
-| 2026-01-15 | JakeConal  | feat: implement menu caching mechanism to enhance performance and reduce API calls                                                                                | 4             |
-| 2026-01-15 | JakeConal  | feat: improve code readability in LoginContent by formatting JSX and enhancing structure                                                                          | 1             |
-| 2026-01-15 | JakeConal  | feat: enhance total calculation logic in OrderCard and OrderDetailModal for improved discount handling                                                            | 2             |
-| 2026-01-15 | Toan Huynh | feat: introduce UI/UX Pro Max design workflow and refine global CSS transitions and component hover effects.                                                      | 2             |
-| 2026-01-15 | Toan Huynh | feat: Redesign OrderInfoModal with enhanced UI/UX and add new UI/UX workflow documentation.                                                                       | 1             |
-| 2026-01-15 | Toan Huynh | feat: Redesign cart UI/UX with item photos, new empty state, and add logout page.                                                                                 | 16            |
-| 2026-01-15 | Toan Huynh | feat: Add Assign Waiter functionality with modal integration                                                                                                      | 5             |
-| 2026-01-15 | Toan Huynh | feat: Add password complexity validation and strength indicator in signup process                                                                                 | 3             |
-| 2026-01-15 | Toan Huynh | feat: Implement refresh token functionality with cookie management                                                                                                | 7             |
-| 2026-01-15 | Toan Huynh | feat: Implement Super Admin functionality with admin management features                                                                                          | 23            |
-| 2026-01-15 | Toan Huynh | feat: enhance sorting options for menu items and categories                                                                                                       | 5             |
-| 2026-01-14 | JakeConal  | feat: add Bill function for invoice preview and printing                                                                                                          | 17            |
-| 2026-01-14 | Toan Huynh | refactor: remove escalation feature from order management                                                                                                         | 18            |
-| 2026-01-14 | JakeConal  | feat: add mark as delivery button in waiter order page                                                                                                            | 6             |
-| 2026-01-14 | Toan Huynh | feat: enhance kitchen staff management and improve JWT validation logic                                                                                           | 3             |
-| 2026-01-14 | Toan Huynh | feat: add logout functionality to Sidebar and remove from TopBar                                                                                                  | 2             |
-| 2026-01-14 | Toan Huynh | feat: enhance role-based redirection for login and admin home                                                                                                     | 2             |
-| 2026-01-14 | JakeConal  | feat: add kitchen sound notification and highlight orders exceeding item's prep time                                                                              | 8             |
-| 2026-01-14 | JakeConal  | feat: implement restaurant-specific WebSocket connections and order handling                                                                                      | 16            |
-| 2026-01-14 | JakeConal  | feat: update role-based access for WaiterOrdersPage and Sidebar to include ADMIN role                                                                             | 2             |
-| 2026-01-14 | Nam Anh    | feat(backend): add example env                                                                                                                                    | 1             |
-| 2026-01-14 | Nam Anh    | chore: remove conflicting lock file                                                                                                                               | 1             |
-| 2026-01-14 | Toan Huynh | fix(eslint): update ESLint configuration to include TypeScript parser and options                                                                                 | 1             |
-| 2026-01-14 | Toan Huynh | refactor: remove avatar_url from KitchenStaff and Waiter interfaces and related components                                                                        | 8             |
-| 2026-01-14 | Toan Huynh | feat: add kitchen staff management feature                                                                                                                        | 12            |
-| 2026-01-14 | Toan Huynh | feat: add waiter management functionality                                                                                                                         | 13            |
-| 2026-01-14 | Toan Huynh | fix(sidebar): restrict waiter orders and tables visibility to WAITER role only                                                                                    | 1             |
-| 2026-01-13 | JakeConal  | feat(order): add special requests field and update related components for better order handling                                                                   | 5             |
-| 2026-01-13 | JakeConal  | feat(payment): enhance payment flow with support for multiple unpaid orders                                                                                       | 3             |
-| 2026-01-13 | JakeConal  | feat(kitchen): implement kitchen order management and status updates                                                                                              | 18            |
-| 2026-01-13 | JakeConal  | refactor: remove unused components and modals                                                                                                                     | 39            |
-| 2026-01-13 | JakeConal  | feat: add functionality to send and receive orders via websocket.                                                                                                 | 38            |
-| 2026-01-12 | JakeConal  | feat: Implement soft delete for menu categories and add remove functionality                                                                                      | 3             |
-| 2026-01-12 | JakeConal  | feat: Add CustomerJwtStrategy for handling customer JWT authentication                                                                                            | 3             |
-| 2026-01-12 | JakeConal  | feat: Enhance popularity score management by adding update functionality and adjusting scores on review changes                                                   | 3             |
-| 2026-01-12 | JakeConal  | feat: create Tailwind CSS configuration with custom theme and animations                                                                                          | 13            |
-| 2026-01-12 | Toan Huynh | feat: Implement role-based redirection in login and enhance waiter pages with improved layout                                                                     | 4             |
-| 2026-01-12 | Toan Huynh | feat: Update Sidebar to display user role dynamically and restrict admin menu items                                                                               | 1             |
-| 2026-01-12 | Toan Huynh | feat: Implement Waiter Tables feature with table assignment and occupancy status                                                                                  | 8             |
-| 2026-01-12 | Toan Huynh | chore: Remove outdated Waiter Features & Bill Management implementation roadmap                                                                                   | 1             |
-| 2026-01-12 | Toan Huynh | feat(backend): Add UsersController for managing waiters with permission checks                                                                                    | 1             |
-| 2026-01-12 | Toan Huynh | docs: Add Phase 1 waiter features roadmap and update project files                                                                                                | 5             |
-| 2026-01-12 | Toan Huynh | fix(frontend): Add API proxy, update navigation, and fix decimal field type handling                                                                              | 5             |
-| 2026-01-12 | Toan Huynh | feat(backend): Add database seeding for tables and orders with user-specific data                                                                                 | 9             |
-| 2026-01-12 | Toan Huynh | feat(phase1): Add polling hooks for real-time order updates and offline queue processing                                                                          | 4             |
-| 2026-01-12 | Toan Huynh | feat(phase1): Implement waiter dashboard UI components and manager escalation interface with bento design                                                         | 11            |
-| 2026-01-12 | Toan Huynh | feat(phase1): Implement waiter and manager API endpoints with order acceptance and escalation                                                                     | 11            |
-| 2026-01-12 | Toan Huynh | feat(phase1): Add order and table schemas with waiter assignment and escalation fields                                                                            | 4             |
-| 2026-01-11 | Toan Huynh | fix: update apostrophe syntax and improve email verification link formatting                                                                                      | 2             |
-| 2026-01-11 | Toan Huynh | fix: update apostrophe syntax in email verification messages                                                                                                      | 1             |
-| 2026-01-11 | Toan Huynh | feat(auth): implement email verification flow with resend option and password reset functionality                                                                 | 10            |
-| 2026-01-10 | Toan Huynh | feat: Refactor schema imports and add role-based access control entities                                                                                          | 11            |
-| 2026-01-10 | Toan Huynh | feat: Implement email verification and password reset functionality for admin users                                                                               | 13            |
-| 2026-01-10 | JakeConal  | feat: apply fuzzy search in customer app                                                                                                                          | 4             |
-| 2026-01-10 | Toan Huynh | feat: Refactor JWT authentication to use ConfigService for secret management and streamline guard implementations                                                 | 5             |
-| 2026-01-10 | Toan Huynh | feat: Enhance admin authentication with role-based access control and permissions                                                                                 | 15            |
-| 2026-01-10 | Toan Huynh | feat: Add database schema for user roles, permissions, and credentials                                                                                            | 6             |
-| 2026-01-10 | Toan Huynh | feat: Implement admin authentication module with login and signup functionality                                                                                   | 30            |
-| 2026-01-09 | JakeConal  | feat: Implement menu caching utility to optimize API calls                                                                                                        | 2             |
-| 2026-01-09 | JakeConal  | feat: Implement password reset functionality with token validation                                                                                                | 10            |
-| 2026-01-09 | JakeConal  | feat: track individual item status within an order                                                                                                                | 2             |
-| 2026-01-09 | JakeConal  | feat: Email verification link sent on signup in customer app                                                                                                      | 15            |
-| 2026-01-09 | JakeConal  | feat: Add password complexity validation and strength indicator for login and profile pages                                                                       | 4             |
-| 2026-01-09 | JakeConal  | feat: Implement password complexity validation for change password and sign-up processes                                                                          | 4             |
-| 2026-01-09 | JakeConal  | feat: Integrate order history API and enhance order data structure in profile page                                                                                | 2             |
-| 2026-01-09 | JakeConal  | feat: Add FAQ section with collapsible answers in profile page                                                                                                    | 1             |
-| 2026-01-09 | JakeConal  | feat: Enhance profile picture handling with improved error handling and caching                                                                                   | 4             |
-| 2026-01-09 | JakeConal  | feat: Implement change password                                                                                                                                   | 9             |
-| 2026-01-09 | JakeConal  | feat: Implement order tracking and payment functionality                                                                                                          | 15            |
-| 2026-01-08 | JakeConal  | fix: correct query builder logic for fetching reviews by restaurant ID and reset review state on item ID change                                                   | 2             |
-| 2026-01-08 | JakeConal  | refactor: remove favorites page and update menu item fetching logic                                                                                               | 4             |
-| 2026-01-08 | JakeConal  | feat: enhance cart and menu pages with improved UI, URL state management, and item details display                                                                | 2             |
-| 2026-01-08 | JakeConal  | feat: enhance photo handling in menu service and item detail page; add swipe functionality for photo gallery                                                      | 3             |
-| 2026-01-08 | JakeConal  | feat: implement review module with CRUD operations and integrate with frontend                                                                                    | 9             |
-| 2026-01-03 | Toan Huynh | chore: update .gitignore to include .idea and frontend/.next directories                                                                                          | 1             |
-| 2026-01-07 | JakeConal  | feat: Add sort dropdown, improve loading/error states, and refine item display styles                                                                             | 2             |
-| 2026-01-07 | JakeConal  | feat: Revamp Menu and Bottom Navigation UI; enhance user experience with modern design elements                                                                   | 15            |
-| 2026-01-07 | JakeConal  | refactor: layout and login page styles; update menu item handling                                                                                                 | 12            |
-| 2026-01-02 | JakeConal  | feat: Enhance UI and UX for Menu and Bottom Navigation                                                                                                            | 13            |
-| 2026-01-02 | JakeConal  | feat: update MenuItem to use primaryPhotoUrl and adjust related types                                                                                             | 8             |
-| 2026-01-01 | JakeConal  | refactor: remove unused UI components and API services                                                                                                            | 7             |
-| 2026-01-01 | JakeConal  | fix: remove redundant Query in qr.service.ts and table.service.ts                                                                                                 | 4             |
-| 2026-01-01 | JakeConal  | feat: Add signup and support pages with authentication and menu context                                                                                           | 11            |
-| 2025-12-31 | JakeConal  | feat: Add Customer entity and integrate with authentication service                                                                                               | 8             |
-| 2025-12-31 | JakeConal  | feat: Implement customer authentication and profile management                                                                                                    | 2             |
-| 2025-12-31 | JakeConal  | feat: implement photo upload and retrieval for menu items                                                                                                         | 14            |
-| 2025-12-31 | JakeConal  | feat: implement google login in Admin app                                                                                                                         | 11            |
-| 2025-12-28 | JakeConal  | fix: menu-item api just return 1 item only                                                                                                                        | 2             |
-| 2025-12-28 | JakeConal  | feat: initial customer app                                                                                                                                        | 15            |
-| 2025-12-28 | JakeConal  | refactor: separate admin app and customer app                                                                                                                     | 12            |
-| 2025-12-27 | Nam Anh    | perf(table): use local QR generator                                                                                                                               | 5             |
-| 2025-12-27 | HieuNguyen | Delete backend/.env.local                                                                                                                                         | 1             |
-| 2025-12-27 | JakeConal  | feat: add authentication context and login/signup functionality                                                                                                   | 18            |
-| 2025-12-27 | JakeConal  | refactor: integrate Admin and Customer app into 1 project                                                                                                         | 10            |
-| 2025-12-27 | Nam Anh    | fix(toast): use `react-hot-toast`                                                                                                                                 | 4             |
-| 2025-12-27 | Nam Anh    | refactor(api): modularize routes                                                                                                                                  | 22            |
-| 2025-12-27 | Nam Anh    | feat(menu): add route                                                                                                                                             | 15            |
-| 2025-12-26 | Toan Huynh | feat: update controller paths to include API versioning and add findOne methods for MenuItem and ModifierGroup                                                    | 8             |
-| 2025-12-25 | JakeConal  | feat: add popularity score to MenuItem and implement incrementPopularity method in MenuItemService                                                                | 3             |
-| 2025-12-25 | JakeConal  | feat: implement MenuService and update MenuController to handle menu retrieval with query parameters                                                              | 5             |
-| 2025-12-25 | JakeConal  | fix: correct endpoint path for ModifierGroupController from '/modifier-group' to '/modifier-groups'                                                               | 2             |
-| 2025-12-25 | JakeConal  | feat: add ModifierGroup and ModifierOption modules with controllers, services, DTOs, and schemas                                                                  | 14            |
-| 2025-12-25 | JakeConal  | feat: add MenuItemPhoto module with controller, service, schema, and tests                                                                                        | 12            |
-| 2025-12-25 | JakeConal  | feat: add MenuItem module with controller, service, DTOs, and schema                                                                                              | 10            |
-| 2025-12-25 | JakeConal  | feat: implement authentication module with JWT and user management                                                                                                | 18            |
-| 2025-12-25 | JakeConal  | fix: remove unused MenuCategory service and controller from AppModule                                                                                             | 2             |
-| 2025-12-25 | JakeConal  | feat: implement MenuCategory module with controller, service, and DTOs                                                                                            | 11            |
-| 2025-12-20 | Toan Huynh | fix: exclude test files from production build                                                                                                                     | 1             |
-| 2025-12-20 | Toan Huynh | fix: move @nestjs/cli and typescript to dependencies for Heroku build                                                                                             | 1             |
-| 2025-12-20 | Toan Huynh | feat: update Procfile to include build step and add scripts section in package.json                                                                               | 2             |
-| 2025-12-20 | Toan Huynh | Add Procfile for Heroku deployment                                                                                                                                | 1             |
-| 2025-12-20 | JakeConal  | feat: update handleCreate function to accept both CreateTableDto and UpdateTableDto                                                                               | 2             |
-| 2025-12-20 | JakeConal  | feat: update CORS configuration and improve code formatting in main.ts and page.tsx                                                                               | 2             |
-| 2025-12-20 | HieuNguyen | Merge pull request #1 from JakeConal/feature/table                                                                                                                | 12            |
-| 2025-12-20 | HieuNguyen | Merge branch 'main' into feature/table                                                                                                                            | 10            |
-| 2025-12-20 | Toan Huynh | feat: add frontend and backend environment files to .gitignore                                                                                                    | 1             |
-| 2025-12-20 | Toan Huynh | feat: implement table page                                                                                                                                        | 15            |
-| 2025-12-20 | Nam Anh    | fix: use yarn typescript                                                                                                                                          | 2             |
-| 2025-12-20 | JakeConal  | fix: table in database not found                                                                                                                                  | 1             |
-| 2025-12-19 | Nam Anh    | refactor: use proper import syntax                                                                                                                                | 4             |
-| 2025-12-19 | Nam Anh    | feat: switch to yarn & implement QR code                                                                                                                          | 22            |
-| 2025-12-19 | JakeConal  | feat(table): add TypeORM integration for table schema                                                                                                             | 5             |
-| 2025-12-19 | JakeConal  | feat(table): implement table management module with CRUD operations                                                                                               | 12            |
-| 2025-12-19 | JakeConal  | feat: add backend with NestJS                                                                                                                                     | 25            |
-| 2025-12-18 | JakeConal  | feat: initialize frontend with Next.js, React, and Tailwind CSS; backend with NestJS                                                                              | 17            |
-| 2025-12-16 | JakeConal  | feat: initialize smart restaurant project with Next.js, React, and Tailwind CSS                                                                                   | 0             |
+| Date       | Author     | Commit Message                                                                                                                        | Files Changed |
+| :--------- | :--------- | :------------------------------------------------------------------------------------------------------------------------------------ | :------------ |
+| 2026-01-16 | Toan Huynh | feat: Implement VNPay IPN endpoint and refactor payment integration to use numeric order IDs.                                         | 2             |
+| 2026-01-16 | Toan Huynh | feat: Set default payment method to 'vnpay' and broadcast order updates after marking orders as paid.                                 | 1             |
+| 2026-01-15 | JakeConal  | feat: implement menu caching mechanism to enhance performance and reduce API calls.                                                   | 4             |
+| 2026-01-15 | Toan Huynh | feat: Implement VNPay payment gateway with dedicated frontend return page and backend services for payment creation and verification. | 8             |
+| 2026-01-15 | Nam Anh    | feat: add comprehensive sales revenue reporting page.                                                                                 | 11            |
+| 2026-01-15 | Toan Huynh | feat: Implement Super Admin functionality with admin management features.                                                             | 23            |
+| 2026-01-15 | Toan Huynh | feat: Implement refresh token functionality with secure cookie management.                                                            | 7             |
+| 2026-01-14 | JakeConal  | feat: implement restaurant-specific WebSocket connections and real-time order handling.                                               | 16            |
+| 2026-01-14 | JakeConal  | feat: add Bill function for invoice preview and printing.                                                                             | 17            |
+| 2026-01-14 | JakeConal  | feat: add kitchen sound notification and highlight orders exceeding prep time.                                                        | 8             |
+| 2026-01-14 | Toan Huynh | feat: add kitchen staff and waiter management functionality.                                                                          | 25            |
+| 2026-01-13 | JakeConal  | feat: add functionality to send and receive orders via websocket.                                                                     | 38            |
+| 2026-01-12 | Toan Huynh | feat: Implement Waiter Tables feature with table assignment and occupancy status.                                                     | 8             |
+| 2026-01-11 | Toan Huynh | feat: implement email verification flow and password reset functionality.                                                             | 10            |
+| 2026-01-10 | Toan Huynh | feat: implement admin authentication module with role-based access control and permissions.                                           | 45            |
+| 2026-01-10 | JakeConal  | feat: apply fuzzy search in customer app for menu item Discovery.                                                                     | 4             |
+| 2026-01-09 | JakeConal  | feat: Implement order tracking and payment functionality for customer app.                                                            | 32            |
+| 2026-01-08 | JakeConal  | feat: implement review module with CRUD operations and integrate with frontend.                                                       | 15            |
+| 2026-01-08 | JakeConal  | feat: enhance cart and menu pages with improved UI, URL state management, and item details display.                                   | 20            |
+| 2026-01-07 | JakeConal  | feat: Revamp Menu and Bottom Navigation UI with modern design elements.                                                               | 15            |
+| 2025-12-31 | JakeConal  | feat: implement photo upload and retrieval for menu items and integrate Google Login in Admin app.                                    | 25            |
+| 2025-12-27 | Nam Anh    | perf(table): use local QR generator and modularize backend API architecture.                                                          | 27            |
+| 2025-12-25 | JakeConal  | feat: implement MenuCategory, MenuItem, and Authentication modules with JWT.                                                          | 39            |
+| 2025-12-19 | JakeConal  | feat: initial backend setup with NestJS and TypeORM integration for table management.                                                 | 42            |
+| 2025-12-18 | JakeConal  | feat: initialize smart restaurant project with Next.js, React, and Tailwind CSS.                                                      | 17            |
+| 2026-01-14 | JakeConal  | feat: add kitchen sound notification and highlight orders exceeding item's prep time                                                  | 8             |
+| 2026-01-14 | JakeConal  | feat: implement restaurant-specific WebSocket connections and order handling                                                          | 16            |
+| 2026-01-14 | JakeConal  | feat: update role-based access for WaiterOrdersPage and Sidebar to include ADMIN role                                                 | 2             |
+| 2026-01-14 | Nam Anh    | feat(backend): add example env                                                                                                        | 1             |
+| 2026-01-14 | Nam Anh    | chore: remove conflicting lock file                                                                                                   | 1             |
+| 2026-01-14 | Toan Huynh | fix(eslint): update ESLint configuration to include TypeScript parser and options                                                     | 1             |
+| 2026-01-14 | Toan Huynh | refactor: remove avatar_url from KitchenStaff and Waiter interfaces and related components                                            | 8             |
+| 2026-01-14 | Toan Huynh | feat: add kitchen staff management feature                                                                                            | 12            |
+| 2026-01-14 | Toan Huynh | feat: add waiter management functionality                                                                                             | 13            |
+| 2026-01-14 | Toan Huynh | fix(sidebar): restrict waiter orders and tables visibility to WAITER role only                                                        | 1             |
+| 2026-01-13 | JakeConal  | feat(order): add special requests field and update related components for better order handling                                       | 5             |
+| 2026-01-13 | JakeConal  | feat(payment): enhance payment flow with support for multiple unpaid orders                                                           | 3             |
+| 2026-01-13 | JakeConal  | feat(kitchen): implement kitchen order management and status updates                                                                  | 18            |
+| 2026-01-13 | JakeConal  | refactor: remove unused components and modals                                                                                         | 39            |
+| 2026-01-13 | JakeConal  | feat: add functionality to send and receive orders via websocket.                                                                     | 38            |
+| 2026-01-12 | JakeConal  | feat: Implement soft delete for menu categories and add remove functionality                                                          | 3             |
+| 2026-01-12 | JakeConal  | feat: Add CustomerJwtStrategy for handling customer JWT authentication                                                                | 3             |
+| 2026-01-12 | JakeConal  | feat: Enhance popularity score management by adding update functionality and adjusting scores on review changes                       | 3             |
+| 2026-01-12 | JakeConal  | feat: create Tailwind CSS configuration with custom theme and animations                                                              | 13            |
+| 2026-01-12 | Toan Huynh | feat: Implement role-based redirection in login and enhance waiter pages with improved layout                                         | 4             |
+| 2026-01-12 | Toan Huynh | feat: Update Sidebar to display user role dynamically and restrict admin menu items                                                   | 1             |
+| 2026-01-12 | Toan Huynh | feat: Implement Waiter Tables feature with table assignment and occupancy status                                                      | 8             |
+| 2026-01-12 | Toan Huynh | chore: Remove outdated Waiter Features & Bill Management implementation roadmap                                                       | 1             |
+| 2026-01-12 | Toan Huynh | feat(backend): Add UsersController for managing waiters with permission checks                                                        | 1             |
+| 2026-01-12 | Toan Huynh | docs: Add Phase 1 waiter features roadmap and update project files                                                                    | 5             |
+| 2026-01-12 | Toan Huynh | fix(frontend): Add API proxy, update navigation, and fix decimal field type handling                                                  | 5             |
+| 2026-01-12 | Toan Huynh | feat(backend): Add database seeding for tables and orders with user-specific data                                                     | 9             |
+| 2026-01-12 | Toan Huynh | feat(phase1): Add polling hooks for real-time order updates and offline queue processing                                              | 4             |
+| 2026-01-12 | Toan Huynh | feat(phase1): Implement waiter dashboard UI components and manager escalation interface with bento design                             | 11            |
+| 2026-01-12 | Toan Huynh | feat(phase1): Implement waiter and manager API endpoints with order acceptance and escalation                                         | 11            |
+| 2026-01-12 | Toan Huynh | feat(phase1): Add order and table schemas with waiter assignment and escalation fields                                                | 4             |
+| 2026-01-11 | Toan Huynh | fix: update apostrophe syntax and improve email verification link formatting                                                          | 2             |
+| 2026-01-11 | Toan Huynh | fix: update apostrophe syntax in email verification messages                                                                          | 1             |
+| 2026-01-11 | Toan Huynh | feat(auth): implement email verification flow with resend option and password reset functionality                                     | 10            |
+| 2026-01-10 | Toan Huynh | feat: Refactor schema imports and add role-based access control entities                                                              | 11            |
+| 2026-01-10 | Toan Huynh | feat: Implement email verification and password reset functionality for admin users                                                   | 13            |
+| 2026-01-10 | JakeConal  | feat: apply fuzzy search in customer app                                                                                              | 4             |
+| 2026-01-10 | Toan Huynh | feat: Refactor JWT authentication to use ConfigService for secret management and streamline guard implementations                     | 5             |
+| 2026-01-10 | Toan Huynh | feat: Enhance admin authentication with role-based access control and permissions                                                     | 15            |
+| 2026-01-10 | Toan Huynh | feat: Add database schema for user roles, permissions, and credentials                                                                | 6             |
+| 2026-01-10 | Toan Huynh | feat: Implement admin authentication module with login and signup functionality                                                       | 30            |
+| 2026-01-09 | JakeConal  | feat: Implement menu caching utility to optimize API calls                                                                            | 2             |
+| 2026-01-09 | JakeConal  | feat: Implement password reset functionality with token validation                                                                    | 10            |
+| 2026-01-09 | JakeConal  | feat: track individual item status within an order                                                                                    | 2             |
+| 2026-01-09 | JakeConal  | feat: Email verification link sent on signup in customer app                                                                          | 15            |
+| 2026-01-09 | JakeConal  | feat: Add password complexity validation and strength indicator for login and profile pages                                           | 4             |
+| 2026-01-09 | JakeConal  | feat: Implement password complexity validation for change password and sign-up processes                                              | 4             |
+| 2026-01-09 | JakeConal  | feat: Integrate order history API and enhance order data structure in profile page                                                    | 2             |
+| 2026-01-09 | JakeConal  | feat: Add FAQ section with collapsible answers in profile page                                                                        | 1             |
+| 2026-01-09 | JakeConal  | feat: Enhance profile picture handling with improved error handling and caching                                                       | 4             |
+| 2026-01-09 | JakeConal  | feat: Implement change password                                                                                                       | 9             |
+| 2026-01-09 | JakeConal  | feat: Implement order tracking and payment functionality                                                                              | 15            |
+| 2026-01-08 | JakeConal  | fix: correct query builder logic for fetching reviews by restaurant ID and reset review state on item ID change                       | 2             |
+| 2026-01-08 | JakeConal  | refactor: remove favorites page and update menu item fetching logic                                                                   | 4             |
+| 2026-01-08 | JakeConal  | feat: enhance cart and menu pages with improved UI, URL state management, and item details display                                    | 2             |
+| 2026-01-08 | JakeConal  | feat: enhance photo handling in menu service and item detail page; add swipe functionality for photo gallery                          | 3             |
+| 2026-01-08 | JakeConal  | feat: implement review module with CRUD operations and integrate with frontend                                                        | 9             |
+| 2026-01-03 | Toan Huynh | chore: update .gitignore to include .idea and frontend/.next directories                                                              | 1             |
+| 2026-01-07 | JakeConal  | feat: Add sort dropdown, improve loading/error states, and refine item display styles                                                 | 2             |
+| 2026-01-07 | JakeConal  | feat: Revamp Menu and Bottom Navigation UI; enhance user experience with modern design elements                                       | 15            |
+| 2026-01-07 | JakeConal  | refactor: layout and login page styles; update menu item handling                                                                     | 12            |
+| 2026-01-02 | JakeConal  | feat: Enhance UI and UX for Menu and Bottom Navigation                                                                                | 13            |
+| 2026-01-02 | JakeConal  | feat: update MenuItem to use primaryPhotoUrl and adjust related types                                                                 | 8             |
+| 2026-01-01 | JakeConal  | refactor: remove unused UI components and API services                                                                                | 7             |
+| 2026-01-01 | JakeConal  | fix: remove redundant Query in qr.service.ts and table.service.ts                                                                     | 4             |
+| 2026-01-01 | JakeConal  | feat: Add signup and support pages with authentication and menu context                                                               | 11            |
+| 2025-12-31 | JakeConal  | feat: Add Customer entity and integrate with authentication service                                                                   | 8             |
+| 2025-12-31 | JakeConal  | feat: Implement customer authentication and profile management                                                                        | 2             |
+| 2025-12-31 | JakeConal  | feat: implement photo upload and retrieval for menu items                                                                             | 14            |
+| 2025-12-31 | JakeConal  | feat: implement google login in Admin app                                                                                             | 11            |
+| 2025-12-28 | JakeConal  | fix: menu-item api just return 1 item only                                                                                            | 2             |
+| 2025-12-28 | JakeConal  | feat: initial customer app                                                                                                            | 15            |
+| 2025-12-28 | JakeConal  | refactor: separate admin app and customer app                                                                                         | 12            |
+| 2025-12-27 | Nam Anh    | perf(table): use local QR generator                                                                                                   | 5             |
+| 2025-12-27 | HieuNguyen | Delete backend/.env.local                                                                                                             | 1             |
+| 2025-12-27 | JakeConal  | feat: add authentication context and login/signup functionality                                                                       | 18            |
+| 2025-12-27 | JakeConal  | refactor: integrate Admin and Customer app into 1 project                                                                             | 10            |
+| 2025-12-27 | Nam Anh    | fix(toast): use `react-hot-toast`                                                                                                     | 4             |
+| 2025-12-27 | Nam Anh    | refactor(api): modularize routes                                                                                                      | 22            |
+| 2025-12-27 | Nam Anh    | feat(menu): add route                                                                                                                 | 15            |
+| 2025-12-26 | Toan Huynh | feat: update controller paths to include API versioning and add findOne methods for MenuItem and ModifierGroup                        | 8             |
+| 2025-12-25 | JakeConal  | feat: add popularity score to MenuItem and implement incrementPopularity method in MenuItemService                                    | 3             |
+| 2025-12-25 | JakeConal  | feat: implement MenuService and update MenuController to handle menu retrieval with query parameters                                  | 5             |
+| 2025-12-25 | JakeConal  | fix: correct endpoint path for ModifierGroupController from '/modifier-group' to '/modifier-groups'                                   | 2             |
+| 2025-12-25 | JakeConal  | feat: add ModifierGroup and ModifierOption modules with controllers, services, DTOs, and schemas                                      | 14            |
+| 2025-12-25 | JakeConal  | feat: add MenuItemPhoto module with controller, service, schema, and tests                                                            | 12            |
+| 2025-12-25 | JakeConal  | feat: add MenuItem module with controller, service, DTOs, and schema                                                                  | 10            |
+| 2025-12-25 | JakeConal  | feat: implement authentication module with JWT and user management                                                                    | 18            |
+| 2025-12-25 | JakeConal  | fix: remove unused MenuCategory service and controller from AppModule                                                                 | 2             |
+| 2025-12-25 | JakeConal  | feat: implement MenuCategory module with controller, service, and DTOs                                                                | 11            |
+| 2025-12-20 | Toan Huynh | fix: exclude test files from production build                                                                                         | 1             |
+| 2025-12-20 | Toan Huynh | fix: move @nestjs/cli and typescript to dependencies for Heroku build                                                                 | 1             |
+| 2025-12-20 | Toan Huynh | feat: update Procfile to include build step and add scripts section in package.json                                                   | 2             |
+| 2025-12-20 | Toan Huynh | Add Procfile for Heroku deployment                                                                                                    | 1             |
+| 2025-12-20 | JakeConal  | feat: update handleCreate function to accept both CreateTableDto and UpdateTableDto                                                   | 2             |
+| 2025-12-20 | JakeConal  | feat: update CORS configuration and improve code formatting in main.ts and page.tsx                                                   | 2             |
+| 2025-12-20 | HieuNguyen | Merge pull request #1 from JakeConal/feature/table                                                                                    | 12            |
+| 2025-12-20 | HieuNguyen | Merge branch 'main' into feature/table                                                                                                | 10            |
+| 2025-12-20 | Toan Huynh | feat: add frontend and backend environment files to .gitignore                                                                        | 1             |
+| 2025-12-20 | Toan Huynh | feat: implement table page                                                                                                            | 15            |
+| 2025-12-20 | Nam Anh    | fix: use yarn typescript                                                                                                              | 2             |
+| 2025-12-20 | JakeConal  | fix: table in database not found                                                                                                      | 1             |
+| 2025-12-19 | Nam Anh    | refactor: use proper import syntax                                                                                                    | 4             |
+| 2025-12-19 | Nam Anh    | feat: switch to yarn & implement QR code                                                                                              | 22            |
+| 2025-12-19 | JakeConal  | feat(table): add TypeORM integration for table schema                                                                                 | 5             |
+| 2025-12-19 | JakeConal  | feat(table): implement table management module with CRUD operations                                                                   | 12            |
+| 2025-12-19 | JakeConal  | feat: add backend with NestJS                                                                                                         | 25            |
+| 2025-12-18 | JakeConal  | feat: initialize frontend with Next.js, React, and Tailwind CSS; backend with NestJS                                                  | 17            |
+| 2025-12-16 | JakeConal  | feat: initialize smart restaurant project with Next.js, React, and Tailwind CSS                                                       | 0             |
 
 ---

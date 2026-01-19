@@ -23,11 +23,11 @@ Our team utilized a modern agile workflow to develop the Smart Restaurant system
 
 ### Contribution Summary
 
-| Member                | Focus Areas                             | Key Deliverables                                                                 |
-| :-------------------- | :-------------------------------------- | :------------------------------------------------------------------------------- |
-| **Nguyễn Minh Hiếu**  | Customer Mobile App / Real-time Systems | End-to-end Ordering flow, WebSocket tracking, Fuzzy Search, Client-side Caching. |
-| **Huỳnh Thái Toàn**   | Admin Dashboard / Payment Integration   | Database Schema, RBAC, VNPay Integration, Kitchen Display System (KDS).          |
-| **Phạm Quốc Nam Anh** | Reports / Backend Infrastructure        | Sales Reporting Engine, QR Generation, Backend modularization.                   |
+| Member                                                                       | Focus Areas                             | Key Deliverables                                                                 |
+| :--------------------------------------------------------------------------- | :-------------------------------------- | :------------------------------------------------------------------------------- |
+| <img src="https://github.com/JakeConal.png" width="32"> **Nguyễn Minh Hiếu** | Customer Mobile App / Real-time Systems | End-to-end Ordering flow, WebSocket tracking, Fuzzy Search, Client-side Caching. |
+| <img src="https://github.com/Toanapr.png" width="32"> **Huỳnh Thái Toàn**    | Admin Dashboard / Payment Integration   | Database Schema, RBAC, VNPay Integration, Kitchen Display System (KDS).          |
+| <img src="https://github.com/kyrie25.png" width="32"> **Phạm Quốc Nam Anh**  | Reports / Backend Infrastructure        | Sales Reporting Engine, QR Generation, Backend modularization.                   |
 
 ---
 
