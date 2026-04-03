@@ -11,8 +11,8 @@ import {
 import { OrderService } from '../order/order.service';
 import { TableService } from '../table/table.service';
 import { AdminGuard } from '../admin-auth/guards/admin.guard';
-import { CurrentUser } from '../auth/decorators/current-user.decorator';
-import type { AuthUser } from '../auth/interfaces/auth-user.interface';
+import { CurrentUser } from '../customer-auth/decorators/current-user.decorator';
+import type { AuthUser } from '../customer-auth/interfaces/auth-user.interface';
 import { AcceptOrderDto } from '../dto/accept-order.dto';
 import { RejectOrderDto } from '../dto/reject-order.dto';
 import { SendToKitchenDto } from '../dto/send-to-kitchen.dto';

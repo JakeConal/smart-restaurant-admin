@@ -4,10 +4,10 @@ import { MenuItemService } from './menu-item.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { MenuItem } from '../schema/menu-item.schema';
 import { MenuCategory } from '../schema/menu-category.schema';
-import { AuthModule } from '../auth/auth.module';
+import { CustomerAuthModule } from '../customer-auth/customer-auth.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([MenuItem, MenuCategory]), AuthModule],
+  imports: [TypeOrmModule.forFeature([MenuItem, MenuCategory]), CustomerAuthModule],
   controllers: [MenuItemController],
   providers: [MenuItemService],
 })

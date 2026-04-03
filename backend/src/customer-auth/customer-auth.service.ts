@@ -11,7 +11,7 @@ import { CustomerLoginDto } from '../dto/customer-login.dto';
 import { EmailService } from '../email/email.service';
 
 @Injectable()
-export class AuthService {
+export class CustomerAuthService {
   constructor(
     @InjectRepository(Customer)
     private customerRepo: Repository<Customer>,

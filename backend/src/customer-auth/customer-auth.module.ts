@@ -2,12 +2,10 @@ import { Module } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { AuthService } from './auth.service';
-import { AuthController } from './auth.controller';
-import { JwtStrategy } from './strategies/jwt.strategy';
+import { CustomerAuthService } from './customer-auth.service';
+import { CustomerAuthController } from './customer-auth.controller';
 import { CustomerJwtStrategy } from './strategies/customer-jwt.strategy';
 import { CustomerGoogleStrategy } from './strategies/customer-google.strategy';
-import { JwtAuthGuard } from './guards/jwt.guards';
 import { CustomerJwtAuthGuard } from './guards/customer-jwt-auth.guard';
 import { Customer } from '../schema/customer.schema';
 import { EmailVerificationToken } from '../schema/email-verification-token.schema';
@@ -21,7 +19,7 @@ import { EmailModule } from '../email/email.module';
       EmailVerificationToken,
       PasswordResetToken,
     ]),
-    PassportModule.register({ defaultStrategy: 'jwt' }),
+    PassportModule.register({ defaultStrategy: 'customer-jwt' }),
     JwtModule.register({
       secret: process.env.JWT_SECRET || 'secretKey123',
       signOptions: {},
@@ -29,14 +27,12 @@ import { EmailModule } from '../email/email.module';
     EmailModule,
   ],
   providers: [
-    AuthService,
-    JwtStrategy,
+    CustomerAuthService,
     CustomerJwtStrategy,
     CustomerGoogleStrategy,
-    JwtAuthGuard,
     CustomerJwtAuthGuard,
   ],
-  controllers: [AuthController],
-  exports: [JwtAuthGuard, CustomerJwtAuthGuard],
+  controllers: [CustomerAuthController],
+  exports: [CustomerJwtAuthGuard, CustomerAuthService],
 })
-export class AuthModule {}
+export class CustomerAuthModule {}

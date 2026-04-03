@@ -4,9 +4,9 @@ import { TableService } from './table.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Table } from '../schema/table.schema';
 import { QrService } from './qr.service';
-import { AuthModule } from '../auth/auth.module';
+import { CustomerAuthModule } from '../customer-auth/customer-auth.module';
 @Module({
-  imports: [TypeOrmModule.forFeature([Table]), AuthModule],
+  imports: [TypeOrmModule.forFeature([Table]), CustomerAuthModule],
   controllers: [TableController],
   providers: [TableService, QrService],
   exports: [TableService],

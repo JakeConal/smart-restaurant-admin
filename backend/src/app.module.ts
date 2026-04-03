@@ -14,7 +14,7 @@ import { Customer } from './schema/customer.schema';
 import { MenuItem } from './schema/menu-item.schema';
 import { MenuItemPhoto } from './schema/menu-item-photo.schema';
 import { MenuCategoryModule } from './menu-category/menu-category.module';
-import { AuthModule } from './auth/auth.module';
+import { CustomerAuthModule } from './customer-auth/customer-auth.module';
 import { UsersModule } from './users/users.module';
 import { MenuItemModule } from './menu-item/menu-item.module';
 import { MenuItemPhotoModule } from './menu-item-photo/menu-item-photo.module';
@@ -109,7 +109,7 @@ import { ReportsModule } from './reports/reports.module';
     TableModule,
     MenuModule,
     MenuCategoryModule,
-    AuthModule,
+    CustomerAuthModule,
     AdminAuthModule,
     UsersModule,
     MenuItemModule,

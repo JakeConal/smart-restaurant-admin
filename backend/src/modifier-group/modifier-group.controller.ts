@@ -10,10 +10,10 @@ import {
   HttpException,
   HttpStatus,
 } from '@nestjs/common';
-import { JwtAuthGuard } from 'src/auth/guards/jwt.guards';
+
 import { AdminGuard } from '../admin-auth/guards/admin.guard';
-import { CurrentUser } from '../auth/decorators/current-user.decorator';
-import type { AuthUser } from '../auth/interfaces/auth-user.interface';
+import { CurrentUser } from '../customer-auth/decorators/current-user.decorator';
+import type { AuthUser } from '../customer-auth/interfaces/auth-user.interface';
 import { CreateModifierGroupDto } from '../dto/create-modifier-group.dto';
 import { ModifierGroupService } from './modifier-group.service';
 

@@ -6,17 +6,16 @@ import {
   Req,
   UseGuards,
   Res,
-  Query,
 } from '@nestjs/common';
-import { AuthService } from './auth.service';
+import { CustomerAuthService } from './customer-auth.service';
 import { CustomerLoginDto } from '../dto/customer-login.dto';
 import { CustomerSignupDto } from '../dto/customer-sign-up.dto';
 import { AuthGuard } from '@nestjs/passport';
 import type { Response } from 'express';
 
 @Controller('auth')
-export class AuthController {
-  constructor(private auth: AuthService) {}
+export class CustomerAuthController {
+  constructor(private auth: CustomerAuthService) {}
 
   @Post('customer/signup')
   customerSignup(@Body() dto: CustomerSignupDto) {
@@ -35,7 +34,7 @@ export class AuthController {
     const clientId = process.env.GOOGLE_CLIENT_ID;
     const redirectUri =
       process.env.GOOGLE_CUSTOMER_CALLBACK_URL ||
-      'http://localhost:3001/auth/customer/google/callback';
+      'http://localhost:3001/customer-auth/customer/google/callback';
     const scope = 'email profile';
     const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${encodeURIComponent(scope)}&response_type=code&state=${encodeURIComponent(state)}`;
     (res as any).redirect(authUrl);
@@ -94,4 +93,3 @@ export class AuthController {
     return this.auth.resetPassword(token, password);
   }
 }
-

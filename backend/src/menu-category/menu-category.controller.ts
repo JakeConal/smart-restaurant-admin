@@ -14,10 +14,10 @@ import { MenuCategoryService } from './menu-category.service';
 import { MenuCategory, CategoryStatus } from 'src/schema/menu-category.schema';
 import { CreateMenuCategoryDto } from 'src/dto/create-menu-category.dto';
 import { UpdateMenuCategoryDto } from 'src/dto/update-menu-category.dto';
-import { JwtAuthGuard } from '../auth/guards/jwt.guards';
+
 import { AdminGuard } from '../admin-auth/guards/admin.guard';
-import { CurrentUser } from '../auth/decorators/current-user.decorator';
-import type { AuthUser } from '../auth/interfaces/auth-user.interface';
+import { CurrentUser } from '../customer-auth/decorators/current-user.decorator';
+import type { AuthUser } from '../customer-auth/interfaces/auth-user.interface';
 
 @Controller('api/admin/menu/categories')
 @UseGuards(AdminGuard)

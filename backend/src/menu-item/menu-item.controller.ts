@@ -11,10 +11,10 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { MenuItemService } from './menu-item.service';
-import { JwtAuthGuard } from '../auth/guards/jwt.guards';
+
 import { AdminGuard } from '../admin-auth/guards/admin.guard';
-import { CurrentUser } from '../auth/decorators/current-user.decorator';
-import type { AuthUser } from '../auth/interfaces/auth-user.interface';
+import { CurrentUser } from '../customer-auth/decorators/current-user.decorator';
+import type { AuthUser } from '../customer-auth/interfaces/auth-user.interface';
 import { CreateMenuItemDto } from '../dto/create-menu-item.dto';
 import { UpdateMenuItemDto } from '../dto/update-menu-item.dto';
 

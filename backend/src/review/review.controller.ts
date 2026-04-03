@@ -10,9 +10,9 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ReviewService } from './review.service';
-import { CustomerJwtAuthGuard } from '../auth/guards/customer-jwt-auth.guard';
-import { CurrentUser } from '../auth/decorators/current-user.decorator';
-import type { AuthUser } from '../auth/interfaces/auth-user.interface';
+import { CustomerJwtAuthGuard } from '../customer-auth/guards/customer-jwt-auth.guard';
+import { CurrentUser } from '../customer-auth/decorators/current-user.decorator';
+import type { AuthUser } from '../customer-auth/interfaces/auth-user.interface';
 import { CreateReviewDto } from '../dto/create-review.dto';
 
 @Controller('api/reviews')
