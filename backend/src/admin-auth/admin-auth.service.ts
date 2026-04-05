@@ -3,29 +3,44 @@ import {
   BadRequestException,
   UnauthorizedException,
   NotFoundException,
+  Logger,
 } from '@nestjs/common';
 import type { Request } from 'express';
 import { JwtService } from '@nestjs/jwt';
+import type { JwtSignOptions } from '@nestjs/jwt';
+import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource } from 'typeorm';
 import * as crypto from 'crypto';
-import { Users, UserStatus } from '../schema/user.schema';
-import { UserCredentials } from '../schema/user-credentials.schema';
-import { RefreshToken } from '../schema/refresh-token.schema';
-import { Role } from '../schema/role.schema';
-import { AdminEmailVerificationToken } from '../schema/admin-email-verification-token.schema';
-import { AdminPasswordResetToken } from '../schema/admin-password-reset-token.schema';
+import { Users, UserStatus } from '../users/entities/user.schema';
+import { UserCredentials } from '../users/entities/user-credentials.schema';
+import { RefreshToken } from './entities/refresh-token.schema';
+import { Role } from '../users/entities/role.schema';
+import { AdminEmailVerificationToken } from './entities/admin-email-verification-token.schema';
+import { AdminPasswordResetToken } from './entities/admin-password-reset-token.schema';
 import {
   AdminAuditLog,
   AdminAuditAction,
   AdminAuditStatus,
-} from '../schema/admin-audit-log.schema';
-import { SignupDto } from '../dto/sign-up.dto';
-import { LoginDto } from '../dto/login.dto';
+} from './entities/admin-audit-log.schema';
+import { SignupDto } from './dto/sign-up.dto';
+import { LoginDto } from './dto/login.dto';
 import { EmailService } from '../email/email.service';
+
+type AuthenticatedAdminUser = {
+  id: string;
+  email: string;
+  fullName: string;
+  role: string;
+  restaurantId?: string;
+  permissions?: string[];
+  isEmailVerified?: boolean;
+};
 
 @Injectable()
 export class AdminAuthService {
+  private readonly logger = new Logger(AdminAuthService.name);
+
   constructor(
     @InjectRepository(Users)
     private userRepo: Repository<Users>,
@@ -44,6 +59,7 @@ export class AdminAuthService {
     private jwt: JwtService,
     private dataSource: DataSource,
     private emailService: EmailService,
+    private configService: ConfigService,
   ) {}
 
   async signup(dto: SignupDto & { fullName: string; roleCode?: string }) {
@@ -111,7 +127,10 @@ export class AdminAuthService {
           verificationToken,
         )
         .catch((err) =>
-          console.error('Failed to send verification email:', err),
+          this.logger.error(
+            `Failed to send verification email: ${(err as Error).message}`,
+            (err as Error).stack,
+          ),
         );
 
       // Generate tokens
@@ -143,7 +162,7 @@ export class AdminAuthService {
   ): Promise<{
     access_token: string;
     refresh_token: string;
-    user: any;
+    user: AuthenticatedAdminUser;
   }> {
     // Find user with credentials and role
     const user = await this.userRepo.findOne({
@@ -321,6 +340,8 @@ export class AdminAuthService {
     }
 
     // Generate access token (15 minutes)
+    const accessExpiry = (this.configService.get<string>('JWT_ACCESS_EXPIRY') ||
+      '15m') as JwtSignOptions['expiresIn'];
     const accessToken = await this.jwt.signAsync(
       {
         sub: user.id,
@@ -329,7 +350,7 @@ export class AdminAuthService {
         restaurantId: user.restaurantId,
         permissions,
       },
-      { expiresIn: (process.env.JWT_ACCESS_EXPIRY || '15m') as any },
+      { expiresIn: accessExpiry },
     );
 
     // Generate refresh token (7 days)
@@ -341,9 +362,12 @@ export class AdminAuthService {
 
     const familyId = crypto.randomUUID();
     const expiresAt = new Date();
+    const refreshExpiryDays = parseInt(
+      this.configService.get<string>('JWT_REFRESH_EXPIRY_DAYS') || '7',
+      10,
+    );
     expiresAt.setDate(
-      expiresAt.getDate() +
-        parseInt(process.env.JWT_REFRESH_EXPIRY_DAYS || '7', 10),
+      expiresAt.getDate() + refreshExpiryDays,
     );
 
     const refreshToken = this.refreshTokenRepo.create({
@@ -364,12 +388,27 @@ export class AdminAuthService {
     };
   }
 
+  private getRequestAuditContext(req?: Request): {
+    ipAddress?: string;
+    userAgent?: string;
+  } {
+    if (!req) {
+      return {};
+    }
+
+    return {
+      ipAddress: req.ip,
+      userAgent: req.get('user-agent') || undefined,
+    };
+  }
+
   // ============= EMAIL VERIFICATION =============
 
   async verifyEmail(
     token: string,
     req?: Request,
   ): Promise<{ message: string }> {
+    const requestContext = this.getRequestAuditContext(req);
     const verificationToken = await this.verificationTokenRepo.findOne({
       where: { token },
     });
@@ -383,8 +422,7 @@ export class AdminAuthService {
           reason: 'Invalid token',
           token: token.substring(0, 10),
         }),
-        ipAddress: (req as any)?.ip,
-        userAgent: (req as any)?.headers?.['user-agent'],
+        ...requestContext,
       });
       throw new BadRequestException('Invalid verification token');
     }
@@ -395,8 +433,7 @@ export class AdminAuthService {
         action: AdminAuditAction.VERIFICATION_FAILED,
         status: AdminAuditStatus.FAILED,
         metadata: JSON.stringify({ reason: 'Token already used' }),
-        ipAddress: (req as any)?.ip,
-        userAgent: (req as any)?.headers?.['user-agent'],
+        ...requestContext,
       });
       throw new BadRequestException('Verification token already used');
     }
@@ -407,8 +444,7 @@ export class AdminAuthService {
         action: AdminAuditAction.VERIFICATION_FAILED,
         status: AdminAuditStatus.FAILED,
         metadata: JSON.stringify({ reason: 'Token expired' }),
-        ipAddress: (req as any)?.ip,
-        userAgent: (req as any)?.headers?.['user-agent'],
+        ...requestContext,
       });
       throw new BadRequestException('Verification token expired');
     }
@@ -437,8 +473,7 @@ export class AdminAuthService {
       action: AdminAuditAction.EMAIL_VERIFIED,
       status: AdminAuditStatus.SUCCESS,
       metadata: JSON.stringify({ email: user.email }),
-      ipAddress: (req as any)?.ip,
-      userAgent: (req as any)?.headers?.['user-agent'],
+      ...requestContext,
     });
 
     return { message: 'Email verified successfully' };
@@ -448,6 +483,7 @@ export class AdminAuthService {
     email: string,
     req?: Request,
   ): Promise<{ message: string }> {
+    const requestContext = this.getRequestAuditContext(req);
     const user = await this.userRepo.findOne({ where: { email } });
 
     if (!user) {
@@ -493,8 +529,7 @@ export class AdminAuthService {
       action: AdminAuditAction.VERIFICATION_SENT,
       status: AdminAuditStatus.SUCCESS,
       metadata: JSON.stringify({ email: user.email }),
-      ipAddress: (req as any)?.ip,
-      userAgent: (req as any)?.headers?.['user-agent'],
+      ...requestContext,
     });
 
     return { message: 'Verification email sent' };
@@ -506,6 +541,7 @@ export class AdminAuthService {
     email: string,
     req?: Request,
   ): Promise<{ message: string }> {
+    const requestContext = this.getRequestAuditContext(req);
     const user = await this.userRepo.findOne({ where: { email } });
 
     if (!user) {
@@ -555,8 +591,7 @@ export class AdminAuthService {
       action: AdminAuditAction.RESET_TOKEN_SENT,
       status: AdminAuditStatus.SUCCESS,
       metadata: JSON.stringify({ email: user.email }),
-      ipAddress: (req as any)?.ip,
-      userAgent: (req as any)?.headers?.['user-agent'],
+      ...requestContext,
     });
 
     return {
@@ -569,6 +604,7 @@ export class AdminAuthService {
     newPassword: string,
     req?: Request,
   ): Promise<{ message: string }> {
+    const requestContext = this.getRequestAuditContext(req);
     const resetToken = await this.resetTokenRepo.findOne({
       where: { token },
     });
@@ -582,8 +618,7 @@ export class AdminAuthService {
           reason: 'Invalid token',
           token: token.substring(0, 10),
         }),
-        ipAddress: (req as any)?.ip,
-        userAgent: (req as any)?.headers?.['user-agent'],
+        ...requestContext,
       });
       throw new BadRequestException('Invalid reset token');
     }
@@ -594,8 +629,7 @@ export class AdminAuthService {
         action: AdminAuditAction.RESET_FAILED,
         status: AdminAuditStatus.FAILED,
         metadata: JSON.stringify({ reason: 'Token already used' }),
-        ipAddress: (req as any)?.ip,
-        userAgent: (req as any)?.headers?.['user-agent'],
+        ...requestContext,
       });
       throw new BadRequestException('Reset token already used');
     }
@@ -606,8 +640,7 @@ export class AdminAuthService {
         action: AdminAuditAction.RESET_FAILED,
         status: AdminAuditStatus.FAILED,
         metadata: JSON.stringify({ reason: 'Token expired' }),
-        ipAddress: (req as any)?.ip,
-        userAgent: (req as any)?.headers?.['user-agent'],
+        ...requestContext,
       });
       throw new BadRequestException('Reset token expired');
     }
@@ -642,8 +675,7 @@ export class AdminAuthService {
       action: AdminAuditAction.PASSWORD_RESET,
       status: AdminAuditStatus.SUCCESS,
       metadata: JSON.stringify({ email: user.email }),
-      ipAddress: (req as any)?.ip,
-      userAgent: (req as any)?.headers?.['user-agent'],
+      ...requestContext,
     });
 
     return {
@@ -673,7 +705,11 @@ export class AdminAuthService {
       });
       await this.auditLogRepo.save(auditLog);
     } catch (error) {
-      console.error('Failed to create audit log:', error);
+      this.logger.error(
+        `Failed to create audit log: ${(error as Error).message}`,
+        (error as Error).stack,
+      );
     }
   }
 }
+

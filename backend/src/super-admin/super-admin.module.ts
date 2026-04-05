@@ -3,9 +3,9 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { SuperAdminController } from './super-admin.controller';
 import { SuperAdminService } from './super-admin.service';
 import { SuperAdminGuard } from './guards/super-admin.guard';
-import { Users } from '../schema/user.schema';
-import { UserCredentials } from '../schema/user-credentials.schema';
-import { Role } from '../schema/role.schema';
+import { Users } from '../users/entities/user.schema';
+import { UserCredentials } from '../users/entities/user-credentials.schema';
+import { Role } from '../users/entities/role.schema';
 import { AdminAuthModule } from '../admin-auth/admin-auth.module';
 
 @Module({
@@ -18,3 +18,4 @@ import { AdminAuthModule } from '../admin-auth/admin-auth.module';
   exports: [SuperAdminService],
 })
 export class SuperAdminModule {}
+

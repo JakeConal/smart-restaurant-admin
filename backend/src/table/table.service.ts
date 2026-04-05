@@ -5,9 +5,9 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Table } from '../schema/table.schema';
-import { CreateTableDto } from '../dto/create-table.dto';
-import { UpdateTableDto } from '../dto/update-table.dto';
+import { Table } from '../table/entities/table.entity';
+import { CreateTableDto } from './dto/create-table.dto';
+import { UpdateTableDto } from './dto/update-table.dto';
 import { QrService } from './qr.service';
 import archiver from 'archiver';
 import { Readable } from 'stream';
@@ -312,3 +312,4 @@ export class TableService {
     return archive;
   }
 }
+

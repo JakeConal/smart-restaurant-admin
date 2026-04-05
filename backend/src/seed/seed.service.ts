@@ -1,13 +1,13 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Role } from '../schema/role.schema';
-import { Permission } from '../schema/permission.schema';
-import { RolePermission } from '../schema/role-permission.schema';
-import { Users, UserStatus } from '../schema/user.schema';
-import { UserCredentials } from '../schema/user-credentials.schema';
-import { Table } from '../schema/table.schema';
-import { Order, OrderStatus } from '../schema/order.schema';
+import { Role } from '../users/entities/role.schema';
+import { Permission } from '../users/entities/permission.schema';
+import { RolePermission } from '../users/entities/role-permission.schema';
+import { Users, UserStatus } from '../users/entities/user.schema';
+import { UserCredentials } from '../users/entities/user-credentials.schema';
+import { Table } from '../table/entities/table.entity';
+import { Order, OrderStatus } from '../order/entities/order.entity';
 
 @Injectable()
 export class SeedService {
@@ -531,3 +531,4 @@ export class SeedService {
     console.log(`✓ Seeded 5 sample orders for user ${user.email}`);
   }
 }
+

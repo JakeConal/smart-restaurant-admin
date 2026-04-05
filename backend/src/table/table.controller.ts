@@ -14,14 +14,14 @@ import {
 } from '@nestjs/common';
 import type { Response } from 'express';
 import { TableService } from './table.service';
-import { CreateTableDto } from '../dto/create-table.dto';
-import { UpdateTableDto } from '../dto/update-table.dto';
-import { JwtAuthGuard } from '../auth/guards/jwt.guards';
+import { CreateTableDto } from './dto/create-table.dto';
+import { UpdateTableDto } from './dto/update-table.dto';
+
 import { AdminGuard } from '../admin-auth/guards/admin.guard';
 import { PermissionGuard } from '../admin-auth/guards/permission.guard';
 import { RequirePermission } from '../admin-auth/decorators/require-permission.decorator';
-import { CurrentUser } from '../auth/decorators/current-user.decorator';
-import type { AuthUser } from '../auth/interfaces/auth-user.interface';
+import { CurrentUser } from '../customer-auth/decorators/current-user.decorator';
+import type { AuthUser } from '../customer-auth/interfaces/auth-user.interface';
 
 @Controller('/api/admin/tables')
 @UseGuards(AdminGuard, PermissionGuard)
@@ -146,4 +146,5 @@ export class TableController {
     return this.tableService.regenerateAllQrCodes(user.restaurantId);
   }
 }
+
 

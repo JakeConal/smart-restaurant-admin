@@ -15,12 +15,12 @@ import { UsersService } from './users.service';
 import { AdminGuard } from '../admin-auth/guards/admin.guard';
 import { PermissionGuard } from '../admin-auth/guards/permission.guard';
 import { RequirePermission } from '../admin-auth/decorators/require-permission.decorator';
-import { CurrentUser } from '../auth/decorators/current-user.decorator';
-import type { AuthUser } from '../auth/interfaces/auth-user.interface';
-import { CreateWaiterDto } from '../dto/create-waiter.dto';
-import { UpdateWaiterDto } from '../dto/update-waiter.dto';
-import { CreateKitchenStaffDto } from '../dto/create-kitchen-staff.dto';
-import { UpdateKitchenStaffDto } from '../dto/update-kitchen-staff.dto';
+import { CurrentUser } from '../customer-auth/decorators/current-user.decorator';
+import type { AuthUser } from '../customer-auth/interfaces/auth-user.interface';
+import { CreateWaiterDto } from './dto/create-waiter.dto';
+import { UpdateWaiterDto } from './dto/update-waiter.dto';
+import { CreateKitchenStaffDto } from './dto/create-kitchen-staff.dto';
+import { UpdateKitchenStaffDto } from './dto/update-kitchen-staff.dto';
 
 @Controller('api/admin/users')
 @UseGuards(AdminGuard, PermissionGuard)
@@ -114,3 +114,4 @@ export class UsersController {
     return { message: 'Kitchen staff status updated successfully' };
   }
 }
+

@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "skills": {
+    "nestjs-best-practices": {
+      "source": "rolling-scopes/rsschool-app",
+      "sourceType": "github",
+      "computedHash": "2c045eb2e5995ee7c69b3c617d9442a1a5d72db0d315b2d6c358fcd3749bf46b"
+    }
+  }
+}

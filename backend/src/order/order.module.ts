@@ -1,9 +1,9 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { Order } from '../schema/order.schema';
-import { Table } from '../schema/table.schema';
-import { MenuItem } from '../schema/menu-item.schema';
-import { AdminAuditLog } from '../schema/admin-audit-log.schema';
+import { Order } from '../order/entities/order.entity';
+import { Table } from '../table/entities/table.entity';
+import { MenuItem } from '../menu/entities/menu-item.entity';
+import { AdminAuditLog } from '../admin-auth/entities/admin-audit-log.schema';
 import { OrderService } from './order.service';
 import { VNPayService } from './vnpay.service';
 import { OrderController } from './order.controller';
@@ -17,3 +17,4 @@ import { OrderGateway } from './order.gateway';
   exports: [OrderService, VNPayService, OrderGateway],
 })
 export class OrderModule { }
+

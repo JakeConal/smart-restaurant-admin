@@ -5,12 +5,12 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource } from 'typeorm';
-import { Users, UserStatus } from '../schema/user.schema';
-import { Role } from '../schema/role.schema';
-import { UserCredentials } from '../schema/user-credentials.schema';
-import { CreateAdminDto } from '../dto/create-admin.dto';
-import { UpdateAdminDto } from '../dto/update-admin.dto';
-import { AdminFilterDto } from '../dto/admin-filter.dto';
+import { Users, UserStatus } from '../users/entities/user.schema';
+import { Role } from '../users/entities/role.schema';
+import { UserCredentials } from '../users/entities/user-credentials.schema';
+import { CreateAdminDto } from './dto/create-admin.dto';
+import { UpdateAdminDto } from './dto/update-admin.dto';
+import { AdminFilterDto } from './dto/admin-filter.dto';
 
 @Injectable()
 export class SuperAdminService {
@@ -239,3 +239,4 @@ export class SuperAdminService {
     return `rest_${timestamp}_${random}`;
   }
 }
+

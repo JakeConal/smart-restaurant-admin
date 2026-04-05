@@ -14,9 +14,9 @@ import {
 } from '@nestjs/common';
 import { SuperAdminService } from './super-admin.service';
 import { SuperAdminGuard } from './guards/super-admin.guard';
-import { CreateAdminDto } from '../dto/create-admin.dto';
-import { UpdateAdminDto } from '../dto/update-admin.dto';
-import { AdminFilterDto } from '../dto/admin-filter.dto';
+import { CreateAdminDto } from './dto/create-admin.dto';
+import { UpdateAdminDto } from './dto/update-admin.dto';
+import { AdminFilterDto } from './dto/admin-filter.dto';
 
 @Controller('api/super-admin/admins')
 @UseGuards(SuperAdminGuard)
@@ -58,3 +58,4 @@ export class SuperAdminController {
     await this.superAdminService.deleteAdmin(id);
   }
 }
+

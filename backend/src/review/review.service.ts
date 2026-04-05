@@ -5,10 +5,10 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Review } from 'src/schema/review.schema';
-import { MenuItem } from 'src/schema/menu-item.schema';
-import { Customer } from 'src/schema/customer.schema';
-import { CreateReviewDto } from '../dto/create-review.dto';
+import { Review } from './entities/review.schema';
+import { MenuItem } from '../menu/entities/menu-item.entity';
+import { Customer } from '../customer-auth/entities/customer.schema';
+import { CreateReviewDto } from './dto/create-review.dto';
 
 @Injectable()
 export class ReviewService {
@@ -289,3 +289,4 @@ export class ReviewService {
     };
   }
 }
+

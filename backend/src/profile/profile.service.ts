@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Customer } from '../schema/customer.schema';
+import { Customer } from '../customer-auth/entities/customer.schema';
 import * as bcrypt from 'bcrypt';
 
 @Injectable()
@@ -184,3 +184,4 @@ export class ProfileService {
     };
   }
 }
+

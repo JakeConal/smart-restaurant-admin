@@ -5,11 +5,11 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, In, Not, IsNull } from 'typeorm';
-import { Order, OrderStatus } from '../schema/order.schema';
-import { Table } from '../schema/table.schema';
-import { MenuItem } from '../schema/menu-item.schema';
-import { CreateOrderDto } from '../dto/create-order.dto';
-import { UpdateOrderDto } from '../dto/update-order.dto';
+import { Order, OrderStatus } from '../order/entities/order.entity';
+import { Table } from '../table/entities/table.entity';
+import { MenuItem } from '../menu/entities/menu-item.entity';
+import { CreateOrderDto } from './dto/create-order.dto';
+import { UpdateOrderDto } from './dto/update-order.dto';
 import { OrderGateway } from './order.gateway';
 
 @Injectable()
@@ -682,3 +682,4 @@ export class OrderService {
     return updatedOrder;
   }
 }
+

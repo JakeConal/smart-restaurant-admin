@@ -15,8 +15,8 @@ import {
 import { FileInterceptor } from '@nestjs/platform-express';
 import type { Response } from 'express';
 import { ProfileService } from './profile.service';
-import { CustomerJwtAuthGuard } from '../auth/guards/customer-jwt-auth.guard';
-import { ChangePasswordDto } from '../dto/change-password.dto';
+import { CustomerJwtAuthGuard } from '../customer-auth/guards/customer-jwt-auth.guard';
+import { ChangePasswordDto } from './dto/change-password.dto';
 
 @Controller('profile')
 @UseGuards(CustomerJwtAuthGuard)
@@ -48,11 +48,11 @@ export class ProfileController {
       const customerId = req.user?.sub;
 
       if (!customerId) {
-        console.log('❌ No customerId in req.user:', req.user);
+        console.log('âŒ No customerId in req.user:', req.user);
         return (res as any).status(401).json({ error: 'Unauthorized' });
       }
 
-      console.log('✅ Loading avatar for customer:', customerId);
+      console.log('âœ… Loading avatar for customer:', customerId);
       const picture = await this.profileService.getProfilePicture(customerId);
 
       // Set proper cache control headers to prevent caching
@@ -69,7 +69,7 @@ export class ProfileController {
       (res as any).send(picture);
     } catch (error) {
       // Return 404 for any error (picture not found, customer not found, etc)
-      console.log('❌ Error in getProfilePicture:', error);
+      console.log('âŒ Error in getProfilePicture:', error);
       (res as any).status(404).end();
     }
   }
@@ -84,4 +84,5 @@ export class ProfileController {
     );
   }
 }
+
 
