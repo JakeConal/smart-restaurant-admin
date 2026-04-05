@@ -44,7 +44,10 @@ import { ReportsModule } from './reports/reports.module';
 
 @Module({
   imports: [
-    ConfigModule.forRoot({ isGlobal: true }),
+    ConfigModule.forRoot({
+      isGlobal: true,
+      envFilePath: ['backend/.env', '.env'],
+    }),
     CacheModule.register({
       isGlobal: true,
       ttl: 60000, // 1 minute default TTL

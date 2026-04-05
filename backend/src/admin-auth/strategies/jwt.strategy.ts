@@ -6,6 +6,12 @@ import { Repository } from 'typeorm';
 import { ConfigService } from '@nestjs/config';
 import { Users, UserStatus } from '../../users/entities/user.schema';
 
+type AdminJwtPayload = {
+  sub: string;
+  email: string;
+  permissions?: string[];
+};
+
 @Injectable()
 export class AdminJwtStrategy extends PassportStrategy(Strategy, 'admin-jwt') {
   constructor(
@@ -13,13 +19,18 @@ export class AdminJwtStrategy extends PassportStrategy(Strategy, 'admin-jwt') {
     private userRepo: Repository<Users>,
     private configService: ConfigService,
   ) {
+    const jwtSecret = configService.get<string>('JWT_SECRET');
+    if (!jwtSecret) {
+      throw new Error('JWT_SECRET is required');
+    }
+
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
-      secretOrKey: configService.get<string>('JWT_SECRET') || 'secretKey123',
+      secretOrKey: jwtSecret,
     });
   }
 
-  async validate(payload: any) {
+  async validate(payload: AdminJwtPayload) {
     // Check if user still exists and is ACTIVE
     const user = await this.userRepo.findOne({
       where: { id: payload.sub },
@@ -44,7 +55,7 @@ export class AdminJwtStrategy extends PassportStrategy(Strategy, 'admin-jwt') {
       email: payload.email,
       role: user.role.code,
       permissions: payload.permissions || [],
-      restaurantId: user.restaurantId || 'default-restaurant',
+      restaurantId: user.restaurantId,
     };
   }
 }

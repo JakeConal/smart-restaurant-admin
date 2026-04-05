@@ -3,25 +3,10 @@ import {
   IsEmail,
   MinLength,
   MaxLength,
+  IsOptional,
   Validate,
 } from 'class-validator';
-import {
-  ValidatorConstraint,
-  ValidatorConstraintInterface,
-} from 'class-validator';
-import { validatePasswordComplexity } from '../../common/password-validator';
-
-@ValidatorConstraint({ name: 'isPasswordComplex', async: false })
-export class IsPasswordComplexConstraint implements ValidatorConstraintInterface {
-  validate(password: string): boolean {
-    const result = validatePasswordComplexity(password);
-    return result.isValid;
-  }
-
-  defaultMessage(): string {
-    return 'Password does not meet complexity requirements';
-  }
-}
+import { IsPasswordComplexConstraint } from '../../common/password-complexity.validator';
 
 export class CustomerSignupDto {
   @IsEmail()
@@ -40,5 +25,6 @@ export class CustomerSignupDto {
   lastName: string;
 
   @IsString()
+  @IsOptional()
   tableToken?: string; // Optional token to preserve after email verification
 }

@@ -9,8 +9,10 @@ import {
   Headers,
   Ip,
   UnauthorizedException,
+  Logger,
 } from '@nestjs/common';
-import type { Request, Response } from 'express';
+import { ConfigService } from '@nestjs/config';
+import type { CookieOptions, Request, Response } from 'express';
 import { AdminAuthService } from './admin-auth.service';
 import { SignupDto } from './dto/sign-up.dto';
 import { LoginDto } from './dto/login.dto';
@@ -20,9 +22,59 @@ import { AdminForgotPasswordDto } from './dto/admin-forgot-password.dto';
 import { AdminResetPasswordDto } from './dto/admin-reset-password.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 
+type AuthenticatedRequest = Request & {
+  user: {
+    sub: string;
+    userId: string;
+    email: string;
+    role: string;
+    restaurantId?: string;
+    permissions?: string[];
+  };
+};
+
 @Controller('admin-auth')
 export class AdminAuthController {
-  constructor(private readonly adminAuthService: AdminAuthService) { }
+  private readonly logger = new Logger(AdminAuthController.name);
+
+  constructor(
+    private readonly adminAuthService: AdminAuthService,
+    private readonly configService: ConfigService,
+  ) {}
+
+  private getRefreshCookieOptions(
+    req: Request,
+    includeExpiry = true,
+  ): CookieOptions {
+    const env = (
+      this.configService.get<string>('NODE_ENV') || 'development'
+    ).toLowerCase();
+    const isProd = env === 'production';
+    const host = req.get('host') || '';
+    const isLocalhost =
+      host.includes('localhost') || host.includes('127.0.0.1');
+
+    const options: CookieOptions = {
+      httpOnly: true,
+      secure: true,
+      sameSite: 'none',
+      path: '/',
+      partitioned: true,
+    };
+
+    if (includeExpiry) {
+      options.maxAge = 7 * 24 * 60 * 60 * 1000;
+      options.expires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+    }
+
+    if (isLocalhost && !isProd) {
+      options.secure = false;
+      options.sameSite = 'lax';
+      delete options.partitioned;
+    }
+
+    return options;
+  }
 
   @Post('signup')
   async signup(@Body() dto: SignupDto & { fullName: string }) {
@@ -38,33 +90,10 @@ export class AdminAuthController {
     @Req() req: Request,
   ) {
     const result = await this.adminAuthService.login(dto, userAgent, ipAddress);
-
-    // Cookie configuration
-    const env = (process.env.NODE_ENV || 'development').toLowerCase();
-    const isProd = env === 'production';
-    const host = req.get('host') || '';
-    const isLocalhost = host.includes('localhost') || host.includes('127.0.0.1');
-
-    // On production/deploy, we MUST use Secure and SameSite=None
-    // Even on local, if you use a proxy, Secure/None is often safer.
-    const cookieOptions: any = {
-      httpOnly: true,
-      secure: true, // Requirement for SameSite=None
-      sameSite: 'none',
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days in ms
-      expires: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-      path: '/',
-      partitioned: true,
-    };
-
-    // Fallback for non-https local development
-    if (isLocalhost && !isProd) {
-      cookieOptions.secure = false;
-      cookieOptions.sameSite = 'lax';
-      delete cookieOptions.partitioned;
-    }
-
-    console.log(`[Auth] Setting cookie for ${dto.email}. isProd: ${isProd}, Secure: ${cookieOptions.secure}`);
+    const cookieOptions = this.getRefreshCookieOptions(req);
+    this.logger.debug(
+      `Setting refresh cookie for ${dto.email}, secure=${cookieOptions.secure}`,
+    );
     res.cookie('refresh_token', result.refresh_token, cookieOptions);
 
     return {
@@ -83,28 +112,7 @@ export class AdminAuthController {
       throw new UnauthorizedException('Refresh token is required');
     }
     const result = await this.adminAuthService.refreshAccessToken(refreshToken);
-
-    const env = (process.env.NODE_ENV || 'development').toLowerCase();
-    const isProd = env === 'production';
-    const host = req.get('host') || '';
-    const isLocalhost = host.includes('localhost') || host.includes('127.0.0.1');
-
-    const cookieOptions: any = {
-      httpOnly: true,
-      secure: true,
-      sameSite: 'none',
-      maxAge: 7 * 24 * 60 * 60 * 1000,
-      expires: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-      path: '/',
-      partitioned: true,
-    };
-
-    if (isLocalhost && !isProd) {
-      cookieOptions.secure = false;
-      cookieOptions.sameSite = 'lax';
-      delete cookieOptions.partitioned;
-    }
-
+    const cookieOptions = this.getRefreshCookieOptions(req);
     res.cookie('refresh_token', result.refresh_token, cookieOptions);
 
     return {
@@ -122,26 +130,7 @@ export class AdminAuthController {
     if (refreshToken) {
       await this.adminAuthService.logout(refreshToken);
     }
-
-    const env = (process.env.NODE_ENV || 'development').toLowerCase();
-    const isProd = env === 'production';
-    const host = req.get('host') || '';
-    const isLocalhost = host.includes('localhost') || host.includes('127.0.0.1');
-
-    const cookieOptions: any = {
-      httpOnly: true,
-      secure: true,
-      sameSite: 'none',
-      path: '/',
-      partitioned: true,
-    };
-
-    if (isLocalhost && !isProd) {
-      cookieOptions.secure = false;
-      cookieOptions.sameSite = 'lax';
-      delete cookieOptions.partitioned;
-    }
-
+    const cookieOptions = this.getRefreshCookieOptions(req, false);
     res.clearCookie('refresh_token', cookieOptions);
 
     return { message: 'Logged out successfully' };
@@ -149,14 +138,14 @@ export class AdminAuthController {
 
   @Post('logout-all')
   @UseGuards(JwtAuthGuard)
-  async logoutAll(@Req() req: any) {
+  async logoutAll(@Req() req: AuthenticatedRequest) {
     await this.adminAuthService.logoutAll(req.user.sub);
     return { message: 'Logged out from all devices successfully' };
   }
 
   @Get('me')
   @UseGuards(JwtAuthGuard)
-  async getMe(@Req() req: any) {
+  async getMe(@Req() req: AuthenticatedRequest) {
     return {
       user: req.user,
     };

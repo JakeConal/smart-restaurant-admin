@@ -1,13 +1,13 @@
 import {
   IsNotEmpty,
   IsString,
-  MinLength,
   MaxLength,
+  MinLength,
   Validate,
 } from 'class-validator';
 import { IsPasswordComplexConstraint } from '../../common/password-complexity.validator';
 
-export class AdminResetPasswordDto {
+export class CustomerResetPasswordDto {
   @IsNotEmpty({ message: 'Reset token is required' })
   @IsString()
   token: string;
@@ -17,5 +17,5 @@ export class AdminResetPasswordDto {
   @MinLength(8, { message: 'Password must be at least 8 characters' })
   @MaxLength(128, { message: 'Password must not exceed 128 characters' })
   @Validate(IsPasswordComplexConstraint)
-  newPassword: string;
+  password: string;
 }

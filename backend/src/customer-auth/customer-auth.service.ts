@@ -3,12 +3,20 @@ import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
+import { randomBytes } from 'crypto';
 import { Customer } from './entities/customer.schema';
 import { EmailVerificationToken } from './entities/email-verification-token.schema';
 import { PasswordResetToken } from './entities/password-reset-token.schema';
 import { CustomerSignupDto } from './dto/customer-sign-up.dto';
 import { CustomerLoginDto } from './dto/customer-login.dto';
 import { EmailService } from '../email/email.service';
+
+type GoogleAuthUser = {
+  email: string;
+  firstName: string;
+  lastName: string;
+  profilePictureUrl: string | null;
+};
 
 @Injectable()
 export class CustomerAuthService {
@@ -111,7 +119,7 @@ export class CustomerAuthService {
     };
   }
 
-  async customerGoogleLogin(user: any) {
+  async customerGoogleLogin(user: GoogleAuthUser) {
     const { email, firstName, lastName, profilePictureUrl } = user;
     let existingCustomer = await this.customerRepo.findOne({
       where: { email },
@@ -262,7 +270,7 @@ export class CustomerAuthService {
    * Generate random verification token
    */
   private generateVerificationToken(): string {
-    return `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    return randomBytes(32).toString('hex');
   }
 
   /**
