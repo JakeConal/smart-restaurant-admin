@@ -3,11 +3,11 @@ import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
-import { Customer } from '../schema/customer.schema';
-import { EmailVerificationToken } from '../schema/email-verification-token.schema';
-import { PasswordResetToken } from '../schema/password-reset-token.schema';
-import { CustomerSignupDto } from '../dto/customer-sign-up.dto';
-import { CustomerLoginDto } from '../dto/customer-login.dto';
+import { Customer } from './entities/customer.schema';
+import { EmailVerificationToken } from './entities/email-verification-token.schema';
+import { PasswordResetToken } from './entities/password-reset-token.schema';
+import { CustomerSignupDto } from './dto/customer-sign-up.dto';
+import { CustomerLoginDto } from './dto/customer-login.dto';
 import { EmailService } from '../email/email.service';
 
 @Injectable()
@@ -361,3 +361,4 @@ export class CustomerAuthService {
     };
   }
 }
+

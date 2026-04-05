@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Between, Not, In } from 'typeorm';
-import { Order, OrderStatus } from '../schema/order.schema';
+import { Order, OrderStatus } from '../order/entities/order.entity';
 
 @Injectable()
 export class ReportsService {
@@ -280,3 +280,4 @@ export class ReportsService {
     return `${displayHour} ${period}`;
   }
 }
+

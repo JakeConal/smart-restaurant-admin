@@ -5,14 +5,14 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource } from 'typeorm';
-import { Users, UserStatus } from '../schema/user.schema';
-import { Role } from '../schema/role.schema';
-import { UserCredentials } from '../schema/user-credentials.schema';
-import { Table } from '../schema/table.schema';
-import { CreateWaiterDto } from '../dto/create-waiter.dto';
-import { UpdateWaiterDto } from '../dto/update-waiter.dto';
-import { CreateKitchenStaffDto } from '../dto/create-kitchen-staff.dto';
-import { UpdateKitchenStaffDto } from '../dto/update-kitchen-staff.dto';
+import { Users, UserStatus } from './entities/user.schema';
+import { Role } from './entities/role.schema';
+import { UserCredentials } from './entities/user-credentials.schema';
+import { Table } from '../table/entities/table.entity';
+import { CreateWaiterDto } from './dto/create-waiter.dto';
+import { UpdateWaiterDto } from './dto/update-waiter.dto';
+import { CreateKitchenStaffDto } from './dto/create-kitchen-staff.dto';
+import { UpdateKitchenStaffDto } from './dto/update-kitchen-staff.dto';
 
 @Injectable()
 export class UsersService {
@@ -464,3 +464,4 @@ export class UsersService {
     await this.usersRepository.update(id, { status: newStatus });
   }
 }
+

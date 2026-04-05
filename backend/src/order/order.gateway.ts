@@ -7,7 +7,7 @@ import {
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { Injectable } from '@nestjs/common';
-import { Order } from '../schema/order.schema';
+import { Order } from '../order/entities/order.entity';
 
 @Injectable()
 @WebSocketGateway({
@@ -263,3 +263,4 @@ export class OrderGateway implements OnGatewayConnection, OnGatewayDisconnect {
     }
   }
 }
+

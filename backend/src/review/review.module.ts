@@ -1,8 +1,8 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { Review } from '../schema/review.schema';
-import { MenuItem } from '../schema/menu-item.schema';
-import { Customer } from '../schema/customer.schema';
+import { Review } from './entities/review.schema';
+import { MenuItem } from '../menu/entities/menu-item.entity';
+import { Customer } from '../customer-auth/entities/customer.schema';
 import { ReviewService } from './review.service';
 import { ReviewController } from './review.controller';
 import { CustomerAuthModule } from '../customer-auth/customer-auth.module';
@@ -14,3 +14,4 @@ import { CustomerAuthModule } from '../customer-auth/customer-auth.module';
   exports: [ReviewService],
 })
 export class ReviewModule {}
+

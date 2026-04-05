@@ -8,8 +8,8 @@ import {
   Res,
 } from '@nestjs/common';
 import { CustomerAuthService } from './customer-auth.service';
-import { CustomerLoginDto } from '../dto/customer-login.dto';
-import { CustomerSignupDto } from '../dto/customer-sign-up.dto';
+import { CustomerLoginDto } from './dto/customer-login.dto';
+import { CustomerSignupDto } from './dto/customer-sign-up.dto';
 import { AuthGuard } from '@nestjs/passport';
 import type { Response } from 'express';
 
@@ -93,3 +93,4 @@ export class CustomerAuthController {
     return this.auth.resetPassword(token, password);
   }
 }
+

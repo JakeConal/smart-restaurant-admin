@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { Customer } from '../schema/customer.schema';
+import { Customer } from '../customer-auth/entities/customer.schema';
 import { ProfileService } from './profile.service';
 import { ProfileController } from './profile.controller';
 
@@ -10,3 +10,4 @@ import { ProfileController } from './profile.controller';
   controllers: [ProfileController],
 })
 export class ProfileModule {}
+

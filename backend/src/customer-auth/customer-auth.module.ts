@@ -7,9 +7,9 @@ import { CustomerAuthController } from './customer-auth.controller';
 import { CustomerJwtStrategy } from './strategies/customer-jwt.strategy';
 import { CustomerGoogleStrategy } from './strategies/customer-google.strategy';
 import { CustomerJwtAuthGuard } from './guards/customer-jwt-auth.guard';
-import { Customer } from '../schema/customer.schema';
-import { EmailVerificationToken } from '../schema/email-verification-token.schema';
-import { PasswordResetToken } from '../schema/password-reset-token.schema';
+import { Customer } from './entities/customer.schema';
+import { EmailVerificationToken } from './entities/email-verification-token.schema';
+import { PasswordResetToken } from './entities/password-reset-token.schema';
 import { EmailModule } from '../email/email.module';
 
 @Module({
@@ -36,3 +36,4 @@ import { EmailModule } from '../email/email.module';
   exports: [CustomerJwtAuthGuard, CustomerAuthService],
 })
 export class CustomerAuthModule {}
+

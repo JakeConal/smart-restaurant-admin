@@ -1,0 +1,64 @@
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Patch,
+  Post,
+  Put,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
+import { MenuCategoryService } from '../services/menu-category.service';
+import { MenuCategory, CategoryStatus } from '../entities/menu-category.entity';
+import { CreateMenuCategoryDto } from '../dto/create-menu-category.dto';
+import { UpdateMenuCategoryDto } from '../dto/update-menu-category.dto';
+
+import { AdminGuard } from '../../admin-auth/guards/admin.guard';
+import { CurrentUser } from '../../customer-auth/decorators/current-user.decorator';
+import type { AuthUser } from '../../customer-auth/interfaces/auth-user.interface';
+
+@Controller('api/admin/menu/categories')
+@UseGuards(AdminGuard)
+export class MenuCategoryController {
+  constructor(private readonly service: MenuCategoryService) { }
+
+  @Post()
+  create(@CurrentUser() user: AuthUser, @Body() dto: CreateMenuCategoryDto) {
+    return this.service.create(user.restaurantId, dto);
+  }
+
+  @Get()
+  findAll(
+    @CurrentUser() user: AuthUser,
+    @Query('status') status?: string,
+    @Query('sortBy') sortBy?: string,
+  ) {
+    return this.service.findAll(user.restaurantId, { status, sortBy });
+  }
+
+  @Put(':id')
+  update(
+    @CurrentUser() user: AuthUser,
+    @Param('id') id: string,
+    @Body() dto: UpdateMenuCategoryDto,
+  ) {
+    return this.service.update(id, user.restaurantId, dto);
+  }
+
+  @Patch(':id/status')
+  updateStatus(
+    @CurrentUser() user: AuthUser,
+    @Param('id') id: string,
+    @Body('status') status: CategoryStatus,
+  ) {
+    return this.service.updateStatus(id, user.restaurantId, status);
+  }
+
+  @Delete(':id')
+  remove(@CurrentUser() user: AuthUser, @Param('id') id: string) {
+    return this.service.remove(id, user.restaurantId);
+  }
+}
+

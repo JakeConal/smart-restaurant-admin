@@ -14,8 +14,8 @@ import {
 } from '@nestjs/common';
 import type { Response } from 'express';
 import { TableService } from './table.service';
-import { CreateTableDto } from '../dto/create-table.dto';
-import { UpdateTableDto } from '../dto/update-table.dto';
+import { CreateTableDto } from './dto/create-table.dto';
+import { UpdateTableDto } from './dto/update-table.dto';
 
 import { AdminGuard } from '../admin-auth/guards/admin.guard';
 import { PermissionGuard } from '../admin-auth/guards/permission.guard';
@@ -146,4 +146,5 @@ export class TableController {
     return this.tableService.regenerateAllQrCodes(user.restaurantId);
   }
 }
+
 

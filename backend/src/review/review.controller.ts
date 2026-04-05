@@ -13,7 +13,7 @@ import { ReviewService } from './review.service';
 import { CustomerJwtAuthGuard } from '../customer-auth/guards/customer-jwt-auth.guard';
 import { CurrentUser } from '../customer-auth/decorators/current-user.decorator';
 import type { AuthUser } from '../customer-auth/interfaces/auth-user.interface';
-import { CreateReviewDto } from '../dto/create-review.dto';
+import { CreateReviewDto } from './dto/create-review.dto';
 
 @Controller('api/reviews')
 export class ReviewController {
@@ -67,3 +67,4 @@ export class ReviewController {
     return this.service.updateAllPopularityScores();
   }
 }
+

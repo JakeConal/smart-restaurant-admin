@@ -7,8 +7,8 @@
     "admin-frontend"
   ],
   "scripts": {
-    "build": "yarn workspace backend build",
-    "start": "yarn workspace backend start:prod"
+    "build": "npm run --prefix backend build",
+    "start": "npm run --prefix backend start:prod"
   },
   "engines": {
     "node": ">=20.0.0"

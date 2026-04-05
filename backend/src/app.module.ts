@@ -1,4 +1,4 @@
-import { Module, OnModuleInit } from '@nestjs/common';
+import { Module } from '@nestjs/common';
 import { CacheModule } from '@nestjs/cache-manager';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
@@ -7,41 +7,35 @@ import { MenuModule } from './menu/menu.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ScheduleModule } from '@nestjs/schedule';
-import { Table } from './schema/table.schema';
-import { MenuCategory } from './schema/menu-category.schema';
-import { Users } from './schema/user.schema';
-import { Customer } from './schema/customer.schema';
-import { MenuItem } from './schema/menu-item.schema';
-import { MenuItemPhoto } from './schema/menu-item-photo.schema';
-import { MenuCategoryModule } from './menu-category/menu-category.module';
+import { Table } from './table/entities/table.entity';
+import { MenuCategory } from './menu/entities/menu-category.entity';
+import { Users } from './users/entities/user.schema';
+import { Customer } from './customer-auth/entities/customer.schema';
+import { MenuItem } from './menu/entities/menu-item.entity';
+import { MenuItemPhoto } from './menu/entities/menu-item-photo.entity';
 import { CustomerAuthModule } from './customer-auth/customer-auth.module';
 import { UsersModule } from './users/users.module';
-import { MenuItemModule } from './menu-item/menu-item.module';
-import { MenuItemPhotoModule } from './menu-item-photo/menu-item-photo.module';
-import { ModifierGroupModule } from './modifier-group/modifier-group.module';
-import { ModifierGroup } from './schema/modifier-group.schema';
-import { ModifierOption } from './schema/modifier-option.schema';
-import { ModifierOptionModule } from './modifier-option/modifier-option.module';
-import { MenuItemModifierModule } from './menu-item-modifier/menu-item-modifier.module';
-import { MenuItemModifierGroup } from './schema/menu-item-modifier.schema';
+import { ModifierGroup } from './menu/entities/modifier-group.entity';
+import { ModifierOption } from './menu/entities/modifier-option.entity';
+import { MenuItemModifierGroup } from './menu/entities/menu-item-modifier.entity';
 import { ProfileModule } from './profile/profile.module';
 import { ReviewModule } from './review/review.module';
-import { Review } from './schema/review.schema';
-import { Order } from './schema/order.schema';
+import { Review } from './review/entities/review.schema';
+import { Order } from './order/entities/order.entity';
 import { OrderModule } from './order/order.module';
-import { EmailVerificationToken } from './schema/email-verification-token.schema';
-import { PasswordResetToken } from './schema/password-reset-token.schema';
-import { AdminEmailVerificationToken } from './schema/admin-email-verification-token.schema';
-import { AdminPasswordResetToken } from './schema/admin-password-reset-token.schema';
-import { AdminAuditLog } from './schema/admin-audit-log.schema';
+import { EmailVerificationToken } from './customer-auth/entities/email-verification-token.schema';
+import { PasswordResetToken } from './customer-auth/entities/password-reset-token.schema';
+import { AdminEmailVerificationToken } from './admin-auth/entities/admin-email-verification-token.schema';
+import { AdminPasswordResetToken } from './admin-auth/entities/admin-password-reset-token.schema';
+import { AdminAuditLog } from './admin-auth/entities/admin-audit-log.schema';
 import { AdminAuthModule } from './admin-auth/admin-auth.module';
 
 // New RBAC entities
-import { Role } from './schema/role.schema';
-import { Permission } from './schema/permission.schema';
-import { RolePermission } from './schema/role-permission.schema';
-import { UserCredentials } from './schema/user-credentials.schema';
-import { RefreshToken } from './schema/refresh-token.schema';
+import { Role } from './users/entities/role.schema';
+import { Permission } from './users/entities/permission.schema';
+import { RolePermission } from './users/entities/role-permission.schema';
+import { UserCredentials } from './users/entities/user-credentials.schema';
+import { RefreshToken } from './admin-auth/entities/refresh-token.schema';
 import { WaiterModule } from './waiter/waiter.module';
 import { ManagerModule } from './manager/manager.module';
 import { KitchenModule } from './kitchen/kitchen.module';
@@ -108,15 +102,9 @@ import { ReportsModule } from './reports/reports.module';
     }),
     TableModule,
     MenuModule,
-    MenuCategoryModule,
     CustomerAuthModule,
     AdminAuthModule,
     UsersModule,
-    MenuItemModule,
-    MenuItemPhotoModule,
-    ModifierGroupModule,
-    ModifierOptionModule,
-    MenuItemModifierModule,
     ProfileModule,
     ReviewModule,
     OrderModule,
@@ -130,3 +118,4 @@ import { ReportsModule } from './reports/reports.module';
   providers: [AppService],
 })
 export class AppModule {}
+

@@ -4,7 +4,7 @@ import { ExtractJwt, Strategy } from 'passport-jwt';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ConfigService } from '@nestjs/config';
-import { Users, UserStatus } from '../../schema/user.schema';
+import { Users, UserStatus } from '../../users/entities/user.schema';
 
 @Injectable()
 export class AdminJwtStrategy extends PassportStrategy(Strategy, 'admin-jwt') {
@@ -48,3 +48,4 @@ export class AdminJwtStrategy extends PassportStrategy(Strategy, 'admin-jwt') {
     };
   }
 }
+

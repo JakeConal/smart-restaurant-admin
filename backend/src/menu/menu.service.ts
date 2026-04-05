@@ -3,12 +3,12 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import type { Cache } from 'cache-manager';
 import { Repository, Like, In } from 'typeorm';
-import { MenuCategory, CategoryStatus } from '../schema/menu-category.schema';
-import { MenuItem, MenuItemStatus } from '../schema/menu-item.schema';
-import { MenuItemPhoto } from '../schema/menu-item-photo.schema';
-import { ModifierGroup } from '../schema/modifier-group.schema';
-import { ModifierOption } from '../schema/modifier-option.schema';
-import { MenuItemModifierGroup } from '../schema/menu-item-modifier.schema';
+import { MenuCategory, CategoryStatus } from './entities/menu-category.entity';
+import { MenuItem, MenuItemStatus } from './entities/menu-item.entity';
+import { MenuItemPhoto } from './entities/menu-item-photo.entity';
+import { ModifierGroup } from './entities/modifier-group.entity';
+import { ModifierOption } from './entities/modifier-option.entity';
+import { MenuItemModifierGroup } from './entities/menu-item-modifier.entity';
 
 @Injectable()
 export class MenuService {
@@ -265,3 +265,4 @@ export class MenuService {
     };
   }
 }
+

@@ -2,7 +2,7 @@ import { Module } from '@nestjs/common';
 import { TableController } from './table.controller';
 import { TableService } from './table.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { Table } from '../schema/table.schema';
+import { Table } from '../table/entities/table.entity';
 import { QrService } from './qr.service';
 import { CustomerAuthModule } from '../customer-auth/customer-auth.module';
 @Module({
@@ -12,3 +12,4 @@ import { CustomerAuthModule } from '../customer-auth/customer-auth.module';
   exports: [TableService],
 })
 export class TableModule {}
+

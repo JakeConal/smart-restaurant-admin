@@ -5,13 +5,13 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { AdminAuthController } from './admin-auth.controller';
 import { AdminAuthService } from './admin-auth.service';
-import { Users } from '../schema/user.schema';
-import { UserCredentials } from '../schema/user-credentials.schema';
-import { RefreshToken } from '../schema/refresh-token.schema';
-import { Role } from '../schema/role.schema';
-import { AdminEmailVerificationToken } from '../schema/admin-email-verification-token.schema';
-import { AdminPasswordResetToken } from '../schema/admin-password-reset-token.schema';
-import { AdminAuditLog } from '../schema/admin-audit-log.schema';
+import { Users } from '../users/entities/user.schema';
+import { UserCredentials } from '../users/entities/user-credentials.schema';
+import { RefreshToken } from './entities/refresh-token.schema';
+import { Role } from '../users/entities/role.schema';
+import { AdminEmailVerificationToken } from './entities/admin-email-verification-token.schema';
+import { AdminPasswordResetToken } from './entities/admin-password-reset-token.schema';
+import { AdminAuditLog } from './entities/admin-audit-log.schema';
 import { AdminJwtStrategy } from './strategies/jwt.strategy';
 import { AdminGuard } from './guards/admin.guard';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
@@ -51,3 +51,4 @@ import { EmailModule } from '../email/email.module';
   exports: [AdminGuard, JwtAuthGuard, PermissionGuard],
 })
 export class AdminAuthModule {}
+

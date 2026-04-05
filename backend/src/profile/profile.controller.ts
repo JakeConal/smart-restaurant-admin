@@ -16,7 +16,7 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import type { Response } from 'express';
 import { ProfileService } from './profile.service';
 import { CustomerJwtAuthGuard } from '../customer-auth/guards/customer-jwt-auth.guard';
-import { ChangePasswordDto } from '../dto/change-password.dto';
+import { ChangePasswordDto } from './dto/change-password.dto';
 
 @Controller('profile')
 @UseGuards(CustomerJwtAuthGuard)
@@ -84,4 +84,5 @@ export class ProfileController {
     );
   }
 }
+
 

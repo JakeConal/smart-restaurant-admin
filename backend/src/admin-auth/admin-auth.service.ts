@@ -9,19 +9,19 @@ import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource } from 'typeorm';
 import * as crypto from 'crypto';
-import { Users, UserStatus } from '../schema/user.schema';
-import { UserCredentials } from '../schema/user-credentials.schema';
-import { RefreshToken } from '../schema/refresh-token.schema';
-import { Role } from '../schema/role.schema';
-import { AdminEmailVerificationToken } from '../schema/admin-email-verification-token.schema';
-import { AdminPasswordResetToken } from '../schema/admin-password-reset-token.schema';
+import { Users, UserStatus } from '../users/entities/user.schema';
+import { UserCredentials } from '../users/entities/user-credentials.schema';
+import { RefreshToken } from './entities/refresh-token.schema';
+import { Role } from '../users/entities/role.schema';
+import { AdminEmailVerificationToken } from './entities/admin-email-verification-token.schema';
+import { AdminPasswordResetToken } from './entities/admin-password-reset-token.schema';
 import {
   AdminAuditLog,
   AdminAuditAction,
   AdminAuditStatus,
-} from '../schema/admin-audit-log.schema';
-import { SignupDto } from '../dto/sign-up.dto';
-import { LoginDto } from '../dto/login.dto';
+} from './entities/admin-audit-log.schema';
+import { SignupDto } from './dto/sign-up.dto';
+import { LoginDto } from './dto/login.dto';
 import { EmailService } from '../email/email.service';
 
 @Injectable()
@@ -677,3 +677,4 @@ export class AdminAuthService {
     }
   }
 }
+

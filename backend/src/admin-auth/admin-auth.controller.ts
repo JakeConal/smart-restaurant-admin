@@ -12,12 +12,12 @@ import {
 } from '@nestjs/common';
 import type { Request, Response } from 'express';
 import { AdminAuthService } from './admin-auth.service';
-import { SignupDto } from '../dto/sign-up.dto';
-import { LoginDto } from '../dto/login.dto';
-import { AdminVerifyEmailDto } from '../dto/admin-verify-email.dto';
-import { AdminResendVerificationDto } from '../dto/admin-resend-verification.dto';
-import { AdminForgotPasswordDto } from '../dto/admin-forgot-password.dto';
-import { AdminResetPasswordDto } from '../dto/admin-reset-password.dto';
+import { SignupDto } from './dto/sign-up.dto';
+import { LoginDto } from './dto/login.dto';
+import { AdminVerifyEmailDto } from './dto/admin-verify-email.dto';
+import { AdminResendVerificationDto } from './dto/admin-resend-verification.dto';
+import { AdminForgotPasswordDto } from './dto/admin-forgot-password.dto';
+import { AdminResetPasswordDto } from './dto/admin-reset-password.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 
 @Controller('admin-auth')
@@ -186,3 +186,4 @@ export class AdminAuthController {
     return this.adminAuthService.resetPassword(dto.token, dto.newPassword, req);
   }
 }
+
