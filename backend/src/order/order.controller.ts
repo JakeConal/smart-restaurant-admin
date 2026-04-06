@@ -9,6 +9,7 @@ import {
   Query,
   HttpException,
   HttpStatus,
+  Logger,
 } from '@nestjs/common';
 import { OrderService } from './order.service';
 import { CreateOrderDto } from './dto/create-order.dto';
@@ -16,19 +17,20 @@ import { UpdateOrderDto } from './dto/update-order.dto';
 
 @Controller('api/orders')
 export class OrderController {
+  private readonly logger = new Logger(OrderController.name);
+
   constructor(private readonly orderService: OrderService) {}
 
   @Post()
   async create(@Body() createOrderDto: CreateOrderDto) {
     try {
-      console.log('[Order Controller] Creating order with:', {
+      this.logger.log('[Order Controller] Creating order', {
         orderId: createOrderDto.orderId,
         table_id: createOrderDto.table_id,
         itemCount: createOrderDto.items?.length,
-        payload: createOrderDto,
       });
       const order = await this.orderService.create(createOrderDto);
-      console.log('[Order Controller] Order created successfully:', {
+      this.logger.log('[Order Controller] Order created successfully', {
         id: order.id,
         orderId: order.orderId,
       });
@@ -37,7 +39,7 @@ export class OrderController {
         data: order,
       };
     } catch (error) {
-      console.error('[Order Controller] Error creating order:', error);
+      this.logger.error('[Order Controller] Error creating order', error);
       const message = error instanceof Error ? error.message : 'Unknown error';
       const stack = error instanceof Error ? error.stack : undefined;
 

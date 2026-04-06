@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { CreateModifierGroupDto } from '../dto/create-modifier-group.dto';
 import { ModifierGroup } from '../entities/modifier-group.entity';
@@ -6,28 +6,28 @@ import { Repository } from 'typeorm';
 
 @Injectable()
 export class ModifierGroupService {
+  private readonly logger = new Logger(ModifierGroupService.name);
+
   constructor(
     @InjectRepository(ModifierGroup)
     private readonly modifierGroupRepo: Repository<ModifierGroup>,
   ) { }
 
   async createGroup(restaurantId: string, dto: CreateModifierGroupDto) {
-    console.log(
-      'Service: Creating modifier group for restaurant:',
+    this.logger.debug('Creating modifier group', {
       restaurantId,
-      'with data:',
-      dto,
-    );
+      name: dto.name,
+    });
     try {
       const group = this.modifierGroupRepo.create({
         restaurantId,
         ...dto,
       });
       const result = await this.modifierGroupRepo.save(group);
-      console.log('Service: Modifier group created successfully:', result);
+      this.logger.debug(`Modifier group created successfully: ${result.id}`);
       return result;
     } catch (error) {
-      console.error('Service: Error creating modifier group:', error);
+      this.logger.error('Error creating modifier group', error);
       throw error;
     }
   }
@@ -49,26 +49,26 @@ export class ModifierGroupService {
       Object.assign(group, dto);
       return this.modifierGroupRepo.save(group);
     } catch (error) {
-      console.error('Error updating modifier group:', error);
+      this.logger.error('Error updating modifier group', error);
       throw error;
     }
   }
 
   async findAllByRestaurant(restaurantId: string) {
     try {
-      console.log('Fetching modifier groups for restaurant:', restaurantId);
+      this.logger.debug(
+        `Fetching modifier groups for restaurant: ${restaurantId}`,
+      );
       const result = await this.modifierGroupRepo.find({
         where: { restaurantId },
         relations: ['options'],
         order: { displayOrder: 'ASC', name: 'ASC' },
       });
-      console.log(`Found ${result.length} modifier groups`);
+      this.logger.debug(`Found ${result.length} modifier groups`);
       return result;
     } catch (error) {
-      console.error(
-        'Error fetching modifier groups for restaurant',
-        restaurantId,
-        ':',
+      this.logger.error(
+        `Error fetching modifier groups for restaurant ${restaurantId}`,
         error,
       );
       // Return empty array on error to prevent app crash
@@ -104,7 +104,7 @@ export class ModifierGroupService {
     try {
       await this.modifierGroupRepo.remove(group);
     } catch (error) {
-      console.error('Error deleting modifier group:', error);
+      this.logger.error('Error deleting modifier group', error);
       throw error;
     }
   }

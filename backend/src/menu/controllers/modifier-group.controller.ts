@@ -9,6 +9,7 @@ import {
   Delete,
   HttpException,
   HttpStatus,
+  Logger,
 } from '@nestjs/common';
 
 import { AdminGuard } from '../../admin-auth/guards/admin.guard';
@@ -20,6 +21,8 @@ import { ModifierGroupService } from '../services/modifier-group.service';
 @Controller('api/admin/menu/modifier-groups')
 @UseGuards(AdminGuard)
 export class ModifierGroupController {
+  private readonly logger = new Logger(ModifierGroupController.name);
+
   constructor(private readonly service: ModifierGroupService) { }
 
   @Post()
@@ -28,10 +31,13 @@ export class ModifierGroupController {
     @Body() dto: CreateModifierGroupDto,
   ) {
     try {
-      console.log('Creating modifier group with data:', dto, 'user:', user);
+      this.logger.debug('Creating modifier group', {
+        restaurantId: user.restaurantId,
+        name: dto.name,
+      });
       return await this.service.createGroup(user.restaurantId, dto);
     } catch (error) {
-      console.error('Error creating modifier group:', error);
+      this.logger.error('Error creating modifier group', error);
       throw new HttpException(
         error.message || 'Failed to create modifier group',
         HttpStatus.BAD_REQUEST,
@@ -63,7 +69,7 @@ export class ModifierGroupController {
     try {
       return await this.service.deleteGroup(id, user.restaurantId);
     } catch (error) {
-      console.error('Controller: Error deleting modifier group:', error);
+      this.logger.error('Error deleting modifier group', error);
       throw new HttpException(
         error.message || 'Failed to delete modifier group',
         error.status || HttpStatus.INTERNAL_SERVER_ERROR,

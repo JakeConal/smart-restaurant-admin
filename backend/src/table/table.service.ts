@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   Injectable,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -14,6 +15,8 @@ import { Readable } from 'stream';
 
 @Injectable()
 export class TableService {
+  private readonly logger = new Logger(TableService.name);
+
   constructor(
     @InjectRepository(Table)
     private readonly tableRepo: Repository<Table>,
@@ -50,7 +53,10 @@ export class TableService {
       savedTable.qrTokenCreatedAt = new Date();
       return await this.tableRepo.save(savedTable);
     } catch (error) {
-      console.error('Failed to generate initial QR code:', error);
+      this.logger.error(
+        `Failed to generate initial QR code: ${(error as Error).message}`,
+        (error as Error).stack,
+      );
       return savedTable;
     }
   }

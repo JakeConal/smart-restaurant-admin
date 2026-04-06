@@ -7,13 +7,18 @@ import {
     Req,
     HttpException,
     HttpStatus,
+    Logger,
 } from '@nestjs/common';
 import express from 'express';
 import { VNPayService } from './vnpay.service';
 import { OrderService } from './order.service';
 
+type VNPayQuery = Record<string, string>;
+
 @Controller('api/vnpay')
 export class VNPayController {
+    private readonly logger = new Logger(VNPayController.name);
+
     constructor(
         private readonly vnpayService: VNPayService,
         private readonly orderService: OrderService,
@@ -30,7 +35,7 @@ export class VNPayController {
         @Req() req: express.Request,
     ) {
         try {
-            console.log('[VNPay Controller] Creating payment request body:', body);
+            this.logger.log(`Creating payment request for ${body.orderIds.length} order(s)`);
 
             // 1. Clean TxnRef: Must be unique for every request even for the same order
             // We use numeric IDs (digits only) + unique suffix
@@ -56,8 +61,7 @@ export class VNPayController {
                 ipAddr = '127.0.0.1';
             }
 
-            console.log(`[VNPay Controller] Client IP: ${ipAddr}, Generated TxnRef: ${txnRef}`);
-            console.log(`[VNPay Controller] Return URL Length: ${body.returnUrl.length} chars`);
+            this.logger.log(`Client IP: ${ipAddr}, Generated TxnRef: ${txnRef}`);
 
             const paymentUrl = this.vnpayService.createPaymentUrl({
                 amount: Math.floor(body.totalAmount),
@@ -66,7 +70,7 @@ export class VNPayController {
                 returnUrl: body.returnUrl,
             });
 
-            console.log('[VNPay Controller] Generated Payment URL:', paymentUrl);
+            this.logger.debug('Generated VNPay payment URL');
 
             return {
                 success: true,
@@ -77,7 +81,7 @@ export class VNPayController {
                 {
                     success: false,
                     message: 'Failed to create VNPay payment URL',
-                    error: error.message,
+                    error: (error as Error).message,
                 },
                 HttpStatus.INTERNAL_SERVER_ERROR,
             );
@@ -85,14 +89,14 @@ export class VNPayController {
     }
 
     @Get('vnpay-return')
-    async vnpayReturn(@Query() query: any) {
+    async vnpayReturn(@Query() query: VNPayQuery) {
         try {
-            console.log('[VNPay Controller] Return URL Query:', query);
+            this.logger.debug('Received VNPay return query');
             const verify = this.vnpayService.verifyReturnUrl(query);
-            console.log('[VNPay Controller] Verification Result:', verify);
+            this.logger.debug(`VNPay return verification result: ${verify.isVerified}/${verify.isSuccess}`);
 
             if (!verify.isVerified) {
-                console.error('[VNPay Controller] Signature verification failed!');
+                this.logger.error('VNPay return signature verification failed');
                 return {
                     success: false,
                     message: 'Data integrity verification failed (Invalid Signature)',
@@ -125,7 +129,7 @@ export class VNPayController {
             for (const idStr of orderIdsToUpdate) {
                 const id = parseInt(idStr);
                 if (!isNaN(id)) {
-                    console.log(`[VNPay] Marking order #${id} as paid via ReturnURL`);
+                    this.logger.log(`Marking order #${id} as paid via ReturnURL`);
                     await this.orderService.markAsPaid(id);
                 }
             }
@@ -136,11 +140,14 @@ export class VNPayController {
                 orderIds: orderIdsToUpdate,
             };
         } catch (error) {
-            console.error('[VNPay Controller] Error in Return URL handler:', error);
+            this.logger.error(
+                `Error in VNPay return handler: ${(error as Error).message}`,
+                (error as Error).stack,
+            );
             return {
                 success: false,
                 message: 'Error processing VNPay return',
-                error: error.message,
+                error: (error as Error).message,
             };
         }
     }
@@ -151,13 +158,13 @@ export class VNPayController {
      * VNPay server will call this endpoint automatically and asynchronously.
      */
     @Get('vnpay-ipn')
-    async vnpayIpn(@Query() query: any) {
+    async vnpayIpn(@Query() query: VNPayQuery) {
         try {
-            console.log('[VNPay IPN] Received notification:', query);
+            this.logger.debug('Received VNPay IPN');
             const verify = this.vnpayService.verifyReturnUrl(query);
 
             if (!verify.isVerified) {
-                console.error('[VNPay IPN] Invalid signature!');
+                this.logger.error('VNPay IPN invalid signature');
                 return { RspCode: '97', Message: 'Invalid signature' };
             }
 
@@ -178,18 +185,21 @@ export class VNPayController {
                 for (const idStr of orderIdsToUpdate) {
                     const id = parseInt(idStr);
                     if (!isNaN(id)) {
-                        console.log(`[VNPay IPN] Success - Updating order #${id}`);
+                        this.logger.log(`VNPay IPN success - updating order #${id}`);
                         await this.orderService.markAsPaid(id);
                     }
                 }
                 return { RspCode: '00', Message: 'Success' };
             } else {
-                console.warn(`[VNPay IPN] Payment failed for ${fullTxnRef}. Code: ${verify.vnp_ResponseCode}`);
+                this.logger.warn(`VNPay IPN payment failed for ${fullTxnRef}. Code: ${verify.vnp_ResponseCode}`);
                 return { RspCode: '00', Message: 'Confirm Success (Payment failed status recorded)' };
             }
         } catch (error) {
-            console.error('[VNPay IPN] Error:', error);
-            return { RspCode: '99', Message: 'Unknown error: ' + error.message };
+            this.logger.error(
+                `VNPay IPN error: ${(error as Error).message}`,
+                (error as Error).stack,
+            );
+            return { RspCode: '99', Message: 'Unknown error: ' + (error as Error).message };
         }
     }
 }

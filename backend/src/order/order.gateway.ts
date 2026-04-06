@@ -6,7 +6,7 @@ import {
   OnGatewayDisconnect,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { Order } from '../order/entities/order.entity';
 
 @Injectable()
@@ -17,17 +17,19 @@ import { Order } from '../order/entities/order.entity';
   namespace: '/orders',
 })
 export class OrderGateway implements OnGatewayConnection, OnGatewayDisconnect {
+  private readonly logger = new Logger(OrderGateway.name);
+
   @WebSocketServer()
   server: Server;
 
   private orderSubscriptions = new Map<string, Set<string>>(); // orderId -> Set of socketIds
 
   handleConnection(client: Socket) {
-    console.log(`[OrderGateway] Client connected: ${client.id}`);
+    this.logger.log(`[OrderGateway] Client connected: ${client.id}`);
   }
 
   handleDisconnect(client: Socket) {
-    console.log(`[OrderGateway] Client disconnected: ${client.id}`);
+    this.logger.log(`[OrderGateway] Client disconnected: ${client.id}`);
 
     // Remove client from all subscriptions
     this.orderSubscriptions.forEach((sockets) => {
@@ -45,7 +47,7 @@ export class OrderGateway implements OnGatewayConnection, OnGatewayDisconnect {
     const { restaurantId } = data;
 
     if (!restaurantId) {
-      console.warn(
+      this.logger.warn(
         `[OrderGateway] Client ${client.id} tried to join restaurant without restaurantId`,
       );
       client.emit('error', { message: 'restaurantId is required' });
@@ -54,7 +56,7 @@ export class OrderGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
     const restaurantRoomName = `restaurant-${restaurantId}`;
     void client.join(restaurantRoomName);
-    console.log(
+    this.logger.log(
       `[OrderGateway] ✅ Client ${client.id} joined restaurant room: ${restaurantRoomName}`,
     );
 
@@ -86,7 +88,7 @@ export class OrderGateway implements OnGatewayConnection, OnGatewayDisconnect {
     }
     this.orderSubscriptions.get(orderId)?.add(client.id);
 
-    console.log(`[OrderGateway] Client ${client.id} subscribed to ${roomName}`);
+    this.logger.log(`[OrderGateway] Client ${client.id} subscribed to ${roomName}`);
 
     // Confirm subscription
     client.emit('subscribed', { orderId });
@@ -115,7 +117,7 @@ export class OrderGateway implements OnGatewayConnection, OnGatewayDisconnect {
       }
     }
 
-    console.log(
+    this.logger.log(
       `[OrderGateway] Client ${client.id} unsubscribed from ${roomName}`,
     );
   }
@@ -130,7 +132,7 @@ export class OrderGateway implements OnGatewayConnection, OnGatewayDisconnect {
       rooms.push(`restaurant-${order.restaurantId}`);
     }
 
-    console.log(`[OrderGateway] Broadcasting order update for ${orderId}:`, {
+    this.logger.log(`[OrderGateway] Broadcasting order update for ${orderId}:`, {
       status: order.status,
       subscribers: this.orderSubscriptions.get(orderId)?.size || 0,
       restaurantId: order.restaurantId,
@@ -152,7 +154,7 @@ export class OrderGateway implements OnGatewayConnection, OnGatewayDisconnect {
       rooms.push(`restaurant-${order.restaurantId}`);
     }
 
-    console.log(`[OrderGateway] Broadcasting order accepted for ${orderId}`);
+    this.logger.log(`[OrderGateway] Broadcasting order accepted for ${orderId}`);
 
     this.server.to(rooms).emit('order:accepted', {
       orderId,
@@ -172,7 +174,7 @@ export class OrderGateway implements OnGatewayConnection, OnGatewayDisconnect {
       rooms.push(`restaurant-${order.restaurantId}`);
     }
 
-    console.log(`[OrderGateway] Broadcasting order rejected for ${orderId}`);
+    this.logger.log(`[OrderGateway] Broadcasting order rejected for ${orderId}`);
 
     this.server.to(rooms).emit('order:rejected', {
       orderId,
@@ -205,7 +207,7 @@ export class OrderGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
     const progress = progressMap[newStatus] ?? 0;
 
-    console.log(
+    this.logger.log(
       `[OrderGateway] Broadcasting status progression for ${orderId}: ${previousStatus} -> ${newStatus} (${progress}%)`,
     );
 
@@ -239,8 +241,8 @@ export class OrderGateway implements OnGatewayConnection, OnGatewayDisconnect {
    * Emit new order created event to waiters in specific restaurant
    */
   broadcastNewOrder(order: Order): void {
-    console.log(`[OrderGateway] Broadcasting new order: ${order.orderId}`);
-    console.log(`[OrderGateway] Order details:`, {
+    this.logger.log(`[OrderGateway] Broadcasting new order: ${order.orderId}`);
+    this.logger.log(`[OrderGateway] Order details:`, {
       orderId: order.orderId,
       restaurantId: order.restaurantId,
       tableId: order.table_id,
@@ -250,14 +252,14 @@ export class OrderGateway implements OnGatewayConnection, OnGatewayDisconnect {
     // Only broadcast to clients in this restaurant's room
     if (order.restaurantId) {
       const restaurantRoomName = `restaurant-${order.restaurantId}`;
-      console.log(`[OrderGateway] Broadcasting to room: ${restaurantRoomName}`);
+      this.logger.log(`[OrderGateway] Broadcasting to room: ${restaurantRoomName}`);
       this.server.to(restaurantRoomName).emit('order:created', {
         orderId: order.orderId,
         order,
         timestamp: new Date().toISOString(),
       });
     } else {
-      console.warn(
+      this.logger.warn(
         `[OrderGateway] ⚠️  Order ${order.orderId} has NO restaurantId - broadcast SKIPPED!`,
       );
     }

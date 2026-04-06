@@ -5,6 +5,11 @@
       "source": "rolling-scopes/rsschool-app",
       "sourceType": "github",
       "computedHash": "2c045eb2e5995ee7c69b3c617d9442a1a5d72db0d315b2d6c358fcd3749bf46b"
+    },
+    "ui-ux-pro-max": {
+      "source": "nextlevelbuilder/ui-ux-pro-max-skill",
+      "sourceType": "github",
+      "computedHash": "6337038fe1fe6bbe1b9f252ab678ee575859190bab6f0f246f4061824eb40875"
     }
   }
 }

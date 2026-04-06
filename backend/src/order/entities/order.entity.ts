@@ -24,6 +24,14 @@ export enum OrderStatus {
   CANCELLED = 'cancelled',
 }
 
+export interface OrderItemModifier {
+  id?: string;
+  name?: string;
+  optionId?: string;
+  optionName?: string;
+  price?: number;
+}
+
 export interface OrderItem {
   id: string;
   menuItemId: string; // UUID, not number
@@ -32,7 +40,7 @@ export interface OrderItem {
   unitPrice: number;
   totalPrice: number;
   prepTimeMinutes?: number; // Added for kitchen tracking
-  modifiers?: any[];
+  modifiers?: OrderItemModifier[];
   specialInstructions?: string;
 }
 

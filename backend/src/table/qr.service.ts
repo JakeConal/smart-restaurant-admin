@@ -1,16 +1,32 @@
 import { Injectable } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import QRCode from 'qrcode';
 import jwt from 'jsonwebtoken';
 import PDFDocument from 'pdfkit';
 
+type TableTokenPayload = jwt.JwtPayload & {
+  tableId: string;
+  restaurantId: string;
+  timestamp: string;
+};
+
 @Injectable()
 export class QrService {
-  private readonly jwtSecret =
-    process.env.JWT_SECRET || 'your-secret-key-change-in-production';
-  private readonly baseUrl =
-    process.env.CUSTOMER_FRONTEND_URL ||
-    process.env.BASE_URL ||
-    'http://localhost:4000';
+  private readonly jwtSecret: string;
+  private readonly baseUrl: string;
+
+  constructor(private readonly configService: ConfigService) {
+    const jwtSecret = this.configService.get<string>('JWT_SECRET');
+    if (!jwtSecret) {
+      throw new Error('JWT_SECRET is required');
+    }
+
+    this.jwtSecret = jwtSecret;
+    this.baseUrl =
+      this.configService.get<string>('CUSTOMER_FRONTEND_URL') ||
+      this.configService.get<string>('BASE_URL') ||
+      'http://localhost:4000';
+  }
 
   /**
    * Generate a signed JWT token for a table
@@ -44,13 +60,13 @@ export class QrService {
     token: string,
   ): { tableId: string; restaurantId: string; timestamp: string } | null {
     try {
-      const decoded = jwt.verify(token, this.jwtSecret) as any;
+      const decoded = jwt.verify(token, this.jwtSecret) as TableTokenPayload;
       return {
         tableId: decoded.tableId,
         restaurantId: decoded.restaurantId,
         timestamp: decoded.timestamp,
       };
-    } catch (error) {
+    } catch {
       return null;
     }
   }

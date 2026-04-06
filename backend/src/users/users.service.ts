@@ -14,6 +14,23 @@ import { UpdateWaiterDto } from './dto/update-waiter.dto';
 import { CreateKitchenStaffDto } from './dto/create-kitchen-staff.dto';
 import { UpdateKitchenStaffDto } from './dto/update-kitchen-staff.dto';
 
+type StaffRoleInfo = {
+  code: string;
+  name: string;
+};
+
+type StaffDetails = {
+  id: string;
+  email: string;
+  full_name: string;
+  avatar_url: string;
+  status: UserStatus;
+  created_at: Date;
+  updated_at: Date;
+  role: StaffRoleInfo;
+  assignedTablesCount?: number;
+};
+
 @Injectable()
 export class UsersService {
   constructor(
@@ -78,7 +95,7 @@ export class UsersService {
     }));
   }
 
-  async getWaiterById(id: string): Promise<any> {
+  async getWaiterById(id: string): Promise<StaffDetails> {
     const result = await this.usersRepository
       .createQueryBuilder('user')
       .leftJoin('user.role', 'role')
@@ -300,7 +317,7 @@ export class UsersService {
     }));
   }
 
-  async getKitchenStaffById(id: string): Promise<any> {
+  async getKitchenStaffById(id: string): Promise<StaffDetails> {
     const result = await this.usersRepository
       .createQueryBuilder('user')
       .leftJoin('user.role', 'role')

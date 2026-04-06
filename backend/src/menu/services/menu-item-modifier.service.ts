@@ -2,6 +2,7 @@ import {
   Injectable,
   BadRequestException,
   NotFoundException,
+  Logger,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, In } from 'typeorm';
@@ -11,6 +12,8 @@ import { ModifierGroup } from '../entities/modifier-group.entity';
 
 @Injectable()
 export class MenuItemModifierService {
+  private readonly logger = new Logger(MenuItemModifierService.name);
+
   constructor(
     @InjectRepository(MenuItemModifierGroup)
     private readonly repo: Repository<MenuItemModifierGroup>,
@@ -21,7 +24,7 @@ export class MenuItemModifierService {
   ) {}
 
   async attachGroups(restaurantId: string, itemId: string, groupIds: string[]) {
-    console.log('attachGroups called with:', {
+    this.logger.debug('attachGroups called with', {
       restaurantId,
       itemId,
       groupIds,
@@ -51,7 +54,7 @@ export class MenuItemModifierService {
 
     // First, remove all existing attachments for this item
     await this.repo.delete({ menuItemId: itemId });
-    console.log('Deleted existing attachments for item:', itemId);
+    this.logger.debug(`Deleted existing attachments for item: ${itemId}`);
 
     // Then, create new attachments
     if (groupIds.length > 0) {
@@ -61,16 +64,16 @@ export class MenuItemModifierService {
       }));
 
       const result = await this.repo.save(rows);
-      console.log('Saved new attachments:', result);
+      this.logger.debug(`Saved ${result.length} new attachments`);
       return result;
     }
 
-    console.log('No groups to attach');
+    this.logger.debug('No groups to attach');
     return [];
   }
 
   async findGroupsByItem(itemId: string) {
-    console.log('findGroupsByItem called with itemId:', itemId);
+    this.logger.debug(`findGroupsByItem called with itemId: ${itemId}`);
 
     // First validate that the item exists
     const item = await this.itemRepo.findOne({
@@ -86,8 +89,8 @@ export class MenuItemModifierService {
       relations: ['group', 'group.options'],
     });
 
-    console.log(
-      'Found modifier groups:',
+    this.logger.debug(
+      'Found modifier groups',
       modifierGroups.map((mg) => ({ id: mg.group.id, name: mg.group.name })),
     );
 

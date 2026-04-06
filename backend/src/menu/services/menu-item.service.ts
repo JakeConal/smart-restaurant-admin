@@ -5,7 +5,7 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { MenuCategory, CategoryStatus } from '../entities/menu-category.entity';
-import { MenuItem } from '../entities/menu-item.entity';
+import { MenuItem, MenuItemStatus } from '../entities/menu-item.entity';
 import { Repository } from 'typeorm';
 import { CreateMenuItemDto } from '../dto/create-menu-item.dto';
 import { UpdateMenuItemDto } from '../dto/update-menu-item.dto';
@@ -246,7 +246,7 @@ export class MenuItemService {
       throw new NotFoundException('Menu item not found');
     }
 
-    item.status = status as any; // Type assertion since enum values match
+    item.status = status as MenuItemStatus;
     const savedItem = await this.itemRepo.save(item);
 
     // Load the category relation for the response

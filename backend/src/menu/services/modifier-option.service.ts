@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ModifierOption } from '../entities/modifier-option.entity';
@@ -7,6 +7,8 @@ import { CreateModifierOptionDto } from '../dto/create-modifier-option.dto';
 
 @Injectable()
 export class ModifierOptionService {
+  private readonly logger = new Logger(ModifierOptionService.name);
+
   constructor(
     @InjectRepository(ModifierOption)
     private readonly repo: Repository<ModifierOption>,
@@ -15,18 +17,16 @@ export class ModifierOptionService {
   ) { }
 
   async createOption(groupId: string, dto: CreateModifierOptionDto) {
-    console.log(
-      'Service: Creating modifier option for group:',
+    this.logger.debug('Creating modifier option', {
       groupId,
-      'with data:',
-      dto,
-    );
+      name: dto.name,
+    });
     const option = this.repo.create({
       groupId,
       ...dto,
     });
     const result = await this.repo.save(option);
-    console.log('Service: Modifier option created successfully:', result);
+    this.logger.debug(`Modifier option created successfully: ${result.id}`);
     return result;
   }
 

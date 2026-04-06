@@ -3,17 +3,28 @@ import { ConfigService } from '@nestjs/config';
 import { VNPay } from 'vnpay';
 import { ProductCode, VnpLocale } from 'vnpay/enums';
 
+type VNPayReturnQuery = Record<string, string> & {
+    vnp_OrderInfo?: string;
+    vnp_TxnRef?: string;
+    vnp_Amount?: string | number;
+    vnp_ResponseCode?: string | number;
+};
+
 @Injectable()
 export class VNPayService {
     private vnpay: VNPay;
 
     constructor(private readonly configService: ConfigService) {
+        const tmnCode = this.configService.get<string>('VNPAY_TMN_CODE');
+        const secureSecret = this.configService.get<string>('VNPAY_HASH_SECRET');
+
+        if (!tmnCode || !secureSecret) {
+            throw new Error('VNPAY_TMN_CODE and VNPAY_HASH_SECRET are required');
+        }
+
         this.vnpay = new VNPay({
-            tmnCode: this.configService.get<string>('VNPAY_TMN_CODE', '2QX6CBMX'),
-            secureSecret: this.configService.get<string>(
-                'VNPAY_HASH_SECRET',
-                '9748689531818B11B20A9C16C4D02C1F',
-            ), // Default sandbox secrets for demo if not provided
+            tmnCode,
+            secureSecret,
             vnpayHost: 'https://sandbox.vnpayment.vn',
             testMode: true,
         });
@@ -37,7 +48,23 @@ export class VNPayService {
         });
     }
 
-    verifyReturnUrl(query: any) {
-        return this.vnpay.verifyReturnUrl(query);
+    verifyReturnUrl(query: VNPayReturnQuery) {
+        if (
+            !query.vnp_OrderInfo ||
+            !query.vnp_TxnRef ||
+            query.vnp_Amount === undefined ||
+            query.vnp_ResponseCode === undefined
+        ) {
+            throw new Error('Invalid VNPay return query');
+        }
+
+        return this.vnpay.verifyReturnUrl(
+            query as VNPayReturnQuery & {
+                vnp_OrderInfo: string;
+                vnp_TxnRef: string;
+                vnp_Amount: string | number;
+                vnp_ResponseCode: string | number;
+            },
+        );
     }
 }

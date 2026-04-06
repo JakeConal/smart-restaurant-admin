@@ -70,7 +70,7 @@ export class MenuService {
     }
 
     // Build where conditions for items
-    const where: any = {
+    const where: Record<string, unknown> = {
       restaurantId,
       isDeleted: false,
     };
@@ -80,7 +80,7 @@ export class MenuService {
     if (q) where.name = Like(`%${q}%`);
 
     // Sort options
-    let order: any = { name: 'ASC' };
+    let order: Record<string, 'ASC' | 'DESC'> = { name: 'ASC' };
     if (sort === 'popularity') {
       order = { popularityScore: 'DESC', name: 'ASC' };
     } else if (sort === 'asc') {
@@ -130,9 +130,18 @@ export class MenuService {
     ]);
 
     // Group photos by menuItemId and prepare URLs
-    const photosByItem = new Map<string, any[]>();
+    const photosByItem = new Map<
+      string,
+      Array<{
+        id: string;
+        menuItemId: string;
+        data: string;
+        mimeType: string;
+        isPrimary: boolean;
+        createdAt: string | Date;
+      }>
+    >();
     const photoMap = new Map<string, string>();
-    const baseUrl = process.env.API_BASE_URL || '';
 
     allPhotos.forEach((photo) => {
       const photoUrl = `/api/menu/items/${photo.menuItemId}/photos/${photo.id}`;
@@ -161,7 +170,7 @@ export class MenuService {
     });
 
     // Group modifiers by item ID
-    const modifiersByItem = new Map<string, any[]>();
+    const modifiersByItem = new Map<string, Array<ModifierGroup & { options: ModifierOption[] }>>();
     itemModifiers.forEach((im) => {
       if (!im.group) return;
       if (!modifiersByItem.has(im.menuItemId)) {

@@ -2,6 +2,7 @@ import {
   Injectable,
   NotFoundException,
   ConflictException,
+  Logger,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, In, Not, IsNull } from 'typeorm';
@@ -14,6 +15,8 @@ import { OrderGateway } from './order.gateway';
 
 @Injectable()
 export class OrderService {
+  private readonly logger = new Logger(OrderService.name);
+
   constructor(
     @InjectRepository(Order)
     private readonly orderRepository: Repository<Order>,
@@ -35,7 +38,7 @@ export class OrderService {
       assignedWaiterId = table?.waiter_id || null;
       restaurantId = table?.restaurantId || null;
 
-      console.log(
+      this.logger.log(
         `[OrderService] Found table: ${JSON.stringify({
           tableId: createOrderDto.table_id,
           restaurantId,
@@ -43,7 +46,7 @@ export class OrderService {
         })}`,
       );
     } else {
-      console.log(`[OrderService] No table_id provided in order creation`);
+      this.logger.log('[OrderService] No table_id provided in order creation');
     }
 
     // Enrich items with prep time and calculate max prep time
@@ -93,7 +96,7 @@ export class OrderService {
 
     const savedOrder = await this.orderRepository.save(order);
 
-    console.log(
+    this.logger.log(
       `[OrderService] Order saved: ${JSON.stringify({
         orderId: savedOrder.orderId,
         restaurantId: savedOrder.restaurantId,

@@ -1,14 +1,29 @@
 /* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as nodemailer from 'nodemailer';
 
 @Injectable()
 export class EmailService {
-  private transporter: any;
+  private readonly logger = new Logger(EmailService.name);
+  private transporter: nodemailer.Transporter;
 
   constructor(private configService: ConfigService) {
     this.initializeTransporter();
+  }
+
+  private getCustomerFrontendUrl(): string {
+    return (
+      this.configService.get<string>('CUSTOMER_FRONTEND_URL') ||
+      'http://localhost:3000'
+    );
+  }
+
+  private getAdminFrontendUrl(): string {
+    return (
+      this.configService.get<string>('ADMIN_FRONTEND_URL') ||
+      'http://localhost:3001'
+    );
   }
 
   /**
@@ -20,10 +35,10 @@ export class EmailService {
       this.configService.get<string>('GMAIL_APP_PASSWORD');
 
     if (!gmailUser || !gmailAppPassword) {
-      console.warn(
+      this.logger.warn(
         '⚠️  Gmail credentials not configured. Using console fallback for email sending.',
       );
-      console.warn(
+      this.logger.warn(
         'Set GMAIL_USER and GMAIL_APP_PASSWORD environment variables to enable Gmail SMTP.',
       );
     }
@@ -48,7 +63,7 @@ export class EmailService {
     customerName: string,
   ): Promise<boolean> {
     try {
-      const verificationUrl = `${process.env.CUSTOMER_FRONTEND_URL || 'http://localhost:3000'}/verify-email?token=${verificationToken}`;
+      const verificationUrl = `${this.getCustomerFrontendUrl()}/verify-email?token=${verificationToken}`;
       const gmailUser = this.configService.get<string>('GMAIL_USER');
 
       const htmlContent = `
@@ -96,14 +111,14 @@ export class EmailService {
         text: `Verify your email: ${verificationUrl}`,
       });
 
-      console.log(`📧 Email sent to ${email}. Message ID: ${info.messageId}`);
+      this.logger.log(`📧 Email sent to ${email}. Message ID: ${info.messageId}`);
       return true;
     } catch (error) {
-      console.error('❌ Error sending verification email:', error);
+      this.logger.error('❌ Error sending verification email:', error);
       // Fallback: log to console for development
-      console.log(
+      this.logger.warn(
         `📧 [FALLBACK] Email Verification Link (${email}):`,
-        `${process.env.CUSTOMER_FRONTEND_URL || 'http://localhost:3000'}/verify-email?token=${verificationToken}`,
+        `${this.getCustomerFrontendUrl()}/verify-email?token=${verificationToken}`,
       );
       return false;
     }
@@ -142,7 +157,7 @@ export class EmailService {
               <h2>Email Verified Successfully</h2>
               <p>Hi ${customerName},</p>
               <p>Your email has been verified! You can now enjoy all features of Smart Restaurant.</p>
-              <a href="${process.env.CUSTOMER_FRONTEND_URL || 'http://localhost:3000'}/menu" class="button">View Menu</a>
+              <a href="${this.getCustomerFrontendUrl()}/menu" class="button">View Menu</a>
               <h3>What's Next?</h3>
               <ul>
                 <li>Browse our delicious menu</li>
@@ -168,13 +183,13 @@ export class EmailService {
         text: 'Your email has been verified! Welcome to Smart Restaurant.',
       });
 
-      console.log(
+      this.logger.log(
         `🎉 Welcome email sent to ${email}. Message ID: ${info.messageId}`,
       );
       return true;
     } catch (error) {
-      console.error('❌ Error sending welcome email:', error);
-      console.log(`🎉 [FALLBACK] Welcome email for ${customerName} (${email})`);
+      this.logger.error('❌ Error sending welcome email:', error);
+      this.logger.warn(`🎉 [FALLBACK] Welcome email for ${customerName} (${email})`);
       return false;
     }
   }
@@ -188,7 +203,7 @@ export class EmailService {
     tableToken?: string,
   ): Promise<boolean> {
     try {
-      let resetUrl = `${process.env.CUSTOMER_FRONTEND_URL || 'http://localhost:3000'}/reset-password?token=${resetToken}`;
+      let resetUrl = `${this.getCustomerFrontendUrl()}/reset-password?token=${resetToken}`;
       if (tableToken) {
         resetUrl += `&tableToken=${encodeURIComponent(tableToken)}`;
       }
@@ -239,15 +254,15 @@ export class EmailService {
         text: `Reset your password: ${resetUrl}`,
       });
 
-      console.log(
+      this.logger.log(
         `🔐 Password reset email sent to ${email}. Message ID: ${info.messageId}`,
       );
       return true;
     } catch (error) {
-      console.error('❌ Error sending password reset email:', error);
-      console.log(
+      this.logger.error('❌ Error sending password reset email:', error);
+      this.logger.warn(
         `🔐 [FALLBACK] Password reset link (${email}):`,
-        `${process.env.CUSTOMER_FRONTEND_URL || 'http://localhost:3000'}/reset-password?token=${resetToken}`,
+        `${this.getCustomerFrontendUrl()}/reset-password?token=${resetToken}`,
       );
       return false;
     }
@@ -262,7 +277,7 @@ export class EmailService {
     verificationToken: string,
   ): Promise<boolean> {
     try {
-      const verificationUrl = `${process.env.ADMIN_FRONTEND_URL || 'http://localhost:3001'}/verify-email?token=${verificationToken}`;
+      const verificationUrl = `${this.getAdminFrontendUrl()}/verify-email?token=${verificationToken}`;
       const gmailUser = this.configService.get<string>('GMAIL_USER');
 
       const htmlContent = `
@@ -322,13 +337,13 @@ export class EmailService {
         text: `Verify your admin email: ${verificationUrl}`,
       });
 
-      console.log(`📧 Admin verification email sent to ${email}. Message ID: ${info.messageId}`);
+      this.logger.log(`📧 Admin verification email sent to ${email}. Message ID: ${info.messageId}`);
       return true;
     } catch (error) {
-      console.error('❌ Error sending admin verification email:', error);
-      console.log(
+      this.logger.error('❌ Error sending admin verification email:', error);
+      this.logger.warn(
         `📧 [FALLBACK] Admin Email Verification Link (${email}):`,
-        `${process.env.ADMIN_FRONTEND_URL || 'http://localhost:3001'}/verify-email?token=${verificationToken}`,
+        `${this.getAdminFrontendUrl()}/verify-email?token=${verificationToken}`,
       );
       return false;
     }
@@ -343,7 +358,7 @@ export class EmailService {
     resetToken: string,
   ): Promise<boolean> {
     try {
-      const resetUrl = `${process.env.ADMIN_FRONTEND_URL || 'http://localhost:3001'}/reset-password?token=${resetToken}`;
+      const resetUrl = `${this.getAdminFrontendUrl()}/reset-password?token=${resetToken}`;
       const gmailUser = this.configService.get<string>('GMAIL_USER');
 
       const htmlContent = `
@@ -411,15 +426,15 @@ export class EmailService {
         text: `Reset your admin password: ${resetUrl}`,
       });
 
-      console.log(
+      this.logger.log(
         `🔐 Admin password reset email sent to ${email}. Message ID: ${info.messageId}`,
       );
       return true;
     } catch (error) {
-      console.error('❌ Error sending admin password reset email:', error);
-      console.log(
+      this.logger.error('❌ Error sending admin password reset email:', error);
+      this.logger.warn(
         `🔐 [FALLBACK] Admin password reset link (${email}):`,
-        `${process.env.ADMIN_FRONTEND_URL || 'http://localhost:3001'}/reset-password?token=${resetToken}`,
+        `${this.getAdminFrontendUrl()}/reset-password?token=${resetToken}`,
       );
       return false;
     }

@@ -9,6 +9,7 @@ import {
   UseGuards,
   HttpException,
   HttpStatus,
+  Logger,
 } from '@nestjs/common';
 import { ModifierOptionService } from '../services/modifier-option.service';
 import { CreateModifierOptionDto } from '../dto/create-modifier-option.dto';
@@ -20,6 +21,8 @@ import type { AuthUser } from '../../customer-auth/interfaces/auth-user.interfac
 @Controller('api/admin/menu')
 @UseGuards(AdminGuard)
 export class ModifierOptionController {
+  private readonly logger = new Logger(ModifierOptionController.name);
+
   constructor(private readonly service: ModifierOptionService) { }
 
   @Post('modifier-groups/:groupId/options')
@@ -29,17 +32,14 @@ export class ModifierOptionController {
     @Body() dto: CreateModifierOptionDto,
   ) {
     try {
-      console.log(
-        'Creating modifier option for group:',
+      this.logger.debug('Creating modifier option', {
         groupId,
-        'with data:',
-        dto,
-        'user:',
-        user.restaurantId,
-      );
+        restaurantId: user.restaurantId,
+        name: dto.name,
+      });
       return await this.service.createOption(groupId, dto);
     } catch (error) {
-      console.error('Error creating modifier option:', error);
+      this.logger.error('Error creating modifier option', error);
       throw new HttpException(
         error.message || 'Failed to create modifier option',
         HttpStatus.BAD_REQUEST,

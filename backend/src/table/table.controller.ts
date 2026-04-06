@@ -96,20 +96,20 @@ export class TableController {
 
     if (format === 'pdf') {
       const pdfBuffer = await this.tableService.downloadQrCodePdf(id);
-      (res as any).set({
+      res.set({
         'Content-Type': 'application/pdf',
         'Content-Disposition': `attachment; filename="table-${table.tableNumber}-qr.pdf"`,
         'Content-Length': pdfBuffer.length,
       });
-      (res as any).send(pdfBuffer);
+      res.send(pdfBuffer);
     } else {
       const pngBuffer = await this.tableService.downloadQrCodePng(id);
-      (res as any).set({
+      res.set({
         'Content-Type': 'image/png',
         'Content-Disposition': `attachment; filename="table-${table.tableNumber}-qr.png"`,
         'Content-Length': pngBuffer.length,
       });
-      (res as any).send(pngBuffer);
+      res.send(pngBuffer);
     }
   }
 
@@ -123,21 +123,21 @@ export class TableController {
       const zipStream = await this.tableService.downloadAllQrCodesZip(
         user.restaurantId,
       );
-      (res as any).set({
+      res.set({
         'Content-Type': 'application/zip',
         'Content-Disposition': 'attachment; filename="all-tables-qr-codes.zip"',
       });
-      zipStream.pipe(res as any);
+      zipStream.pipe(res);
     } else {
       const pdfBuffer = await this.tableService.downloadAllQrCodes(
         user.restaurantId,
       );
-      (res as any).set({
+      res.set({
         'Content-Type': 'application/pdf',
         'Content-Disposition': 'attachment; filename="all-tables-qr-codes.pdf"',
         'Content-Length': pdfBuffer.length,
       });
-      (res as any).send(pdfBuffer);
+      res.send(pdfBuffer);
     }
   }
 
